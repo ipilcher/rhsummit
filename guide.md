@@ -165,14 +165,14 @@ Instead, we'll start with a fully deployed environment, do some exploration
 and testing, and then finish up by deleting the overcloud and starting a new
 deployment (which probably won't complete).
 
-|Node               |IPMI        |External|Storage|Storage<br>Management|Internal|
-|-------------------|------------|--------|-------|---------------------|--------|
-|overcloud-ctrl01   |172.16.0.131|||||
-|overcloud-ctrl02   |172.16.0.132|||||
-|overcloud-ctrl03   |172.16.0.133|||||
-|overcloud-ceph01   |172.16.0.136|||||
-|overcloud-ceph02   |172.16.0.137|||||
-|overcloud-ceph03   |172.16.0.138|||||
-|overcloud-compute01|172.16.0.134|||||
-|overcloud-compute02|172.16.0.135|||||
+|Overcloud Host     |IPMI        |External       |Storage     |Storage<br>Management|Internal|
+|-------------------|------------|---------------|------------|---------------------|--------|
+|overcloud-ctrl01   |172.16.0.131|192.168.122.201|172.17.3.201|||
+|overcloud-ctrl02   |172.16.0.132|192.168.122.202|172.17.3.202|||
+|overcloud-ctrl03   |172.16.0.133|192.168.122.203|172.17.3.203|||
+|overcloud-ceph01   |172.16.0.136|               |172.17.3.221|||
+|overcloud-ceph02   |172.16.0.137|               |172.17.3.222|||
+|overcloud-ceph03   |172.16.0.138|               |172.17.3.223|||
+|overcloud-compute01|172.16.0.134|               |172.17.3.211|||
+|overcloud-compute02|172.16.0.135|               |172.17.3.212|||
 

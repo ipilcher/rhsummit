@@ -85,7 +85,14 @@ platform don't fit the traditional containerized application model.
   tend to be optimized for services that each have a single IP address on a
   single flat network.  To accomodate OSP's requirement for multiple networks,
   all containers in OSP 12 run with ``host`` networking, where all host network
-  interfaces, IP addresses, etc., and exposed to the containerized applications.
-* **Configuration** - 
+  interfaces, IP addresses, etc., are exposed to the containerized applications.
+* **Configuration** - OSP 12 is the sixth version to Red Hat OpenStack Platform
+  to use OSP director (TripleO) for installation and configuration.  Over those
+  six releases, OSP director has developed a robust system for creating and
+  customizing OpenStack (and other) configuration files - including support for
+  site-specific customizations and a large ecosystem of partner plug-ins.  A
+  later lab will explore how OSP 12 preserves compatibility with customer
+  configurations and partner-plugins - including compatibility across upgrades
+  from non-containerized OSP 11 to containerized OSP 12!
 * Logging
 * Privileged operations

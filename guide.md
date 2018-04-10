@@ -13,7 +13,8 @@
 
 ## Lab Contents
 
-* **Lab 1:** Introduction
+* **Lab 0:** Introduction
+* **Lab 1:** Lab Environment
 * **Lab 2:** Everything else
 
 ## Lab 0: Introduction
@@ -132,3 +133,15 @@ lab.
   the overcloud, because they run "on top of" the undercloud.
 
 OpenStack on OpenStack!
+
+## Lab 1: Lab Environment
+
+This lab features a reasonably realistic OSP 12 deployment, including:
+
+* A highly available OpenStack control plane
+* Isolated networks (VLANs) for
+  * foo
+  * bar
+  * baz
+* Bonded network interfaces
+* Red Hat Ceph Storage

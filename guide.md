@@ -86,6 +86,6 @@ platform don't fit the traditional containerized application model.
   single flat network.  To accomodate OSP's requirement for multiple networks,
   all containers in OSP 12 run with ``host`` networking, where all host network
   interfaces, IP addresses, etc., and exposed to the containerized applications.
-* Configuration
+* **Configuration** - 
 * Logging
 * Privileged operations

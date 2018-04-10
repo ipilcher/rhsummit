@@ -102,4 +102,7 @@ platform don't fit the traditional containerized application model.
   files will need to be updated for OSP 12.
 * **Privileged operations** - Isolation from the host operating system is one of
   the benefits of containerizing applications, but there are certain services
-  within OSP that 
+  within OSP that require privileged access to the host OS.  For example,
+  libvirt interacts with KVM to manage virtual machines, and Neutron creates
+  and destroys network namespaces and Open vSwitch bridges and ports.  For this
+  reason, a few containers within OSP 12 run as ``privileged`` containers.

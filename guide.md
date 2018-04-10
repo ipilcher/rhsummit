@@ -148,8 +148,10 @@ This lab features a reasonably realistic OSP 12 deployment, including:
 
 This environment runs as a set of virtual machines in the Ravello cloud, which
 allows us to simulate much of the network infrastructure (NICs, switches, VLANs)
-found in real datacenters.  It also supportes nested virtualization, which
-allows our compute node VM(s) to run KVM guests themselves.
+found in real datacenters.  Red Hat has developed an IPMI "bridge," which maps
+IPMI commands to Ravello API calls, allowing us to use standard power control
+agents.  Finally, it also supports nested virtualization, which allows our
+compute node VM(s) to run KVM guests themselves.
 
 You will access your personal lab environment via a bastion VM.  To log in to
 the bastion, ...
@@ -163,14 +165,14 @@ Instead, we'll start with a fully deployed environment, do some exploration
 and testing, and then finish up by deleting the overcloud and starting a new
 deployment (which probably won't complete).
 
-|Node               |IPMI|External|Storage|Storage<br>Management|Internal|
-|-------------------|----|--------|-------|---------------------|--------|
-|overcloud-ctrl01   ||||||
-|overcloud-ctrl02   ||||||
-|overcloud-ctrl03   ||||||
-|overcloud-ceph01   ||||||
-|overcloud-ceph02   ||||||
-|overcloud-ceph03   ||||||
-|overcloud-compute01||||||
-|overcloud-compute02||||||
+|Node               |IPMI        |External|Storage|Storage<br>Management|Internal|
+|-------------------|------------|--------|-------|---------------------|--------|
+|overcloud-ctrl01   |172.16.0.131|||||
+|overcloud-ctrl02   |172.16.0.132|||||
+|overcloud-ctrl03   |172.16.0.133|||||
+|overcloud-ceph01   |172.16.0.136|||||
+|overcloud-ceph02   |172.16.0.137|||||
+|overcloud-ceph03   |172.16.0.138|||||
+|overcloud-compute01|172.16.0.134|||||
+|overcloud-compute02|172.16.0.135|||||
 

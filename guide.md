@@ -125,8 +125,10 @@ this capability to deploy and manage Red Hat OpenStack Platform.
 This brings us to two very important terms, that will be used throughout this
 lab.
 
-* **Undercloud** - The undercloud is an "all-in-one" OpenStack deployment that
-  deploys, configures, and manages a set of bare-metal servers.
-* **Overcloud** - 
+* **Undercloud** - The undercloud (sometimes refered to as the OSP director
+  node) is an "all-in-one" OpenStack deployment that deploys, configures, and
+  manages a set of bare-metal servers which run Red Hat OpenStack Platform.
+* **Overcloud** - The OSP servers managed by the undercloud are refered to as
+  the overcloud, because they run "on top of" the undercloud.
 
-The overcloud runs "on" the undercloud - OpenStack on OpenStack!
+OpenStack on OpenStack!

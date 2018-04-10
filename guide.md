@@ -86,7 +86,7 @@ platform don't fit the traditional containerized application model.
   single flat network.  To accomodate OSP's requirement for multiple networks,
   all containers in OSP 12 run with ``host`` networking, where all host network
   interfaces, IP addresses, etc., are exposed to the containerized applications.
-* **Configuration** - OSP 12 is the sixth version to Red Hat OpenStack Platform
+* **Configuration** - OSP 12 is the sixth version of Red Hat OpenStack Platform
   to use OSP director (TripleO) for installation and configuration.  Over those
   six releases, OSP director has developed a robust system for creating and
   customizing OpenStack (and other) configuration files - including support for
@@ -94,5 +94,12 @@ platform don't fit the traditional containerized application model.
   later lab will explore how OSP 12 preserves compatibility with customer
   configurations and partner-plugins - including compatibility across upgrades
   from non-containerized OSP 11 to containerized OSP 12!
-* Logging
-* Privileged operations
+* **Logging** - Just like OpenStack services expect to read their configuration
+  from local configuration files, they expect to write their logs to local log
+  files.  OSP 12 makes these log files visible to the host operating system,
+  although their locations differ from those of the non-containerized services
+  in OSP 11.  (A later lab will provide details.)  Tools that parse these log
+  files will need to be updated for OSP 12.
+* **Privileged operations** - Isolation from the host operating system is one of
+  the benefits of containerizing applications, but there are certain services
+  within OSP that 

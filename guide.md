@@ -3,7 +3,8 @@
 # Red Hat Summit 2018 - San Francisco, California
 
 **Title:** Understanding Containerized Red Hat OpenStack Platform (L1018)  
-**Date:** May 8, 2017  
+**Date:** May 8, 2017
+
 **Authors:**
 * Ian Pilcher <<ipilcher@redhat.com>>
 * Greg Charot <<gcharot@redhat.com>>

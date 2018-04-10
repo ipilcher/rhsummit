@@ -118,4 +118,15 @@ We often talk about instances (usually virtual machines) running "on" a
 particular cloud or infrastructure, such as OpenStack - meaning that that
 infrastructure is responsible for deploying, managing, metering, and ultimately
 retiring the instance.  In addition to traditional virtual machine instances,
-OpenStack supports bare-metal instances
+OpenStack supports bare-metal instances via a service called **Ironic**.  Thus,
+it is possible to run a bare-metal server "on" an OpenStack cloud, and we use
+this capability to deploy and manage Red Hat OpenStack Platform.
+
+This brings us to two very important terms, that will be used throughout this
+lab.
+
+* **Undercloud** - The undercloud is an "all-in-one" OpenStack deployment that
+  deploys, configures, and manages a set of bare-metal servers.
+* **Overcloud** - 
+
+The overcloud runs "on" the undercloud - OpenStack on OpenStack!

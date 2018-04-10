@@ -114,3 +114,8 @@ platform don't fit the traditional containerized application model.
 OpenStack Platform director (OSP director) is based on the upstream TripleO
 project.  TripleO stands for "OpenStack on OpenStack," but what does this mean?
 
+We often talk about instances (usually virtual machines) running "on" a
+particular cloud or infrastructure, such as OpenStack - meaning that that
+infrastructure is responsible for deploying, managing, metering, and ultimately
+retiring the instance.  In addition to traditional virtual machine instances,
+OpenStack supports bare-metal instances

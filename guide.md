@@ -163,8 +163,7 @@ Instead, we'll start with a fully deployed environment, do some exploration
 and testing, and then finish up by deleting the overcloud and starting a new
 deployment (which probably won't complete).
 
-|||||Storage||
-|Node|IPMI|External|Storage|Management|Internal|
-|----|----|--------|-------|----------|--------|
+|Node|IPMI|External|Storage|Storage Mgmt|Internal|
+|----|----|--------|-------|------------|--------|
 |overcloud-ctrl01||||||
 

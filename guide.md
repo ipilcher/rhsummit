@@ -110,3 +110,7 @@ platform don't fit the traditional containerized application model.
 ### TripleO Terminology
 
 ![TripleO](/images/overcloud-undercloud.png)
+
+OpenStack Platform director (OSP director) is based on the upstream TripleO
+project.  TripleO stands for "OpenStack on OpenStack," but what does this mean?
+

@@ -145,3 +145,14 @@ This lab features a reasonably realistic OSP 12 deployment, including:
   * baz
 * Bonded network interfaces
 * Red Hat Ceph Storage
+
+This environment runs as a set of virtual machines in the Ravello cloud, which
+allows to simulate much of the network infrastructure (NICs, switches, VLANs)
+found in real datacenters.  It also supportes nested virtualization, which
+allows our compute node VM(s) to run KVM guests themselves.
+
+You will access your personal lab environment via a bastion VM.  To log in to
+the bastion, ...
+
+The bastion also acts as an NTP server, yum repository server, and container
+image registry for your environment.

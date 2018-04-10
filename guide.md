@@ -140,14 +140,14 @@ This lab features a reasonably realistic OSP 12 deployment, including:
 
 * A highly available OpenStack control plane
 * Isolated networks (VLANs) for
-  * foo
-  * bar
-  * baz
+  * internal control plane - APIs, messaging, database, etc.
+  * storage and storage management
+  * external API/tenant access (floating IPs)
 * Bonded network interfaces
 * Red Hat Ceph Storage
 
 This environment runs as a set of virtual machines in the Ravello cloud, which
-allows to simulate much of the network infrastructure (NICs, switches, VLANs)
+allows us to simulate much of the network infrastructure (NICs, switches, VLANs)
 found in real datacenters.  It also supportes nested virtualization, which
 allows our compute node VM(s) to run KVM guests themselves.
 

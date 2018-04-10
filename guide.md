@@ -9,7 +9,7 @@
 * Ian Pilcher <<ipilcher@redhat.com>>
 * Greg Charot <<gcharot@redhat.com>>
 * Jacob Liberman <<jliberma@redhat.com>>
-* Rhyx Oxenham <<roxenham@redhat.com>>
+* Rhys Oxenham <<roxenham@redhat.com>>
 
 ## Lab Contents
 
@@ -65,4 +65,14 @@ benefits:
   containerized service can be updated independently.  Unlike package-based
   deployments, containerized services can be updated without breaking shared
   library dependencies.
-* **Flexibility** - Red Hat OpenStack Platform 10 introduced 
+* **Flexibility** - Red Hat OpenStack Platform 10 introduced the concept of
+  composable service roles.  Rather than offering only a handful of monolithic
+  roles with pre-defined services (such as the controller and compute roles),
+  OSP 10 and later allow administrators to create roles with their own unique
+  combinations of services.  Containerization eases the deployment of these
+  custom service combinations.
+* **Control** - Resource consumption can be limited at the container level,
+  ensuring that a rogue service does not starve other services of resources.
+  Architectures such as Red Hat Hyperconverged Infrastructure for Cloud could
+  not be reliably deployed without this control.
+  

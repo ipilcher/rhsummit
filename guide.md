@@ -44,7 +44,7 @@ Having written that we're not going to talk about containers, we're now going to
 talk about containers, but only a few aspects that are relevant to Red Hat
 OpenStack Platform 12.
 
-**We are not talking about running containerized applications _ON_ OpenStack.**
+**We are not talking about running containerized applications on OpenStack.**
 OpenStack is a fantastic platform for running containerized applications and
 container orchestration engines, such as Red Hat OpenShift Container Platform,
 but that is not the subject of this lab.
@@ -53,7 +53,7 @@ Instead, this lab is concerned with running the services that manage an
 OpenStack environment within containers.  Why is Red Hat doing this?
 
 Running OpenStack (and other) services within containers provides a number of
-benefits:
+benefits.
 
 * **Stability** - Each container runs as an independent stack, with no
   dependencies on other containers.
@@ -75,4 +75,17 @@ benefits:
   ensuring that a rogue service does not starve other services of resources.
   Architectures such as Red Hat Hyperconverged Infrastructure for Cloud could
   not be reliably deployed without this control.
-  
+
+Note that there are a few ways in which the services in Red Hat OpenStack
+platform don't fit the traditional containerized application model.
+
+* **Networking** - Red Hat OpenStack Platform has supported network isolation -
+  separating OpenStack and workload traffic onto multiple physical networks -
+  since its very first release.  Container runtimes and orchestrators, however,
+  tend to be optimized for services that each have a single IP address on a
+  single flat network.  To accomodate OSP's requirement for multiple networks,
+  all containers in OSP 12 run with ``host`` networking, where all host network
+  interfaces, IP addresses, etc., and exposed to the containerized applications.
+* Configuration
+* Logging
+* Privileged operations

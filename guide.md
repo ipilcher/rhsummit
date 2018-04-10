@@ -4,7 +4,11 @@
 
 **Title:** Understanding Containerized Red Hat OpenStack Platform (L1018)  
 **Date:** May 8, 2017  
-**Author:** Ian Pilcher <<ipilcher@redhat.com>>  
+**Authors:**
+* Ian Pilcher <<ipilcher@redhat.com>>
+* Greg Charot <<gcharot@redhat.com>>
+* Jacob Liberman <<jliberma@redhat.com>>
+* Rhyx Oxenham <<roxenham@redhat.com>>
 
 ## Lab Contents
 
@@ -33,16 +37,31 @@ We have a number of Red Hat OpenStack subject matter experts in the room with us
 today.  If you have any problems or questions, please raise your hand, and one
 of them will be with you as soon as possible.
 
-### A Word About Containers
+### OpenStack and Containers
 
 Having written that we're not going to talk about containers, we're now going to
 talk about containers, but only a few aspects that are relevant to Red Hat
 OpenStack Platform 12.
 
-1. **We are not talking about running containerized applications _ON_
-   OpenStack.**  OpenStack is a fantastic platform for running containerized
-   applications and container orchestration engines, such as Red Hat OpenShift
-   Container Platform,  but that is not the subject of this lab.
-   
-   Instead, this lab is concerned with running the services that manage an
-   OpenStack environment within containers.
+**We are not talking about running containerized applications _ON_ OpenStack.**
+OpenStack is a fantastic platform for running containerized applications and
+container orchestration engines, such as Red Hat OpenShift Container Platform,
+but that is not the subject of this lab.
+ 
+Instead, this lab is concerned with running the services that manage an
+OpenStack environment within containers.  Why is Red Hat doing this?
+
+Running OpenStack (and other) services within containers provides a number of
+benefits:
+
+* **Stability** - Each container runs as an independent stack, with no
+  dependencies on other containers.
+* **Security** - Applications running within containers are isolated from the
+  host operating system and each other.  Because container images are immutable,
+  any compromise is contained, and containers can easily be recreated from
+  sources.
+* **Lifecycle management** - Because containers are isolated, atomic units, each
+  containerized service can be updated independently.  Unlike package-based
+  deployments, containerized services can be updated without breaking shared
+  library dependencies.
+* **Flexibility** - Red Hat OpenStack Platform 10 introduced 

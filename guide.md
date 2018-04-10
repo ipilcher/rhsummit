@@ -106,3 +106,7 @@ platform don't fit the traditional containerized application model.
   libvirt interacts with KVM to manage virtual machines, and Neutron creates
   and destroys network namespaces and Open vSwitch bridges and ports.  For this
   reason, a few containers within OSP 12 run as ``privileged`` containers.
+
+### TripleO Terminology
+
+![TripleO](/images/overcloud-undercloud.png)

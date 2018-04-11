@@ -163,7 +163,7 @@ image registry for your environment.
 
 ![Lab diagram](/images/lab-diagram.svg)
 
-**Network legend**
+**Networks**
 
 ![Lab networks](/images/lab-networks.svg)
 

@@ -19,7 +19,7 @@
    inkscape:version="0.92.2 (5c3e80d, 2017-08-06)"><metadata
      id="metadata8"><rdf:RDF><cc:Work
          rdf:about=""><dc:format>image/svg+xml</dc:format><dc:type
-           rdf:resource="http://purl.org/dc/dcmitype/StillImage" /><dc:title></dc:title></cc:Work></rdf:RDF></metadata><defs
+           rdf:resource="http://purl.org/dc/dcmitype/StillImage" /><dc:title /></cc:Work></rdf:RDF></metadata><defs
      id="defs6"><clipPath
        clipPathUnits="userSpaceOnUse"
        id="clipPath18"><path
@@ -52,8 +52,8 @@
      id="namedview4"
      showgrid="false"
      inkscape:zoom="1"
-     inkscape:cx="535.31772"
-     inkscape:cy="297.58109"
+     inkscape:cx="813.66771"
+     inkscape:cy="493.46561"
      inkscape:window-x="873"
      inkscape:window-y="178"
      inkscape:window-maximized="0"
@@ -2290,8 +2290,8 @@
              transform="matrix(1,0,0,-1,567.7,318.6)"
              style="font-variant:normal;font-weight:normal;font-size:8px;font-family:'Nimbus Sans';-inkscape-font-specification:NimbusSans;writing-mode:lr-tb;fill:#696969;fill-opacity:1;fill-rule:nonzero;stroke:none"
              id="text1782"><tspan
-               x="0 2.2 6.296 10.792 15.192 17.488001 21.784 25.879999 28.176001 32.776001 35.472 39.872002 44.368 48.768002 50.560001 54.655998 56.952 59.152 61.848 66.248001 72.944 75.239998 81.031998 86.727997 92.127998 94.424004 98.519997 102.92 105.12 106.912 111.008 115.408 119.904 122.2 126.2 130.696"
+               x="0 2.2 6.296 10.792 15.192 17.488001 21.784 25.879999 28.176001 32.776001 35.472 39.872002 44.368 48.768002 50.560001 54.655998 56.952 59.152 61.848 66.248001 72.944"
                y="0"
                sodipodi:role="line"
-               id="tspan1780">Icon by Freepik from www.faticon.com</tspan></text>
+               id="tspan1780">Icon by Freepik from www.flaticon.com</tspan></text>
 </g></g></g></g></svg>

@@ -52,12 +52,12 @@
      id="namedview4"
      showgrid="false"
      inkscape:zoom="1"
-     inkscape:cx="815.66771"
-     inkscape:cy="493.46561"
+     inkscape:cx="425.37782"
+     inkscape:cy="373.46561"
      inkscape:window-x="873"
      inkscape:window-y="178"
      inkscape:window-maximized="0"
-     inkscape:current-layer="g1770" /><g
+     inkscape:current-layer="g10" /><g
      id="g10"
      inkscape:groupmode="layer"
      inkscape:label="lab"
@@ -148,7 +148,8 @@
                x="0 11.696 22.191999 32.880001 44.271999 55.776001 64.975998 77.375999 88.879997"
                y="0"
                sodipodi:role="line"
-               id="tspan78">OVERCLOUD</tspan></text>
+               id="tspan78"
+               style="-inkscape-font-specification:'Nimbus Sans Bold';font-family:'Nimbus Sans';font-weight:bold;font-style:normal;font-stretch:normal;font-variant:normal">OVERCLOUD</tspan></text>
 </g><g
            id="g82"><path
              d="M 86.4,250.7 H 705.6"
@@ -1731,7 +1732,8 @@
                x="0 8.6879997 17.292 25.896 33.984001 42.48 51.084 58.080002 67.463997 76.068001"
                y="0"
                sodipodi:role="line"
-               id="tspan1342">UNDERCLOUD</tspan></text>
+               id="tspan1342"
+               style="font-weight:bold">UNDERCLOUD</tspan></text>
 </g><path
            d="M 296.2,143.3 H 234.9 V 201 h 122.5 v -57.7 z"
            style="fill:#cccccc;fill-opacity:1;fill-rule:evenodd;stroke:none"
@@ -1749,7 +1751,8 @@
                x="0 8.6040001 17.988001 26.591999 33.792 42.287998 51.672001 58.967999 66.264 74.351997"
                y="0"
                sodipodi:role="line"
-               id="tspan1354">CONTROLLER</tspan></text>
+               id="tspan1354"
+               style="font-weight:bold">CONTROLLER</tspan></text>
 </g><g
            id="g1358"><text
              transform="matrix(1,0,0,-1,243.5,163.4)"
@@ -1758,7 +1761,8 @@
                x="0 8.6879997 18.072001 26.676001 34.571999"
                y="0"
                sodipodi:role="line"
-               id="tspan1360">NODES</tspan></text>
+               id="tspan1360"
+               style="font-weight:bold">NODES</tspan></text>
 </g><path
            d="M 476.2,143.3 H 414.9 V 201 h 122.5 v -57.7 z"
            style="fill:#cccccc;fill-opacity:1;fill-rule:evenodd;stroke:none"
@@ -1776,7 +1780,8 @@
                x="0 7.8959999 15 24.299999 32.987999 41.088001 50.472"
                y="0"
                sodipodi:role="line"
-               id="tspan1372">STORAGE</tspan></text>
+               id="tspan1372"
+               style="font-weight:bold">STORAGE</tspan></text>
 </g><g
            id="g1376"><text
              transform="matrix(1,0,0,-1,423.5,163.4)"
@@ -1785,7 +1790,8 @@
                x="0 8.6879997 18.072001 26.676001 34.571999"
                y="0"
                sodipodi:role="line"
-               id="tspan1378">NODES</tspan></text>
+               id="tspan1378"
+               style="font-weight:bold">NODES</tspan></text>
 </g><path
            d="M 656.2,143.3 H 594.9 V 201 h 122.5 v -57.7 z"
            style="fill:#cccccc;fill-opacity:1;fill-rule:evenodd;stroke:none"
@@ -1803,7 +1809,8 @@
                x="0 8.6040001 17.988001 27.888 35.688 44.375999 51.576"
                y="0"
                sodipodi:role="line"
-               id="tspan1390">COMPUTE</tspan></text>
+               id="tspan1390"
+               style="font-weight:bold">COMPUTE</tspan></text>
 </g><g
            id="g1394"><text
              transform="matrix(1,0,0,-1,603.5,163.4)"
@@ -1812,7 +1819,8 @@
                x="0 8.6879997 18.072001 26.676001 34.571999"
                y="0"
                sodipodi:role="line"
-               id="tspan1396">NODES</tspan></text>
+               id="tspan1396"
+               style="font-weight:bold">NODES</tspan></text>
 </g><g
            id="g1400"><path
              d="m 62.2,302.3 v -1.4"
@@ -2235,7 +2243,8 @@
                x="0 7.0999999 14.89 22.09 28.09 34.59"
                y="0"
                sodipodi:role="line"
-               id="tspan1732">ROUTER</tspan></text>
+               id="tspan1732"
+               style="font-weight:bold">ROUTER</tspan></text>
 </g><path
            d="M 142.5,353.1 H 81.3 v 57.6 h 122.5 v -57.6 z"
            style="fill:#cccccc;fill-opacity:1;fill-rule:evenodd;stroke:none"
@@ -2253,7 +2262,8 @@
                x="0 8.3039999 16.704 24.6 31.896 35.279999 44.664001"
                y="0"
                sodipodi:role="line"
-               id="tspan1744">BASTION</tspan></text>
+               id="tspan1744"
+               style="font-weight:bold">BASTION</tspan></text>
 </g><g
            id="g1748"><path
              d="m 148,299.1 c 337.2,0 113.2,72.1 448.2,72.1"

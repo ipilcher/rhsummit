@@ -167,18 +167,9 @@ image registry for your environment.
 
 ![Lab networks](/images/lab-networks.svg)
 
-
-Deploying this OSP 12 architecture into the Ravello environment takes at least
-60 minutes, so we won't spend the first half of our time watching a deployment.
-Instead, we'll start with a fully deployed environment, do some exploration
-and testing, and then finish up by deleting the overcloud and starting a new
-deployment (which probably won't complete).
-
-![Lab diagram](/images/lab-diagram.svg)
-
-Networks:
-
-![Lab networks](/images/lab-networks.svg)
+Because we're using pre-determined IP addresses, we already know what our
+overcloud nodes' addresses will be on these networks (with the exception of the
+provisioning network, where addreesses are always dynamically assigned).
 
 |Overcloud Host     |IPMI        |External       |Internal    |VXLAN<br>Tunnels|Storage     |Storage<br>Management|
 |-------------------|------------|---------------|------------|----------------|------------|---------------------|
@@ -190,3 +181,9 @@ Networks:
 |overcloud-ceph03   |172.16.0.138|               |            |                |172.17.3.223|172.17.4.223         |
 |overcloud-compute01|172.16.0.134|               |172.17.1.211|172.17.2.211    |172.17.3.211|                     |
 |overcloud-compute02|172.16.0.135|               |172.17.1.212|172.17.2.212    |172.17.3.212|                     |
+
+Deploying this OSP 12 architecture into the Ravello environment takes at least
+60 minutes, so we won't spend the first half of our time watching a deployment.
+Instead, we'll start with a fully deployed environment, do some exploration
+and testing, and then finish up by deleting the overcloud and starting a new
+deployment (which probably won't complete).

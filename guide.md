@@ -136,13 +136,15 @@ OpenStack on OpenStack!
 
 ## Lab 1: Lab Environment
 
-This lab features a reasonably realistic OSP 12 deployment, including:
+This lab features a realistic OSP 12 deployment (except for the number of
+compute nodes), including:
 
 * A highly available OpenStack control plane
 * Isolated networks (VLANs) for
   * internal control plane - APIs, messaging, database, etc.
   * storage and storage management
   * external API/tenant access (floating IPs)
+* Pre-determined IP addresses
 * Bonded network interfaces
 * Red Hat Ceph Storage
 

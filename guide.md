@@ -161,6 +161,10 @@ the bastion, ...
 The bastion also acts as an NTP server, yum repository server, and container
 image registry for your environment.
 
+![Lab diagram](/images/lab-diagram.svg)
+![Lab networks](/images/lab-networks.svg)
+
+
 Deploying this OSP 12 architecture into the Ravello environment takes at least
 60 minutes, so we won't spend the first half of our time watching a deployment.
 Instead, we'll start with a fully deployed environment, do some exploration

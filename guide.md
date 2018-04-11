@@ -162,6 +162,9 @@ The bastion also acts as an NTP server, yum repository server, and container
 image registry for your environment.
 
 ![Lab diagram](/images/lab-diagram.svg)
+
+**Network legend**
+
 ![Lab networks](/images/lab-networks.svg)
 
 

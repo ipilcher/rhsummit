@@ -183,7 +183,7 @@ provisioning network, where addreesses are always dynamically assigned).
 |overcloud-compute02|172.16.0.135|               |172.17.1.212|172.17.2.212    |172.17.3.212|                     |
 
 Deploying this OSP 12 architecture into the Ravello environment takes at least
-60 minutes, so we won't spend the first half of our time watching a deployment.
-Instead, we'll start with a fully deployed environment, do some exploration
-and testing, and then finish up by deleting the overcloud and starting a new
-deployment (which probably won't complete).
+60 minutes, and we don't want to spend half of our time just watching a
+deployment.  So we'll start with a fully deployed environment in which we can
+do som exploration and testing.  As a final step, we'll delete the overcloud and
+look at the deployment process.

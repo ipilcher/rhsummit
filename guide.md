@@ -165,6 +165,8 @@ Instead, we'll start with a fully deployed environment, do some exploration
 and testing, and then finish up by deleting the overcloud and starting a new
 deployment (which probably won't complete).
 
+![Lab environment](/images/lab.svg)
+
 |Overcloud Host     |IPMI        |External       |Internal    |VXLAN<br>Tunnels|Storage     |Storage<br>Management|
 |-------------------|------------|---------------|------------|----------------|------------|---------------------|
 |overcloud-ctrl01   |172.16.0.131|192.168.122.201|172.17.1.201|172.17.2.201    |172.17.3.201|172.17.4.201         |

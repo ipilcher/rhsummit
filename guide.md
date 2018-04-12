@@ -15,7 +15,8 @@
 
 * **Lab 0:** Introduction
 * **Lab 1:** Lab Environment
-* **Lab 2:** Everything else
+* **Lab 2:** 
+* **Lab 3:** Everything else
 
 ## Lab 0: Introduction
 
@@ -168,8 +169,10 @@ image registry for your environment.
 ![Lab networks](/images/lab-networks.svg)
 
 Because we're using pre-determined IP addresses, we already know what our
-overcloud nodes' addresses will be on these networks (with the exception of the
-provisioning network, where addreesses are always dynamically assigned).
+overcloud nodes' addresses will be on these networks.  (The exceptions are the
+provisioning network addresses, which are always dynamically assigned.  We
+happen to be sharing that network with our IPMI BMCs, so we actually have a mix
+of static and dynamic addresses on the same network.)
 
 |Overcloud Host     |IPMI        |External       |Internal    |VXLAN<br>Tunnels|Storage     |Storage<br>Management|
 |-------------------|------------|---------------|------------|----------------|------------|---------------------|

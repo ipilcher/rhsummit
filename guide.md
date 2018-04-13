@@ -330,8 +330,8 @@ Start the instance and wait for it to become ``ACTIVE``.
 +--------------------------------------+-------+--------+--------------------------------+---------------------+---------+
 ```
 
-You should be able to log in to the the instance using ``stack``'s default SSH
-key.
+You should be able to log in to the the instance using the ``stack`` users's
+default SSH key.
 
 ```
 (test@overcloud) [stack@undercloud ~]$ ssh cirros@192.168.122.154
@@ -341,4 +341,12 @@ RSA key fingerprint is MD5:f9:17:09:dc:ab:b6:6f:5a:86:35:a5:5e:50:69:43:5d.
 Are you sure you want to continue connecting (yes/no)? yes
 Warning: Permanently added '192.168.122.154' (RSA) to the list of known hosts.
 $
+
+$ exit
+Connection to 192.168.122.154 closed.
 ```
+
+Success!  We haz cloud!
+
+### 'Tainers, 'Tainers, 'Tainers!
+

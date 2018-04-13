@@ -240,7 +240,9 @@ power state column or ``True`` in the maintenance column.
 +--------------------------------------+---------------------+--------------------------------------+-------------+--------------------+-------------+
 ```
 
-
+Now list look at the overcloud hosts.  From the undercloud's point of view,
+these are **instances** that run on the bare-metal nodes.  (The instance IDs can
+be used to map the instances to their bare-metal nodes.)
 
 ```
 (undercloud) [stack@undercloud ~]$ openstack server list
@@ -255,7 +257,13 @@ power state column or ``True`` in the maintenance column.
 | 66515ba8-15eb-480a-ad37-c3e91da47df8 | lab-ceph01       | ACTIVE | ctlplane=172.16.0.31 | overcloud-full | ceph-storage |
 | 87920ee2-dd27-432d-b8b1-52a2ab49a9ff | lab-compute01    | ACTIVE | ctlplane=172.16.0.25 | overcloud-full | compute      |
 +--------------------------------------+------------------+--------+----------------------+----------------+--------------+
+```
 
+Check the status of the Ceph storage cluster.  (The clock skew and "too many PGs
+per OSD" warnings are expected.  Let an instructor know if you see any other
+warnings or errors.)
+
+```
 (undercloud) [stack@undercloud ~]$ ssh heat-admin@172.16.0.32 sudo ceph -s
     cluster 62e500d2-3e8a-11e8-8abf-2cc26041e5e3
      health HEALTH_WARN
@@ -269,7 +277,11 @@ power state column or ``True`` in the maintenance column.
       pgmap v15024: 704 pgs, 6 pools, 64802 kB data, 790 objects
             404 MB used, 269 GB / 269 GB avail
                  704 active+clean
-                 
+```
+
+A number of ...
+
+```                 
 (undercloud) [stack@undercloud ~]$ . testrc
 (test@overcloud) [stack@undercloud ~]$ openstack server list
 +--------------------------------------+-------+---------+--------------------------------+---------------------+---------+

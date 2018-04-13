@@ -195,6 +195,8 @@ look at the deployment process.
 
 In this lab, we'll examine our containerized OSP 12 deployment.
 
+### Is This Thing On?
+
 First, log in to the undercloud.  (Enter ``redhat`` as the password.)
 
 ```
@@ -279,10 +281,38 @@ warnings or errors.)
                  704 active+clean
 ```
 
-A number of ...
+A number of items have been pre-created in the **overcloud**.
+
+* ``external`` network and subnet
+* ``m1.tiny`` instance flavor
+* ``cirros-0.3.4-x86_64`` image
+* ``test`` tenant and user
+* ``test`` network, subnet, and router
+* ``stack`` SSH keypair
+* ``test1`` instance
+
+Source the ``testrc`` file to access the overcloud as the ``test`` user.
 
 ```                 
 (undercloud) [stack@undercloud ~]$ . testrc
+(test@overcloud) [stack@undercloud ~]$
+```
+
+Check the status of the instance.  It should be ``SHUTOFF``.
+
+```
+(test@overcloud) [stack@undercloud ~]$ openstack server list
++--------------------------------------+-------+---------+--------------------------------+---------------------+---------+
+| ID                                   | Name  | Status  | Networks                       | Image               | Flavor  |
++--------------------------------------+-------+---------+--------------------------------+---------------------+---------+
+| 828a5d3b-3a01-43dc-ac8b-592e22d3e818 | test1 | SHUTOFF | test=10.0.1.4, 192.168.122.154 | cirros-0.3.4-x86_64 | m1.tiny |
++--------------------------------------+-------+---------+--------------------------------+---------------------+---------+
+```
+
+Start the instance and wait for it to become ``ACTIVE``.
+
+```
+(test@overcloud) [stack@undercloud ~]$ openstack server start test1
 (test@overcloud) [stack@undercloud ~]$ openstack server list
 +--------------------------------------+-------+---------+--------------------------------+---------------------+---------+
 | ID                                   | Name  | Status  | Networks                       | Image               | Flavor  |
@@ -290,14 +320,20 @@ A number of ...
 | 828a5d3b-3a01-43dc-ac8b-592e22d3e818 | test1 | SHUTOFF | test=10.0.1.4, 192.168.122.154 | cirros-0.3.4-x86_64 | m1.tiny |
 +--------------------------------------+-------+---------+--------------------------------+---------------------+---------+
 
-(test@overcloud) [stack@undercloud ~]$ openstack server start test1
+(...)
+
 (test@overcloud) [stack@undercloud ~]$ openstack server list
 +--------------------------------------+-------+--------+--------------------------------+---------------------+---------+
 | ID                                   | Name  | Status | Networks                       | Image               | Flavor  |
 +--------------------------------------+-------+--------+--------------------------------+---------------------+---------+
 | 828a5d3b-3a01-43dc-ac8b-592e22d3e818 | test1 | ACTIVE | test=10.0.1.4, 192.168.122.154 | cirros-0.3.4-x86_64 | m1.tiny |
 +--------------------------------------+-------+--------+--------------------------------+---------------------+---------+
+```
 
+You should be able to log in to the the instance using ``stack``'s default SSH
+key.
+
+```
 (test@overcloud) [stack@undercloud ~]$ ssh cirros@192.168.122.154
 The authenticity of host '192.168.122.154 (192.168.122.154)' can't be established.
 RSA key fingerprint is SHA256:8/gIYkbqVlCt0N5Kte8fZPETgbp6TAbdXTrh4tJUABg.

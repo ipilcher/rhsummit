@@ -15,7 +15,7 @@
 
 * **Lab 0:** Introduction
 * **Lab 1:** Lab Environment
-* **Lab 2:** 
+* **Lab 2:** Looking Around
 * **Lab 3:** Everything else
 
 ## Lab 0: Introduction
@@ -174,19 +174,22 @@ provisioning network addresses, which are always dynamically assigned.  We
 happen to be sharing that network with our IPMI BMCs, so we actually have a mix
 of static and dynamic addresses on the same network.)
 
-|Overcloud Host     |IPMI        |External       |Internal    |VXLAN<br>Tunnels|Storage     |Storage<br>Management|
-|-------------------|------------|---------------|------------|----------------|------------|---------------------|
-|overcloud-ctrl01   |172.16.0.131|192.168.122.201|172.17.1.201|172.17.2.201    |172.17.3.201|172.17.4.201         |
-|overcloud-ctrl02   |172.16.0.132|192.168.122.202|172.17.1.202|172.17.2.202    |172.17.3.202|172.17.4.202         |
-|overcloud-ctrl03   |172.16.0.133|192.168.122.203|172.17.1.203|172.17.2.203    |172.17.3.203|172.17.4.203         |
-|overcloud-ceph01   |172.16.0.136|               |            |                |172.17.3.221|172.17.4.221         |
-|overcloud-ceph02   |172.16.0.137|               |            |                |172.17.3.222|172.17.4.222         |
-|overcloud-ceph03   |172.16.0.138|               |            |                |172.17.3.223|172.17.4.223         |
-|overcloud-compute01|172.16.0.134|               |172.17.1.211|172.17.2.211    |172.17.3.211|                     |
-|overcloud-compute02|172.16.0.135|               |172.17.1.212|172.17.2.212    |172.17.3.212|                     |
+|Overcloud Host|IPMI        |External       |Internal    |VXLAN<br>Tunnels|Storage     |Storage<br>Management|
+|--------------|------------|---------------|------------|----------------|------------|---------------------|
+|lab-ctrl01    |172.16.0.131|192.168.122.201|172.17.1.201|172.17.2.201    |172.17.3.201|172.17.4.201         |
+|lab-ctrl02    |172.16.0.132|192.168.122.202|172.17.1.202|172.17.2.202    |172.17.3.202|172.17.4.202         |
+|lab-ctrl03    |172.16.0.133|192.168.122.203|172.17.1.203|172.17.2.203    |172.17.3.203|172.17.4.203         |
+|lab-ceph01    |172.16.0.136|               |            |                |172.17.3.221|172.17.4.221         |
+|lab-ceph02    |172.16.0.137|               |            |                |172.17.3.222|172.17.4.222         |
+|lab-ceph03    |172.16.0.138|               |            |                |172.17.3.223|172.17.4.223         |
+|lab-compute01 |172.16.0.134|               |172.17.1.211|172.17.2.211    |172.17.3.211|                     |
+|lab-compute02 |172.16.0.135|               |172.17.1.212|172.17.2.212    |172.17.3.212|                     |
 
 Deploying this OSP 12 architecture into the Ravello environment takes at least
 60 minutes, and we don't want to spend half of our time just watching a
 deployment.  So we'll start with a fully deployed environment in which we can
 do som exploration and testing.  As a final step, we'll delete the overcloud and
 look at the deployment process.
+
+## Lab 2: Looking Around
+

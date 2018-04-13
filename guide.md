@@ -193,3 +193,104 @@ look at the deployment process.
 
 ## Lab 2: Looking Around
 
+In this lab, we'll examine our containerized OSP 12 deployment.
+
+First, log in to the undercloud.  (Enter ``redhat`` as the password.)
+
+```
+[lab-user@bastion-XXXX ~]$ ssh stack@undercloud.example.com
+The authenticity of host 'undercloud.example.com (192.168.122.253)' can't be established.
+ECDSA key fingerprint is SHA256:wRBB50VRT5XX6IqOy668ZGM28clpKbJ/K5FdHevw7Wg.
+ECDSA key fingerprint is MD5:0b:33:69:86:26:4a:07:5e:04:a1:63:2e:ef:da:01:1a.
+Are you sure you want to continue connecting (yes/no)? yes
+Warning: Permanently added 'undercloud.example.com,192.168.122.253' (ECDSA) to the list of known hosts.
+stack@undercloud.example.com's password:
+Last login: Thu Apr 12 19:37:45 2018 from bastion.example.com
+```
+
+Before doing anything else, let's check that our deployment is working properly.
+(It was just powered on for the first time in several weeks.)
+
+Source the ``stackrc`` file to access OpenStack services on the undercloud.
+
+```
+[stack@undercloud ~]$ . stackrc
+(undercloud) [stack@undercloud ~]$
+```
+
+Check the status of our overcloud nodes.  (Remember that these nodes are
+managed by the Ironic service on the **undercloud**.)
+
+Please let one of the instructors know if any of your nodes show ``None`` in the
+power state column or ``True`` in the maintenance column.
+
+```
+(undercloud) [stack@undercloud ~]$ openstack baremetal node list
++--------------------------------------+---------------------+--------------------------------------+-------------+--------------------+-------------+
+| UUID                                 | Name                | Instance UUID                        | Power State | Provisioning State | Maintenance |
++--------------------------------------+---------------------+--------------------------------------+-------------+--------------------+-------------+
+| b77a7893-e5ec-4107-b6db-63d755548cc7 | overcloud-ctrl01    | 5c2f6fd7-3351-4ca6-bd41-3fafb1de5162 | power on    | active             | False       |
+| c1c3a604-07d1-4510-8172-69c2bd2318d7 | overcloud-ctrl02    | f8c7a2b3-73c8-476f-87a9-4c0af28e7595 | power on    | active             | False       |
+| cccc3857-c2b5-4c31-b5ee-d2b2ede4ea75 | overcloud-ctrl03    | b837722d-0d91-4e50-a359-223487fbdb2e | power on    | active             | False       |
+| 6b990f06-a262-4fd4-b132-4775ef1bf0c8 | overcloud-ceph01    | 9e7924fd-4611-41de-a29a-c600502e12a0 | power on    | active             | False       |
+| 72b19247-5104-4e73-87fc-fa96a9fd504f | overcloud-ceph02    | 66515ba8-15eb-480a-ad37-c3e91da47df8 | power on    | active             | False       |
+| 497a58e0-607d-47b0-a08c-049e2377f566 | overcloud-ceph03    | 47e02f2f-b3fe-4f0a-83b6-d0305004aec9 | power on    | active             | False       |
+| 329eac87-50b7-43fb-8de4-03d62fd63a17 | overcloud-compute01 | 87920ee2-dd27-432d-b8b1-52a2ab49a9ff | power on    | active             | False       |
+| 29dbc509-85c8-4acf-902d-b03d70fa3541 | overcloud-compute02 | None                                 | power off   | available          | False       |
++--------------------------------------+---------------------+--------------------------------------+-------------+--------------------+-------------+
+```
+
+
+
+```
+(undercloud) [stack@undercloud ~]$ openstack server list
++--------------------------------------+------------------+--------+----------------------+----------------+--------------+
+| ID                                   | Name             | Status | Networks             | Image          | Flavor       |
++--------------------------------------+------------------+--------+----------------------+----------------+--------------+
+| 47e02f2f-b3fe-4f0a-83b6-d0305004aec9 | lab-ceph02       | ACTIVE | ctlplane=172.16.0.23 | overcloud-full | ceph-storage |
+| 5c2f6fd7-3351-4ca6-bd41-3fafb1de5162 | lab-controller03 | ACTIVE | ctlplane=172.16.0.36 | overcloud-full | control      |
+| b837722d-0d91-4e50-a359-223487fbdb2e | lab-controller01 | ACTIVE | ctlplane=172.16.0.32 | overcloud-full | control      |
+| f8c7a2b3-73c8-476f-87a9-4c0af28e7595 | lab-controller02 | ACTIVE | ctlplane=172.16.0.22 | overcloud-full | control      |
+| 9e7924fd-4611-41de-a29a-c600502e12a0 | lab-ceph03       | ACTIVE | ctlplane=172.16.0.33 | overcloud-full | ceph-storage |
+| 66515ba8-15eb-480a-ad37-c3e91da47df8 | lab-ceph01       | ACTIVE | ctlplane=172.16.0.31 | overcloud-full | ceph-storage |
+| 87920ee2-dd27-432d-b8b1-52a2ab49a9ff | lab-compute01    | ACTIVE | ctlplane=172.16.0.25 | overcloud-full | compute      |
++--------------------------------------+------------------+--------+----------------------+----------------+--------------+
+
+(undercloud) [stack@undercloud ~]$ ssh heat-admin@172.16.0.32 sudo ceph -s
+    cluster 62e500d2-3e8a-11e8-8abf-2cc26041e5e3
+     health HEALTH_WARN
+            clock skew detected on mon.lab-controller02, mon.lab-controller03
+            too many PGs per OSD (352 > max 300)
+            Monitor clock skew detected 
+     monmap e2: 3 mons at {lab-controller01=172.17.3.201:6789/0,lab-controller02=172.17.3.202:6789/0,lab-controller03=172.17.3.203:6789/0}
+            election epoch 10, quorum 0,1,2 lab-controller01,lab-controller02,lab-controller03
+     osdmap e31: 6 osds: 6 up, 6 in
+            flags sortbitwise,require_jewel_osds,recovery_deletes
+      pgmap v15024: 704 pgs, 6 pools, 64802 kB data, 790 objects
+            404 MB used, 269 GB / 269 GB avail
+                 704 active+clean
+                 
+(undercloud) [stack@undercloud ~]$ . testrc
+(test@overcloud) [stack@undercloud ~]$ openstack server list
++--------------------------------------+-------+---------+--------------------------------+---------------------+---------+
+| ID                                   | Name  | Status  | Networks                       | Image               | Flavor  |
++--------------------------------------+-------+---------+--------------------------------+---------------------+---------+
+| 828a5d3b-3a01-43dc-ac8b-592e22d3e818 | test1 | SHUTOFF | test=10.0.1.4, 192.168.122.154 | cirros-0.3.4-x86_64 | m1.tiny |
++--------------------------------------+-------+---------+--------------------------------+---------------------+---------+
+
+(test@overcloud) [stack@undercloud ~]$ openstack server start test1
+(test@overcloud) [stack@undercloud ~]$ openstack server list
++--------------------------------------+-------+--------+--------------------------------+---------------------+---------+
+| ID                                   | Name  | Status | Networks                       | Image               | Flavor  |
++--------------------------------------+-------+--------+--------------------------------+---------------------+---------+
+| 828a5d3b-3a01-43dc-ac8b-592e22d3e818 | test1 | ACTIVE | test=10.0.1.4, 192.168.122.154 | cirros-0.3.4-x86_64 | m1.tiny |
++--------------------------------------+-------+--------+--------------------------------+---------------------+---------+
+
+(test@overcloud) [stack@undercloud ~]$ ssh cirros@192.168.122.154
+The authenticity of host '192.168.122.154 (192.168.122.154)' can't be established.
+RSA key fingerprint is SHA256:8/gIYkbqVlCt0N5Kte8fZPETgbp6TAbdXTrh4tJUABg.
+RSA key fingerprint is MD5:f9:17:09:dc:ab:b6:6f:5a:86:35:a5:5e:50:69:43:5d.
+Are you sure you want to continue connecting (yes/no)? yes
+Warning: Permanently added '192.168.122.154' (RSA) to the list of known hosts.
+$
+```

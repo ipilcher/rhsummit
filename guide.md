@@ -429,7 +429,11 @@ db5b448fc09a        172.16.0.1:8787/rhosp12/openstack-mariadb:12.0-20180309.1   
 ```
 
 There are 49 separate containers running on our controller.  They can be roughly
-divided into three different varieties.
+divided into three different varieties:
+
+1. Pacemaker-managed containers,
+1. Ceph containers, and
+1. Everything else.
 
 #### Pacemaker-Managed Containers
 

@@ -552,19 +552,19 @@ JSON, so we'll use the ``jq`` command to see the parts in which we're
 interested, but it can be instructive to look through the complete output.)
 
 ```
-[heat-admin@lab-controller01 ~]$ sudo docker inspect 00c1febf51d2 | jq .[0].Config.Image
+[heat-admin@lab-controller01 ~]$ sudo docker inspect haproxy-bundle-docker-0 | jq .[0].Config.Image
 "172.16.0.1:8787/rhosp12/openstack-haproxy:pcmklatest"
 
-[heat-admin@lab-controller01 ~]$ sudo docker inspect 00c1febf51d2 | jq .[0].HostConfig.NetworkMode
+[heat-admin@lab-controller01 ~]$ sudo docker inspect haproxy-bundle-docker-0 | jq .[0].HostConfig.NetworkMode
 "host"
 
-[heat-admin@lab-controller01 ~]$ sudo docker inspect 00c1febf51d2 | jq .[0].Config.Cmd
+[heat-admin@lab-controller01 ~]$ sudo docker inspect haproxy-bundle-docker-0 | jq .[0].Config.Cmd
 [
   "/bin/bash",
   "/usr/local/bin/kolla_start"
 ]
 
-[heat-admin@lab-controller01 ~]$ sudo docker inspect 00c1febf51d2 | jq .[0].HostConfig.Binds
+[heat-admin@lab-controller01 ~]$ sudo docker inspect haproxy-bundle-docker-0 | jq .[0].HostConfig.Binds
 [
   "/etc/pki/tls/certs/ca-bundle.crt:/etc/pki/tls/certs/ca-bundle.crt:ro",
   "/etc/pki/tls/certs/ca-bundle.trust.crt:/etc/pki/tls/certs/ca-bundle.trust.crt:ro",
@@ -582,10 +582,98 @@ interested, but it can be instructive to look through the complete output.)
 One final item, which is true of all Pacemaker-managed containers.
 
 ```
-[heat-admin@lab-controller01 ~]$ sudo docker inspect 00c1febf51d2 | jq .[0].HostConfig.RestartPolicy.Name
+[heat-admin@lab-controller01 ~]$ sudo docker inspect haproxy-bundle-docker-0 | jq .[0].HostConfig.RestartPolicy.Name
 "no"
 ```
 
 If one of the Pacemaker-managed containers dies for some reason, we don't want
 the ``docker`` daemon to automatically restart it; we always want these
 containers to be completely managed by Pacemaker.
+
+#### Ceph Containers
+
+The second variety of container in our deployment is a Ceph container.  Each of
+our controllers has a Ceph monitor container running and each Ceph storage node
+has 2 Ceph OSD containers running (one for each data disk).
+
+Ceph containers are different from "normal" containers (discussed below),
+mainly in the way that they are deployed and configured.  Starting with OSP 12,
+OSP director deploys Ceph containers with ``ceph-ansible`` - the same
+mechanism that is used for standalone Ceph installations.  This will be
+discussed further in the **Deployment** lab below.
+
+One thing which is significant is the startup mechanism for the Ceph containers,
+so let's take a look.
+
+```
+[heat-admin@lab-controller01 ~]$ sudo docker inspect ceph-mon-lab-controller01 |  jq .[0].HostConfig.RestartPolicy
+{
+  "MaximumRetryCount": 0,                                                                                                                                                                                          
+  "Name": "no"
+}
+```
+
+So Docker hasn't been configured to automatically start these containers.  How
+are they started?
+
+The answer is ``systemd``.  ``ceph-ansible`` creates a ``systemd`` service for
+each container that it wishes to run.
+
+
+```
+[heat-admin@lab-controller01 ~]$ systemctl status ceph-mon@lab-controller01.service
+● ceph-mon@lab-controller01.service - Ceph Monitor
+   Loaded: loaded (/etc/systemd/system/ceph-mon@.service; enabled; vendor preset: disabled)
+   Active: active (running) since Mon 2018-04-16 19:35:23 UTC; 4h 5min ago
+ Main PID: 4805 (docker-current)
+   CGroup: /system.slice/system-ceph\x2dmon.slice/ceph-mon@lab-controller01.service
+           └─4805 /usr/bin/docker-current run --rm --name ceph-mon-lab-controller01 --net=host --memory=1g --cpu-quota=100000 -v /var/lib/ceph:/var/lib/ceph -v /etc/ceph:/etc/ceph -v /etc/localtime:/etc/local...
+
+Apr 16 23:40:13 lab-controller01 docker[4805]: 2018-04-16 23:40:13.665708 7f55e0108700  0 log_channel(cluster) log [INF] : pgmap v18043: 704 pgs: 704 active+clean; 62135 kB data, 415 MB used, 26.../ 269 GB avail
+Apr 16 23:40:18 lab-controller01 docker[4805]: 2018-04-16 23:40:18.640536 7f55e0108700  0 log_channel(cluster) log [INF] : pgmap v18044: 704 pgs: 704 active+clean; 62135 kB data, 415 MB used, 26.../ 269 GB avail
+Apr 16 23:40:23 lab-controller01 docker[4805]: 2018-04-16 23:40:23.650519 7f55e0108700  0 log_channel(cluster) log [INF] : pgmap v18045: 704 pgs: 704 active+clean; 62135 kB data, 415 MB used, 26.../ 269 GB avail
+Apr 16 23:40:28 lab-controller01 docker[4805]: 2018-04-16 23:40:28.648097 7f55e0108700  0 log_channel(cluster) log [INF] : pgmap v18046: 704 pgs: 704 active+clean; 62135 kB data, 415 MB used, 26.../ 269 GB avail
+Apr 16 23:40:33 lab-controller01 docker[4805]: 2018-04-16 23:40:33.643755 7f55e0108700  0 log_channel(cluster) log [INF] : pgmap v18047: 704 pgs: 704 active+clean; 62135 kB data, 415 MB used, 26.../ 269 GB avail
+Apr 16 23:40:38 lab-controller01 docker[4805]: 2018-04-16 23:40:38.643607 7f55e0108700  0 log_channel(cluster) log [INF] : pgmap v18048: 704 pgs: 704 active+clean; 62135 kB data, 415 MB used, 26.../ 269 GB avail
+Apr 16 23:40:41 lab-controller01 docker[4805]: 2018-04-16 23:40:41.339339 7f55decf3700  0 mon.lab-controller01@0(leader).data_health(10) update_stats avail 81% total 61427 MB, used 11181 MB, avail 50246 MB
+Apr 16 23:40:43 lab-controller01 docker[4805]: 2018-04-16 23:40:43.644051 7f55e0108700  0 log_channel(cluster) log [INF] : pgmap v18049: 704 pgs: 704 active+clean; 62135 kB data, 415 MB used, 26.../ 269 GB avail
+Apr 16 23:40:48 lab-controller01 docker[4805]: 2018-04-16 23:40:48.652448 7f55e0108700  0 log_channel(cluster) log [INF] : pgmap v18050: 704 pgs: 704 active+clean; 62135 kB data, 415 MB used, 26.../ 269 GB avail
+Apr 16 23:40:53 lab-controller01 docker[4805]: 2018-04-16 23:40:53.646715 7f55e0108700  0 log_channel(cluster) log [INF] : pgmap v18051: 704 pgs: 704 active+clean; 62135 kB data, 415 MB used, 26.../ 269 GB avail
+Hint: Some lines were ellipsized, use -l to show in full.
+
+[heat-admin@lab-controller01 ~]$ systemctl is-enabled ceph-mon@lab-controller01.service
+enabled
+
+[heat-admin@lab-controller01 ~]$ cat /etc/systemd/system/ceph-mon@.service
+[Unit]
+Description=Ceph Monitor
+After=docker.service
+
+[Service]
+EnvironmentFile=-/etc/environment
+ExecStartPre=-/usr/bin/docker rm ceph-mon-%i
+ExecStartPre=$(command -v mkdir) -p /etc/ceph /var/lib/ceph/mon
+ExecStart=/usr/bin/docker run --rm --name ceph-mon-%i --net=host \
+  --memory=1g \
+--cpu-quota=100000 \
+-v /var/lib/ceph:/var/lib/ceph \
+  -v /etc/ceph:/etc/ceph \
+-v /etc/localtime:/etc/localtime:ro \
+--net=host \
+-e IP_VERSION=4 \
+    -e MON_IP=172.17.3.201 \
+      -e CLUSTER=ceph \
+  -e FSID=62e500d2-3e8a-11e8-8abf-2cc26041e5e3 \
+  -e CEPH_PUBLIC_NETWORK=172.17.3.0/24 \
+  -e CEPH_DAEMON=MON \
+   \
+  172.16.0.1:8787/ceph/rhceph-2-rhel7:latest
+ExecStopPost=-/usr/bin/docker stop ceph-mon-%i
+Restart=always
+RestartSec=10s
+TimeoutStartSec=120
+TimeoutStopSec=15
+
+[Install]
+WantedBy=multi-user.target
+```

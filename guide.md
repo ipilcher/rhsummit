@@ -371,7 +371,7 @@ at the running containers that make it work, starting on one of the controllers.
 Last login: Thu Apr 12 22:53:57 2018 from 172.16.0.1
 ```
 
-We can use the ``docker`` command to see all of the containers running on our
+We can use the ``docker ps`` command to see all of the containers running on our
 controller.
 
 ```
@@ -513,3 +513,75 @@ This shows us several different resource types.
 
 3. Docker container sets - We can see 4 Docker container "bundles" being
    managed by Pacemaker - ``rabbitmq``, ``galera``, ``redis``, and ``haproxy``.
+
+Bundles are a new Pacemaker resource type that define how Pacemaker should run
+a container.  For example:
+
+```
+[heat-admin@lab-controller01 ~]$ sudo pcs resource show haproxy-bundle
+ Bundle: haproxy-bundle
+  Docker: image=172.16.0.1:8787/rhosp12/openstack-haproxy:pcmklatest network=host options="--user=root --log-driver=journald -e KOLLA_CONFIG_STRATEGY=COPY_ALWAYS" replicas=3 run-command="/bin/bash /usr/local/bin/kolla_start"
+  Storage Mapping:
+   options=ro source-dir=/var/lib/kolla/config_files/haproxy.json target-dir=/var/lib/kolla/config_files/config.json (haproxy-cfg-files)
+   options=ro source-dir=/var/lib/config-data/puppet-generated/haproxy/ target-dir=/var/lib/kolla/config_files/src (haproxy-cfg-data)
+   options=ro source-dir=/etc/hosts target-dir=/etc/hosts (haproxy-hosts)
+   options=ro source-dir=/etc/localtime target-dir=/etc/localtime (haproxy-localtime)
+   options=ro source-dir=/etc/pki/ca-trust/extracted target-dir=/etc/pki/ca-trust/extracted (haproxy-pki-extracted)
+   options=ro source-dir=/etc/pki/tls/certs/ca-bundle.crt target-dir=/etc/pki/tls/certs/ca-bundle.crt (haproxy-pki-ca-bundle-crt)
+   options=ro source-dir=/etc/pki/tls/certs/ca-bundle.trust.crt target-dir=/etc/pki/tls/certs/ca-bundle.trust.crt (haproxy-pki-ca-bundle-trust-crt)
+   options=ro source-dir=/etc/pki/tls/cert.pem target-dir=/etc/pki/tls/cert.pem (haproxy-pki-cert)
+   options=rw source-dir=/dev/log target-dir=/dev/log (haproxy-dev-log)
+   options=ro source-dir=/etc/pki/tls/private/overcloud_endpoint.pem target-dir=/var/lib/kolla/config_files/src-tls/etc/pki/tls/private/overcloud_endpoint.pem (haproxy-cert)
+```
+
+You can see that this defines things like:
+
+* The image used to run the container,
+* The network type to use (``host`` as always)
+* The number of replicas that Pacemaker should run
+* The command to run within the container
+* Host directories that are bind mounted (mostly read-only) into the container
+
+We can use the ``docker inspect`` command to see how these settings have been
+applied to the running container.  (``docker inspect`` outputs a large amount of
+JSON, so we'll use the ``jq`` command to see the parts in which we're
+interested, but it can be instructive to look through the complete output.)
+
+```
+[heat-admin@lab-controller01 ~]$ sudo docker inspect 00c1febf51d2 | jq .[0].Config.Image
+"172.16.0.1:8787/rhosp12/openstack-haproxy:pcmklatest"
+
+[heat-admin@lab-controller01 ~]$ sudo docker inspect 00c1febf51d2 | jq .[0].HostConfig.NetworkMode
+"host"
+
+[heat-admin@lab-controller01 ~]$ sudo docker inspect 00c1febf51d2 | jq .[0].Config.Cmd
+[
+  "/bin/bash",
+  "/usr/local/bin/kolla_start"
+]
+
+[heat-admin@lab-controller01 ~]$ sudo docker inspect 00c1febf51d2 | jq .[0].HostConfig.Binds
+[
+  "/etc/pki/tls/certs/ca-bundle.crt:/etc/pki/tls/certs/ca-bundle.crt:ro",
+  "/etc/pki/tls/certs/ca-bundle.trust.crt:/etc/pki/tls/certs/ca-bundle.trust.crt:ro",
+  "/etc/pki/tls/cert.pem:/etc/pki/tls/cert.pem:ro",
+  "/var/lib/kolla/config_files/haproxy.json:/var/lib/kolla/config_files/config.json:ro",
+  "/var/lib/config-data/puppet-generated/haproxy/:/var/lib/kolla/config_files/src:ro",
+  "/etc/hosts:/etc/hosts:ro",
+  "/etc/pki/ca-trust/extracted:/etc/pki/ca-trust/extracted:ro",
+  "/etc/localtime:/etc/localtime:ro",
+  "/dev/log:/dev/log:rw",
+  "/etc/pki/tls/private/overcloud_endpoint.pem:/var/lib/kolla/config_files/src-tls/etc/pki/tls/private/overcloud_endpoint.pem:ro"
+]
+```
+
+One final item, which is true of all Pacemaker-managed containers.
+
+```
+[heat-admin@lab-controller01 ~]$ sudo docker inspect 00c1febf51d2 | jq .[0].HostConfig.RestartPolicy.Name
+"no"
+```
+
+If one of the Pacemaker-managed containers dies for some reason, we don't want
+the ``docker`` daemon to automatically restart it; we always want these
+containers to be completely managed by Pacemaker.

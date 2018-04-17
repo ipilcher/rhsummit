@@ -142,7 +142,7 @@ compute nodes), including:
 
 * A highly available OpenStack control plane
 * Isolated networks (VLANs) for
-  * internal control plane - APIs, messaging, database, etc.
+  * internal control plane &mdash; APIs, messaging, database, etc.
   * storage and storage management
   * external API/tenant access (floating IPs)
 * Pre-determined IP addresses

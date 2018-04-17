@@ -730,4 +730,4 @@ above.
 #### Let Me Out! Let Me Out!
 
 Thus far, we've done all of our investigation from our controller's host
-operating system -- effectively examining containers from the outside.
+operating system &mdash; effectively examining containers from the outside.

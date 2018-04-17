@@ -677,3 +677,60 @@ TimeoutStopSec=15
 [Install]
 WantedBy=multi-user.target
 ```
+
+#### Everything Else
+
+The remainder of the containers running on our controllers are what we will call
+"normal" containers (for lack of a better term).  These containers are set to be
+automatically started by the Docker daemon.
+
+```
+[heat-admin@lab-controller01 ~]$ sudo docker inspect memcached | jq .[0].HostConfig.RestartPolicy.Name
+"always"
+```
+
+### The Ananatomy of a Container
+
+Let's take a detailed look at one of our running containers, to understand how
+...
+
+First, let's look at the full output of ``docker inspect``.
+
+```
+[heat-admin@lab-controller01 ~]$ sudo docker inspect nova_scheduler | less
+(...)
+        "Path": "kolla_start",
+(...)
+            "Binds": [
+                "/etc/pki/ca-trust/extracted:/etc/pki/ca-trust/extracted:ro",
+                "/etc/pki/tls/certs/ca-bundle.crt:/etc/pki/tls/certs/ca-bundle.crt:ro",
+                "/etc/pki/tls/cert.pem:/etc/pki/tls/cert.pem:ro",
+                "/etc/ssh/ssh_known_hosts:/etc/ssh/ssh_known_hosts:ro",
+                "/var/lib/kolla/config_files/nova_scheduler.json:/var/lib/kolla/config_files/config.json:ro",
+                "/var/log/containers/nova:/var/log/nova",
+                "/etc/hosts:/etc/hosts:ro",
+                "/etc/localtime:/etc/localtime:ro",
+                "/etc/pki/tls/certs/ca-bundle.trust.crt:/etc/pki/tls/certs/ca-bundle.trust.crt:ro",
+                "/dev/log:/dev/log",
+                "/etc/puppet:/etc/puppet:ro",
+                "/var/lib/config-data/puppet-generated/nova/:/var/lib/kolla/config_files/src:ro",
+                "/run:/run"
+            ],
+(...)
+            "User": "nova",
+(...)
+            "Env": [
+                "KOLLA_CONFIG_STRATEGY=COPY_ALWAYS",
+(...)
+```
+
+We've copied a few of the more significant bits of output from this command
+above.
+
+* ``"Path": "kolla_start"``
+* ``"/var/lib/kolla/config_files/nova_scheduler.json:/var/lib/kolla/config_files/config.json:ro"``
+* ``"/var/log/containers/nova:/var/log/nova"``
+* ``"User": "nova"``
+
+#### Let Me Out! Let Me Out!
+

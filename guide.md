@@ -57,23 +57,23 @@ OpenStack environment within containers.  Why is Red Hat doing this?
 Running OpenStack (and other) services within containers provides a number of
 benefits.
 
-* **Stability** - Each container runs as an independent stack, with no
+* **Stability** &mdash; Each container runs as an independent stack, with no
   dependencies on other containers.
-* **Security** - Applications running within containers are isolated from the
+* **Security** &mdash Applications running within containers are isolated from the
   host operating system and each other.  Because container images are immutable,
   any compromise is contained, and containers can easily be recreated from
   sources.
-* **Lifecycle management** - Because containers are isolated, atomic units, each
+* **Lifecycle management** &mdash; Because containers are isolated, atomic units, each
   containerized service can be updated independently.  Unlike package-based
   deployments, containerized services can be updated without breaking shared
   library dependencies.
-* **Flexibility** - Red Hat OpenStack Platform 10 introduced the concept of
+* **Flexibility** &mdash; Red Hat OpenStack Platform 10 introduced the concept of
   composable service roles.  Rather than offering only a handful of monolithic
   roles with pre-defined services (such as the controller and compute roles),
   OSP 10 and later allow administrators to create roles with their own unique
   combinations of services.  Containerization eases the deployment of these
   custom service combinations.
-* **Control** - Resource consumption can be limited at the container level,
+* **Control** &mdash; Resource consumption can be limited at the container level,
   ensuring that a rogue service does not starve other services of resources.
   Architectures such as Red Hat Hyperconverged Infrastructure for Cloud could
   not be reliably deployed without this control.
@@ -81,14 +81,14 @@ benefits.
 Note that there are a few ways in which the services in Red Hat OpenStack
 platform don't fit the traditional containerized application model.
 
-* **Networking** - Red Hat OpenStack Platform has supported network isolation -
+* **Networking** &mdash; Red Hat OpenStack Platform has supported network isolation -
   separating OpenStack and workload traffic onto multiple physical networks -
   since its very first release.  Container runtimes and orchestrators, however,
   tend to be optimized for services that each have a single IP address on a
   single flat network.  To accomodate OSP's requirement for multiple networks,
   all containers in OSP 12 run with ``host`` networking, where all host network
   interfaces, IP addresses, etc., are exposed to the containerized applications.
-* **Configuration** - OSP 12 is the sixth version of Red Hat OpenStack Platform
+* **Configuration** &mdash; OSP 12 is the sixth version of Red Hat OpenStack Platform
   to use OSP director (TripleO) for installation and configuration.  Over those
   six releases, OSP director has developed a robust system for creating and
   customizing OpenStack (and other) configuration files - including support for
@@ -96,13 +96,13 @@ platform don't fit the traditional containerized application model.
   later lab will explore how OSP 12 preserves compatibility with customer
   configurations and partner-plugins - including compatibility across upgrades
   from non-containerized OSP 11 to containerized OSP 12!
-* **Logging** - Just like OpenStack services expect to read their configuration
+* **Logging** &mdash; Just like OpenStack services expect to read their configuration
   from local configuration files, they expect to write their logs to local log
   files.  OSP 12 makes these log files visible to the host operating system,
   although their locations differ from those of the non-containerized services
   in OSP 11.  (A later lab will provide details.)  Tools that parse these log
   files will need to be updated for OSP 12.
-* **Privileged operations** - Isolation from the host operating system is one of
+* **Privileged operations** &mdash; Isolation from the host operating system is one of
   the benefits of containerizing applications, but there are certain services
   within OSP that require privileged access to the host OS.  For example,
   libvirt interacts with KVM to manage virtual machines, and Neutron creates
@@ -117,7 +117,7 @@ OpenStack Platform director (OSP director) is based on the upstream TripleO
 project.  TripleO stands for "OpenStack on OpenStack," but what does this mean?
 
 We often talk about instances (usually virtual machines) running "on" a
-particular cloud or infrastructure, such as OpenStack - meaning that that
+particular cloud or infrastructure, such as OpenStack &mdash; meaning that that
 infrastructure is responsible for deploying, managing, metering, and ultimately
 retiring the instance.  In addition to traditional virtual machine instances,
 OpenStack supports bare-metal instances via a service called **Ironic**.  Thus,
@@ -127,10 +127,10 @@ this capability to deploy and manage Red Hat OpenStack Platform.
 This brings us to two very important terms, that will be used throughout this
 lab.
 
-* **Undercloud** - The undercloud (sometimes refered to as the OSP director
+* **Undercloud** &mdash; The undercloud (sometimes refered to as the OSP director
   node) is an "all-in-one" OpenStack deployment that deploys, configures, and
   manages a set of bare-metal servers which run Red Hat OpenStack Platform.
-* **Overcloud** - The OSP servers managed by the undercloud are refered to as
+* **Overcloud** &mdash; The OSP servers managed by the undercloud are refered to as
   the overcloud, because they run "on top of" the undercloud.
 
 OpenStack on OpenStack!
@@ -499,11 +499,11 @@ Daemon Status:
 
 This shows us several different resource types.
 
-1. IP addresses - Just like earlier releases, Pacemaker manages a virtual IP
+1. IP addresses &mdash; Just like earlier releases, Pacemaker manages a virtual IP
    address on each network.  HAProxy listens on these VIPs and distributes
    work across the controllers.
 
-2. ``openstack-cinder-volume`` - Our old friend, the Cinder volume service, is
+2. ``openstack-cinder-volume`` &mdash; Our old friend, the Cinder volume service, is
    still running in active/passive mode, so we need Pacemaker to ensure that
    **exactly** one instance is running at any particular time.
    
@@ -515,8 +515,8 @@ This shows us several different resource types.
    containerized versions as a tech preview).  Red Hat plans to containierize
    both the Cinder volume and Neutron services in OSP 13.
 
-3. Docker container sets - We can see 4 Docker container "bundles" being
-   managed by Pacemaker - ``rabbitmq``, ``galera``, ``redis``, and ``haproxy``.
+3. Docker container sets &mdash; We can see 4 Docker container "bundles" being
+   managed by Pacemaker &mdash; ``rabbitmq``, ``galera``, ``redis``, and ``haproxy``.
 
 Bundles are a new Pacemaker resource type that define how Pacemaker should run
 a container.  For example:
@@ -598,7 +598,7 @@ has 2 Ceph OSD containers running (one for each data disk).
 
 Ceph containers are different from "normal" containers (discussed below),
 mainly in the way that they are deployed and configured.  Starting with OSP 12,
-OSP director deploys Ceph containers with ``ceph-ansible`` - the same
+OSP director deploys Ceph containers with ``ceph-ansible`` &mdash; the same
 mechanism that is used for standalone Ceph installations.  This will be
 discussed further in the **Deployment** lab below.
 

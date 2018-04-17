@@ -727,10 +727,7 @@ First, let's look at the full output of ``docker inspect``.
 We've copied a few of the more significant bits of output from this command
 above.
 
-* ``"Path": "kolla_start"``
-* ``"/var/lib/kolla/config_files/nova_scheduler.json:/var/lib/kolla/config_files/config.json:ro"``
-* ``"/var/log/containers/nova:/var/log/nova"``
-* ``"User": "nova"``
-
 #### Let Me Out! Let Me Out!
 
+Thus far, we've done all of our investigation from our controller's host
+operating system --- effectively examining containers from the outside.

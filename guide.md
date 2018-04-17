@@ -792,10 +792,71 @@ What about networking?
     link/ether 02:42:e6:c0:ac:7e brd ff:ff:ff:ff:ff:ff
 ```
 
-There's ``host`` networking in action.  All of the host's network interfaces,
+That's ``host`` networking in action.  All of the host's network interfaces,
 IP addresses, routing tables, and firewall rules are visible within the
 container.  (Actually, that's only true of network objects in the host's default
 network namespace.  Interfaces, etc., in other network namespaces &mdash; such
 as Neutron's ``qdhcp-...`` and ``qrouter-...`` namespaces are inaccessible from
 within the container.)
 
+#### Logging
+
+Now let's look at logging.  OpenStack Nova services generally write their logs
+to files in ``/var/log/nova``, so let's look at that directory.
+
+```
+()[nova@lab-controller01 /]$ ls -l /var/log/nova
+total 52532
+-rw-r--r--. 1 nova nova  4324332 Apr 17 21:01 nova-api-metadata.log
+-rw-r--r--. 1 nova nova 10835400 Apr 13 12:00 nova-api-metadata.log.1
+-rw-r--r--. 1 nova nova 10340388 Apr 17 21:01 nova-api.log
+-rw-r--r--. 1 nova nova 10491224 Apr 13 11:00 nova-api.log.1
+-rw-r--r--. 1 nova nova 10539568 Apr 13 04:00 nova-api.log.2
+-rw-r--r--. 1 nova nova    29890 Apr 17 19:12 nova-conductor.log
+-rw-r--r--. 1 nova nova    16783 Apr 17 19:12 nova-consoleauth.log
+-rw-r--r--. 1 nova nova    75225 Apr 12 20:46 nova-manage.log
+-rw-r--r--. 1 nova nova     1776 Apr 17 19:06 nova-novncproxy.log
+-rw-r--r--. 1 nova nova   699968 Apr 17 21:01 nova-placement-api.log
+-rw-r--r--. 1 nova nova        0 Apr 13 00:01 nova-rowsflush.log
+-rw-r--r--. 1 nova nova   151254 Apr 17 21:00 nova-scheduler.log
+```
+
+We can see logs for all of the Nova services in that directory, but we know that
+only ``nova-scheduler`` is running in this container.  What's going on?
+
+Recall the ``Binds`` stanza from the ``docker inspect`` output above:
+
+```
+"Binds": [
+    "/etc/pki/ca-trust/extracted:/etc/pki/ca-trust/extracted:ro",
+    "/etc/pki/tls/certs/ca-bundle.crt:/etc/pki/tls/certs/ca-bundle.crt:ro",
+    "/etc/pki/tls/cert.pem:/etc/pki/tls/cert.pem:ro",
+    "/etc/ssh/ssh_known_hosts:/etc/ssh/ssh_known_hosts:ro",
+    "/var/lib/kolla/config_files/nova_scheduler.json:/var/lib/kolla/config_files/config.json:ro",
+    "/var/log/containers/nova:/var/log/nova",
+    "/etc/hosts:/etc/hosts:ro",
+    "/etc/localtime:/etc/localtime:ro",
+    "/etc/pki/tls/certs/ca-bundle.trust.crt:/etc/pki/tls/certs/ca-bundle.trust.crt:ro",
+    "/dev/log:/dev/log",
+    "/etc/puppet:/etc/puppet:ro",
+    "/var/lib/config-data/puppet-generated/nova/:/var/lib/kolla/config_files/src:ro",
+    "/run:/run"
+],
+```
+
+Note that the host directory ``/var/log/containers/nova`` has been  **bind**
+mounted into the container at ``/var/log/nova``.  (A bind mount creates an
+alternative path to an existing directory or file, similar to a symbolic link.)
+Note also that this particular bind does **not** end with ``:ro``; writing to a
+log file obviously requires read/write access.
+
+After looking at the contents of this directory, it isn't much of a stretch to
+guess that the other Nova containers running on this host are also bind mounting
+this directory (``/var/log/containers/nova``) &mdash; effectively sharing it.
+
+Let's add an entry to the Nova scheduler log file.  Later, we'll verify that it
+is visible from the host operating system.
+
+```
+()[nova@lab-controller01 /]$ echo 'This is not a dance!' >> /var/log/nova/nova-scheduler.log
+```

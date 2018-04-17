@@ -731,3 +731,71 @@ above.
 
 Thus far, we've done all of our investigation from our controller's host
 operating system &mdash; effectively examining containers from the outside.
+Let's get an "inside" view.
+
+```
+[heat-admin@lab-controller01 ~]$ sudo docker exec -it nova_scheduler /bin/sh
+()[nova@lab-controller01 /]$
+```
+
+Note that our containerized shell is running as the ``nova`` user.  This matches
+the user setting of the container that we saw with ``docker inspect``.
+
+Let's see what is running in the container.
+
+```
+()[nova@lab-controller01 /]$ ps aux
+USER         PID %CPU %MEM    VSZ   RSS TTY      STAT START   TIME COMMAND
+nova           1  0.1  0.7 273240 96276 ?        Ss   19:11   0:10 /usr/bin/python2 /usr/bin/nova-scheduler
+nova        1375  0.0  0.0  11776  1748 ?        Ss   20:37   0:00 /bin/sh
+nova        1525  0.0  0.0  47448  1664 ?        R+   20:44   0:00 ps aux
+```
+
+Not much!  Other than our shell and ``ps`` command, only the ``nova-scheduler``
+process is running.
+
+What about networking?
+
+```
+()[nova@lab-controller01 /]$ ip link
+1: lo: <LOOPBACK,UP,LOWER_UP> mtu 65536 qdisc noqueue state UNKNOWN mode DEFAULT qlen 1
+    link/loopback 00:00:00:00:00:00 brd 00:00:00:00:00:00
+2: eth0: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc pfifo_fast state UP mode DEFAULT qlen 1000
+    link/ether 2c:c2:60:01:02:04 brd ff:ff:ff:ff:ff:ff
+3: eth1: <BROADCAST,MULTICAST,SLAVE,UP,LOWER_UP> mtu 1500 qdisc pfifo_fast master bond1 state UP mode DEFAULT qlen 1000
+    link/ether 2c:c2:60:1a:18:15 brd ff:ff:ff:ff:ff:ff
+4: eth2: <BROADCAST,MULTICAST,SLAVE,UP,LOWER_UP> mtu 1500 qdisc pfifo_fast master bond1 state UP mode DEFAULT qlen 1000
+    link/ether 2c:c2:60:1a:18:15 brd ff:ff:ff:ff:ff:ff
+5: ovs-system: <BROADCAST,MULTICAST> mtu 1500 qdisc noop state DOWN mode DEFAULT qlen 1000
+    link/ether 46:fb:82:8c:fb:b0 brd ff:ff:ff:ff:ff:ff
+8: br-int: <BROADCAST,MULTICAST> mtu 1500 qdisc noop state DOWN mode DEFAULT qlen 1000
+    link/ether 3e:79:55:2b:b6:41 brd ff:ff:ff:ff:ff:ff
+11: vlan401: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc noqueue state UNKNOWN mode DEFAULT qlen 1000
+    link/ether fe:e6:c3:f1:30:04 brd ff:ff:ff:ff:ff:ff
+12: vlan101: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc noqueue state UNKNOWN mode DEFAULT qlen 1000
+    link/ether 4e:ec:95:50:e1:88 brd ff:ff:ff:ff:ff:ff
+13: br-ex: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc noqueue state UNKNOWN mode DEFAULT qlen 1000
+    link/ether 2c:c2:60:1a:18:15 brd ff:ff:ff:ff:ff:ff
+14: vlan201: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc noqueue state UNKNOWN mode DEFAULT qlen 1000
+    link/ether 3e:ab:1f:fa:60:2c brd ff:ff:ff:ff:ff:ff
+15: vlan301: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc noqueue state UNKNOWN mode DEFAULT qlen 1000
+    link/ether ce:6f:e6:5f:a9:cd brd ff:ff:ff:ff:ff:ff
+16: vxlan_sys_4789: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 65470 qdisc noqueue master ovs-system state UNKNOWN mode DEFAULT qlen 1000
+    link/ether ee:59:fb:45:35:15 brd ff:ff:ff:ff:ff:ff
+17: br-tun: <BROADCAST,MULTICAST> mtu 1500 qdisc noop state DOWN mode DEFAULT qlen 1000
+    link/ether 06:91:55:06:9a:4c brd ff:ff:ff:ff:ff:ff
+18: bond0: <BROADCAST,MULTICAST,MASTER> mtu 1500 qdisc noop state DOWN mode DEFAULT qlen 1000
+    link/ether 3e:41:77:25:bf:72 brd ff:ff:ff:ff:ff:ff
+19: bond1: <BROADCAST,MULTICAST,MASTER,UP,LOWER_UP> mtu 1500 qdisc noqueue master ovs-system state UP mode DEFAULT qlen 1000
+    link/ether 2c:c2:60:1a:18:15 brd ff:ff:ff:ff:ff:ff
+20: docker0: <NO-CARRIER,BROADCAST,MULTICAST,UP> mtu 1500 qdisc noqueue state DOWN mode DEFAULT 
+    link/ether 02:42:e6:c0:ac:7e brd ff:ff:ff:ff:ff:ff
+```
+
+There's ``host`` networking in action.  All of the host's network interfaces,
+IP addresses, routing tables, and firewall rules are visible within the
+container.  (Actually, that's only true of network objects in the host's default
+network namespace.  Interfaces, etc., in other network namespaces &mdash; such
+as Neutron's ``qdhcp-...`` and ``qrouter-...`` namespaces are inaccessible from
+within the container.)
+

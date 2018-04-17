@@ -59,7 +59,7 @@ benefits.
 
 * **Stability** &mdash; Each container runs as an independent stack, with no
   dependencies on other containers.
-* **Security** &mdash Applications running within containers are isolated from the
+* **Security** &mdash; Applications running within containers are isolated from the
   host operating system and each other.  Because container images are immutable,
   any compromise is contained, and containers can easily be recreated from
   sources.

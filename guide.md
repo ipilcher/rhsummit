@@ -914,6 +914,14 @@ OK, that makes sense; once ``kolla_set_configs`` has done it's work, this
 container (``nova_scheduler``) will run ``/usr/bin/nova-scheduler``.  Now let's
 look at what ``kolla_set_configs`` is doing.
 
+Rather than reading all 422 lines of ``/usr/local/bin/kolla_set_configs``, let's
+look at the JSON file that tells it what to do (as noted in the commend above).
+First, note that ``/var/lib/kolla/config_files/config.json`` is bind mounted
+from ``/var/lib/kolla/config_files/nova_scheduler.json``.  That naming
+convention allows different ``config.json`` files, for different containers, to
+coexist in the host's ``/var/lib/kolla/config_files`` directory.
+
+```
 
 
 

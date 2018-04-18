@@ -910,18 +910,125 @@ the command that will be run:
 
 (Apparently cool kids don't use newlines.)
 
-OK, that makes sense; once ``kolla_set_configs`` has done it's work, this
+OK, that makes sense.  Once ``kolla_set_configs`` has done it's work, this
 container (``nova_scheduler``) will run ``/usr/bin/nova-scheduler``.  Now let's
 look at what ``kolla_set_configs`` is doing.
 
 Rather than reading all 422 lines of ``/usr/local/bin/kolla_set_configs``, let's
-look at the JSON file that tells it what to do (as noted in the commend above).
+look at the JSON file that tells it what to do (as noted in the comment above).
 First, note that ``/var/lib/kolla/config_files/config.json`` is bind mounted
 from ``/var/lib/kolla/config_files/nova_scheduler.json``.  That naming
 convention allows different ``config.json`` files, for different containers, to
-coexist in the host's ``/var/lib/kolla/config_files`` directory.
+coexist in the host's ``/var/lib/kolla/config_files`` directory.  What is
+actually in that file?
 
 ```
+()[nova@lab-controller01 /]$ cat /var/lib/kolla/config_files/config.json
+cat: /var/lib/kolla/config_files/config.json: Permission denied
+```
 
+Oops.  Recall that ``kolla_start`` uses ``sudo`` to run ``kolla_set_configs``
+with ``root`` privileges, and we're currently running as the ``nova`` user.
+Let's exit our containerized shell, so that we can start a new one as ``root``.
 
+```
+()[nova@lab-controller01 /]$ exit
+exit
+[heat-admin@lab-controller01 ~]$
+```
 
+Before starting our new shell, let's check that our log entry is visible from
+the host operating system.
+
+```
+[heat-admin@lab-controller01 ~]$ grep dance /var/log/containers/nova/*
+/var/log/containers/nova/nova-scheduler.log:This is not a dance!
+```
+
+Now that we've confirmed that, start the new shell.
+
+```
+[heat-admin@lab-controller01 ~]$ sudo docker exec -u root -it nova_scheduler /bin/sh
+()[root@lab-controller01 /]$
+```
+
+Recall that ``kolla_start`` runs ``sudo -E kolla_set_configs``.  Let's look at
+the rules that allow that.
+
+```
+()[root@lab-controller01 /]$ cat /etc/sudoers
+# The idea here is a container service adds their UID to the kolla group
+# via usermod -a -G kolla <uid>.  Then the kolla_start may run
+# kolla_set_configs via sudo as the root user which is necessary to protect
+# the immutability of the container
+
+# anyone in the kolla group may sudo -E (set the environment)
+Defaults: %kolla setenv
+
+# root may run any commands via sudo as the network seervice user.  This is
+# neededfor database migrations of existing services which have not been
+# converted to run as a non-root user, but instead do that via sudo -E glance
+root ALL=(ALL) ALL
+
+# anyone in the kolla group may run /usr/local/bin/kolla_set_configs as the
+# root user via sudo without password confirmation
+%kolla ALL=(root) NOPASSWD: /usr/local/bin/kolla_set_configs
+
+#includedir /etc/sudoers.d
+```
+
+Now we can look at ``config.json``.  (``jq`` isn't available in the container,
+so we'll use a Python module to format the JSON.)
+
+```
+()[root@lab-controller01 /]$ cat /var/lib/kolla/config_files/config.json | python -m json.tool
+{
+    "command": "/usr/bin/nova-scheduler",
+    "config_files": [
+        {
+            "dest": "/",
+            "merge": true,
+            "preserve_properties": true,
+            "source": "/var/lib/kolla/config_files/src/*"
+        }
+    ],
+    "permissions": [
+        {
+            "owner": "nova:nova",
+            "path": "/var/log/nova",
+            "recurse": true
+        }
+    ]
+}
+```
+
+This is pretty straitforward.  ``kolla_set_configs`` is going to copy the
+contents of ``/var/lib/kolla/config_files/src`` (which is a read-only bind mount
+of ``/var/lib/config-data/puppet-generated/nova``) to the root directory of the
+container, merging the two directory trees and preserving the properties of the
+copied files (ownership, permissions, etc.).  It's also going to recursively
+set the permissions of the ``/var/log/nova`` directory.
+
+Why is the destination directory ``/``, rather than ``/etc``?  Let's look at the
+files under ``/var/lib/kolla/config_files/src``.
+
+```
+()[root@lab-controller01 /]$ ls /var/lib/kolla/config_files/src
+etc  var
+
+()[root@lab-controller01 /]$ find /var/lib/kolla/config_files/src/var -type f
+/var/lib/kolla/config_files/src/var/spool/cron/nova
+/var/lib/kolla/config_files/src/var/www/cgi-bin/nova/nova-api
+```
+
+In addition to the expected files under ``/etc``, there are a couple of files
+under ``/var`` that also need to be copied.  (This could likely have also been
+accomplished by having two elements in the ``config_files`` array &mdash; one
+for ``/etc`` and one for ``/var``.)
+
+This approach gives our containerized application exactly what it expects
+&mdash; a read/write set of configuration files (depending on file ownership and
+permissions) &mdash; while keeping the container immutable.  If one of the
+containerized services in OSP 12 were to be compromised and made to corrupt one
+of it's configuration files, the configuration could be restored to the desired
+state by simply restarting the container.

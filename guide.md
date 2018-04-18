@@ -692,7 +692,7 @@ automatically started by the Docker daemon.
 ### The Ananatomy of a Container
 
 Let's take a detailed look at one of our running containers, to understand how
-...
+it's been configured to run an OpenStack service.
 
 First, let's look at the full output of ``docker inspect``.
 
@@ -860,3 +860,60 @@ is visible from the host operating system.
 ```
 ()[nova@lab-controller01 /]$ echo 'This is not a dance!' >> /var/log/nova/nova-scheduler.log
 ```
+
+#### Configuration Files
+
+We might assume that configuration files would use an approach similar to that
+of the log directories and simply bind mount configuration directories into our
+container.  Looking back at the ``Binds`` stanza again, we can see that only a
+few files and directories under ``/etc`` are bind mountes &mdash; a small subset
+of the files in our container's ``/etc`` directory tree.  So how do the correct
+versions of all those files get there?
+
+To answer that question, we need to look at our container's startup process.  We
+saw with ``docker inspect`` that our container's entry point is something called
+``kolla_start``.  Let's look at that script.
+
+```
+()[nova@lab-controller01 /]$ which kolla_start
+/usr/local/bin/kolla_start
+
+()[nova@lab-controller01 /]$ cat /usr/local/bin/kolla_start
+#!/bin/bash
+set -o errexit
+
+# Processing /var/lib/kolla/config_files/config.json as root.  This is necessary
+# to permit certain files to be controlled by the root user which should
+# not be writable by the dropped-privileged user, especially /run_command
+sudo -E kolla_set_configs
+CMD=$(cat /run_command)
+ARGS=""
+
+if [[ ! "${!KOLLA_SKIP_EXTEND_START[@]}" ]]; then
+    # Run additional commands if present
+    . kolla_extend_start
+fi
+
+echo "Running command: '${CMD}${ARGS:+ $ARGS}'"
+exec ${CMD} ${ARGS}
+```
+
+The comment at the beginning of the script provides a good explanation of what
+it's doing &mdash; run (as ``root``) the ``kolla_set_configs`` script and then
+run the command specified in ``/run_command``.  Let's start at the end and check
+the command that will be run:
+
+```
+()[nova@lab-controller01 /]$ cat /run_command && echo
+/usr/bin/nova-scheduler
+```
+
+(Apparently cool kids don't use newlines.)
+
+OK, that makes sense; once ``kolla_set_configs`` has done it's work, this
+container (``nova_scheduler``) will run ``/usr/bin/nova-scheduler``.  Now let's
+look at what ``kolla_set_configs`` is doing.
+
+
+
+

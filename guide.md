@@ -24,7 +24,13 @@
     * Ceph Containers
     * Everything Else
   - The Anatomy of a Container
-* **Lab 3:** Everything else
+    * Let Me Out! Let Me Out!
+    * Logging
+    * Configuration Files
+  - Other Node Types
+* **Lab 3:** Updating the Overcloud
+* **Lab 4:** Troubleshooting and Testing
+* **Lab 5:** Deploying a New Overcloud
 
 ## Lab 0: Introduction
 

@@ -1083,3 +1083,87 @@ Thus far, we've only looked at one of our controller nodes.  Before moving on to
 the next lab, let's take a quick look at our other two node types &mdash;
 compute and Ceph storage.
 
+#### Compute Nodes
+
+First, log out of the controller and log in to the compute node.
+
+```
+[heat-admin@lab-controller01 ~]$ exit
+logout
+Connection to 172.16.0.32 closed.
+
+(undercloud) [stack@undercloud ~]$ openstack server list
++--------------------------------------+------------------+--------+----------------------+----------------+--------------+
+| ID                                   | Name             | Status | Networks             | Image          | Flavor       |
++--------------------------------------+------------------+--------+----------------------+----------------+--------------+
+| 47e02f2f-b3fe-4f0a-83b6-d0305004aec9 | lab-ceph02       | ACTIVE | ctlplane=172.16.0.23 | overcloud-full | ceph-storage |
+| 5c2f6fd7-3351-4ca6-bd41-3fafb1de5162 | lab-controller03 | ACTIVE | ctlplane=172.16.0.36 | overcloud-full | control      |
+| b837722d-0d91-4e50-a359-223487fbdb2e | lab-controller01 | ACTIVE | ctlplane=172.16.0.32 | overcloud-full | control      |
+| f8c7a2b3-73c8-476f-87a9-4c0af28e7595 | lab-controller02 | ACTIVE | ctlplane=172.16.0.22 | overcloud-full | control      |
+| 9e7924fd-4611-41de-a29a-c600502e12a0 | lab-ceph03       | ACTIVE | ctlplane=172.16.0.33 | overcloud-full | ceph-storage |
+| 66515ba8-15eb-480a-ad37-c3e91da47df8 | lab-ceph01       | ACTIVE | ctlplane=172.16.0.31 | overcloud-full | ceph-storage |
+| 87920ee2-dd27-432d-b8b1-52a2ab49a9ff | lab-compute01    | ACTIVE | ctlplane=172.16.0.25 | overcloud-full | compute      |
++--------------------------------------+------------------+--------+----------------------+----------------+--------------+
+
+(undercloud) [stack@undercloud ~]$ ssh heat-admin@172.16.0.25
+Last login: Thu Apr 12 22:56:44 2018 from 172.16.0.1
+```
+
+List the running containers.
+
+```
+[heat-admin@lab-compute01 ~]$ sudo docker ps
+CONTAINER ID        IMAGE                                                                  COMMAND             CREATED             STATUS                  PORTS               NAMES
+2b24ef01f508        172.16.0.1:8787/rhosp12/openstack-cron:12.0-20180309.1                 "kolla_start"       6 days ago          Up 22 hours                                 logrotate_crond
+eadec14e872f        172.16.0.1:8787/rhosp12/openstack-nova-compute:12.0-20180309.1         "kolla_start"       6 days ago          Up 22 hours (healthy)                       nova_migration_target
+0cc416053d1f        172.16.0.1:8787/rhosp12/openstack-ceilometer-compute:12.0-20180309.1   "kolla_start"       6 days ago          Up 22 hours                                 ceilometer_agent_compute
+51c5a1f97ade        172.16.0.1:8787/rhosp12/openstack-nova-compute:12.0-20180309.1         "kolla_start"       6 days ago          Up 22 hours (healthy)                       nova_compute
+b55823464afc        172.16.0.1:8787/rhosp12/openstack-nova-libvirt:12.0-20180309.1         "kolla_start"       6 days ago          Up 22 hours                                 nova_libvirt
+7a9b459e16af        172.16.0.1:8787/rhosp12/openstack-nova-libvirt:12.0-20180309.1         "kolla_start"       6 days ago          Up 22 hours                                 nova_virtlogd
+```
+
+As one might expect, we see a number of Nova compute and libvirt containers
+running.  All of them are using ``kolla_start`` to set up their configuration
+files.
+
+Also as expected, the compute services make extensive use of privileged
+containers to manage virtual machines.
+
+```
+[heat-admin@lab-compute01 ~]$ for TAINER in `sudo docker ps --format '{{ .Names }}'` ; do echo -n "${TAINER}:  " ; sudo docker inspect $TAINER | jq .[0].HostConfig.Privileged ; done
+logrotate_crond:  true
+nova_migration_target:  true
+ceilometer_agent_compute:  false
+nova_compute:  true
+nova_libvirt:  true
+nova_virtlogd:  true
+```
+
+#### Ceph Storage Nodes
+
+```
+(undercloud) [stack@undercloud ~]$ openstack server list
++--------------------------------------+------------------+--------+----------------------+----------------+--------------+
+| ID                                   | Name             | Status | Networks             | Image          | Flavor       |
++--------------------------------------+------------------+--------+----------------------+----------------+--------------+
+| 47e02f2f-b3fe-4f0a-83b6-d0305004aec9 | lab-ceph02       | ACTIVE | ctlplane=172.16.0.23 | overcloud-full | ceph-storage |
+| 5c2f6fd7-3351-4ca6-bd41-3fafb1de5162 | lab-controller03 | ACTIVE | ctlplane=172.16.0.36 | overcloud-full | control      |
+| b837722d-0d91-4e50-a359-223487fbdb2e | lab-controller01 | ACTIVE | ctlplane=172.16.0.32 | overcloud-full | control      |
+| f8c7a2b3-73c8-476f-87a9-4c0af28e7595 | lab-controller02 | ACTIVE | ctlplane=172.16.0.22 | overcloud-full | control      |
+| 9e7924fd-4611-41de-a29a-c600502e12a0 | lab-ceph03       | ACTIVE | ctlplane=172.16.0.33 | overcloud-full | ceph-storage |
+| 66515ba8-15eb-480a-ad37-c3e91da47df8 | lab-ceph01       | ACTIVE | ctlplane=172.16.0.31 | overcloud-full | ceph-storage |
+| 87920ee2-dd27-432d-b8b1-52a2ab49a9ff | lab-compute01    | ACTIVE | ctlplane=172.16.0.25 | overcloud-full | compute      |
++--------------------------------------+------------------+--------+----------------------+----------------+--------------+
+(undercloud) [stack@undercloud ~]$ ssh heat-admin@172.16.0.31
+[heat-admin@lab-ceph01 ~]$
+
+[heat-admin@lab-ceph01 ~]$ sudo docker ps
+CONTAINER ID        IMAGE                                                    COMMAND             CREATED             STATUS              PORTS               NAMES
+9012f9714a02        172.16.0.1:8787/ceph/rhceph-2-rhel7:latest               "/entrypoint.sh"    23 hours ago        Up 23 hours                             ceph-osd-lab-ceph01-vdb
+e34e9894d493        172.16.0.1:8787/ceph/rhceph-2-rhel7:latest               "/entrypoint.sh"    23 hours ago        Up 23 hours                             ceph-osd-lab-ceph01-vdc
+e54c65b75b77        172.16.0.1:8787/rhosp12/openstack-cron:12.0-20180309.1   "kolla_start"       6 days ago          Up 23 hours                             logrotate_crond
+
+[heat-admin@lab-ceph01 ~]$ systemctl list-units | grep ceph-osd
+  ceph-osd@vdb.service                                                                                  loaded active running   Ceph OSD
+  ceph-osd@vdc.service                                                                                  loaded active running   Ceph OSD
+  

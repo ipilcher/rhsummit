@@ -28,6 +28,8 @@
     * Logging
     * Configuration Files
   - Other Node Types
+    * Compute Nodes
+    * Ceph Storage Nodes
 * **Lab 3:** Updating the Overcloud
 * **Lab 4:** Troubleshooting and Testing
 * **Lab 5:** Deploying a New Overcloud
@@ -1074,4 +1076,10 @@ INFO:__main__:Setting permission for /var/log/nova
 INFO:__main__:Setting permission for /var/log/nova/nova-manage.log
 (...)
 ```
+
+### Other Node Types
+
+Thus far, we've only looked at one of our controller nodes.  Before moving on to
+the next lab, let's take a quick look at our other two node types &mdash;
+compute and Ceph storage.
 

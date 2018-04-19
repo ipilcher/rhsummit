@@ -18,6 +18,12 @@
   - TripleO Terminology
 * **Lab 1:** Lab Environment
 * **Lab 2:** Looking Around
+  - Is This Thing On?
+  - Containers (Three Different Ones)
+    * Pacemaker-Managed Containers
+    * Ceph Containers
+    * Everything Else
+  - The Anatomy of a Container
 * **Lab 3:** Everything else
 
 ## Lab 0: Introduction

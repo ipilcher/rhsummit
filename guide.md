@@ -1141,7 +1141,13 @@ nova_virtlogd:  true
 
 #### Ceph Storage Nodes
 
+Now let's look at the containers on one of our Ceph storage nodes.
+
 ```
+[heat-admin@lab-compute01 ~]$ exit
+logout
+Connection to 172.16.0.25 closed.
+
 (undercloud) [stack@undercloud ~]$ openstack server list
 +--------------------------------------+------------------+--------+----------------------+----------------+--------------+
 | ID                                   | Name             | Status | Networks             | Image          | Flavor       |
@@ -1154,6 +1160,7 @@ nova_virtlogd:  true
 | 66515ba8-15eb-480a-ad37-c3e91da47df8 | lab-ceph01       | ACTIVE | ctlplane=172.16.0.31 | overcloud-full | ceph-storage |
 | 87920ee2-dd27-432d-b8b1-52a2ab49a9ff | lab-compute01    | ACTIVE | ctlplane=172.16.0.25 | overcloud-full | compute      |
 +--------------------------------------+------------------+--------+----------------------+----------------+--------------+
+
 (undercloud) [stack@undercloud ~]$ ssh heat-admin@172.16.0.31
 [heat-admin@lab-ceph01 ~]$
 
@@ -1162,8 +1169,93 @@ CONTAINER ID        IMAGE                                                    COM
 9012f9714a02        172.16.0.1:8787/ceph/rhceph-2-rhel7:latest               "/entrypoint.sh"    23 hours ago        Up 23 hours                             ceph-osd-lab-ceph01-vdb
 e34e9894d493        172.16.0.1:8787/ceph/rhceph-2-rhel7:latest               "/entrypoint.sh"    23 hours ago        Up 23 hours                             ceph-osd-lab-ceph01-vdc
 e54c65b75b77        172.16.0.1:8787/rhosp12/openstack-cron:12.0-20180309.1   "kolla_start"       6 days ago          Up 23 hours                             logrotate_crond
+```
+
+We see that ``ceph-ansible`` has created a separate container for each Ceph OSD,
+each of which corresponds to a single data disk.
+
+And just like the Ceph monitor containers on our controllers, each of these
+containers is a separate ``systemd`` unit, rather than being automatically
+started by the Docker daemon.
+
+```
+[heat-admin@lab-ceph01 ~]$ sudo docker inspect ceph-osd-lab-ceph01-vdb | jq .[0].HostConfig.RestartPolicy
+{
+  "MaximumRetryCount": 0,
+  "Name": "no"
+}
 
 [heat-admin@lab-ceph01 ~]$ systemctl list-units | grep ceph-osd
   ceph-osd@vdb.service                                                                                  loaded active running   Ceph OSD
   ceph-osd@vdc.service                                                                                  loaded active running   Ceph OSD
   
+[heat-admin@lab-ceph01 ~]$ systemctl status ceph-osd@vdb.service
+● ceph-osd@vdb.service - Ceph OSD
+   Loaded: loaded (/etc/systemd/system/ceph-osd@.service; enabled; vendor preset: disabled)
+   Active: active (running) since Wed 2018-04-18 19:58:27 UTC; 23h ago
+  Process: 2292 ExecStartPre=/usr/bin/docker rm -f ceph-osd-lab-ceph01-%i (code=exited, status=1/FAILURE)
+  Process: 2277 ExecStartPre=/usr/bin/docker stop ceph-osd-lab-ceph01-%i (code=exited, status=1/FAILURE)
+ Main PID: 2308 (ceph-osd-run.sh)
+   CGroup: /system.slice/system-ceph\x2dosd.slice/ceph-osd@vdb.service
+           ├─2308 /bin/bash /usr/share/ceph-osd-run.sh vdb
+           └─2356 /usr/bin/docker-current run --rm --net=host --privileged=true --pid=host --memory=3g --cpu-quota=100000 -v /dev:/dev -v /etc/localtime:/etc/localtime:ro -v /var/lib/ceph:/var/lib/ceph -v /etc/ceph:/et...
+
+Apr 18 19:59:37 lab-ceph01 ceph-osd-run.sh[2308]: 2018-04-18 19:59:37.839496 7faac8504700  0 -- :/1290131804 >> 172.17.3.201:6789/0 pipe(0x7faab80052b0 sd=5 :0 s=1 pgs=0 cs=0 l=1 c=0x7faab800be10).fault
+Apr 18 19:59:40 lab-ceph01 ceph-osd-run.sh[2308]: 2018-04-18 19:59:40.839784 7faac8403700  0 -- :/1290131804 >> 172.17.3.202:6789/0 pipe(0x7faab8009f60 sd=5 :0 s=1 pgs=0 cs=0 l=1 c=0x7faab800df20).fault
+Apr 18 19:59:43 lab-ceph01 ceph-osd-run.sh[2308]: 2018-04-18 19:59:43.839931 7faac8504700  0 -- :/1290131804 >> 172.17.3.203:6789/0 pipe(0x7faab800e970 sd=5 :0 s=1 pgs=0 cs=0 l=1 c=0x7faab800fc30).fault
+Apr 18 19:59:46 lab-ceph01 ceph-osd-run.sh[2308]: 2018-04-18 19:59:46.840187 7faac8403700  0 -- :/1290131804 >> 172.17.3.201:6789/0 pipe(0x7faab8010260 sd=4 :0 s=1 pgs=0 cs=0 l=1 c=0x7faab8011520).fault
+Apr 18 19:59:49 lab-ceph01 ceph-osd-run.sh[2308]: 2018-04-18 19:59:49.840657 7faac8504700  0 -- :/1290131804 >> 172.17.3.202:6789/0 pipe(0x7faab800e970 sd=5 :0 s=1 pgs=0 cs=0 l=1 c=0x7faab800fc30).fault
+Apr 18 19:59:55 lab-ceph01 ceph-osd-run.sh[2308]: 2018-04-18 19:59:55.841242 7faac8302700  0 -- 172.17.3.221:0/1290131804 >> 172.17.3.202:6789/0 pipe(0x7faab800e950 sd=4 :0 s=1 pgs=0 cs=0 l=1 c=0x7faab800fc10).fault
+Apr 18 20:00:01 lab-ceph01 ceph-osd-run.sh[2308]: create-or-move updated item name 'osd.1' weight 0.04 at location {host=lab-ceph01,root=default} to crush map
+Apr 18 20:00:01 lab-ceph01 ceph-osd-run.sh[2308]: 2018-04-18 20:00:01  /entrypoint.sh: SUCCESS
+Apr 18 20:00:01 lab-ceph01 ceph-osd-run.sh[2308]: starting osd.1 at :/0 osd_data /var/lib/ceph/osd/ceph-1 /var/lib/ceph/osd/ceph-1/journal
+Apr 18 20:00:03 lab-ceph01 ceph-osd-run.sh[2308]: 2018-04-18 20:00:03.813532 7f82948dba40 -1 osd.1 22 log_to_monitors {default=true}
+
+[heat-admin@lab-ceph01 ~]$ cat /etc/systemd/system/ceph-osd@.service
+# Please do not change this file directly since it is managed by Ansible and will be overwritten
+[Unit]
+Description=Ceph OSD
+After=docker.service
+
+[Service]
+EnvironmentFile=-/etc/environment
+ExecStartPre=-/usr/bin/docker stop ceph-osd-lab-ceph01-%i
+ExecStartPre=-/usr/bin/docker rm -f ceph-osd-lab-ceph01-%i
+ExecStart=/usr/share/ceph-osd-run.sh %i
+ExecStop=-/usr/bin/docker stop ceph-osd-lab-ceph01-%i
+Restart=always
+RestartSec=10s
+TimeoutStartSec=120
+TimeoutStopSec=15
+
+[Install]
+WantedBy=multi-user.target
+
+[heat-admin@lab-ceph01 ~]$ less /usr/share/ceph-osd-run.sh
+(...)
+########
+# MAIN #
+########
+
+/usr/bin/docker run \
+  --rm \
+  --net=host \
+  --privileged=true \
+  --pid=host \
+  --memory=3g \
+  --cpu-quota=100000 \
+  -v /dev:/dev \
+  -v /etc/localtime:/etc/localtime:ro \
+  -v /var/lib/ceph:/var/lib/ceph \
+  -v /etc/ceph:/etc/ceph \
+  $DOCKER_ENV \
+  -e OSD_FILESTORE=1 \
+  -e OSD_DMCRYPT=0 \
+  -e CLUSTER=ceph \
+  -e OSD_DEVICE=/dev/${1} \
+  -e CEPH_DAEMON=OSD_CEPH_DISK_ACTIVATE \
+   \
+  --name=ceph-osd-lab-ceph01-${1} \
+  172.16.0.1:8787/ceph/rhceph-2-rhel7:latest
+(END)
+```

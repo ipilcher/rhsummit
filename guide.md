@@ -1032,3 +1032,31 @@ permissions) &mdash; while keeping the container immutable.  If one of the
 containerized services in OSP 12 were to be compromised and made to corrupt one
 of it's configuration files, the configuration could be restored to the desired
 state by simply restarting the container.
+
+A final note about ``kolla_set_configs`` &mdash; All of its actions are logged
+to ``stderr``/``stdout``, and they can be viewed with the ``docker logs``
+command.
+
+```
+()[root@lab-controller01 /]$ exit
+exit
+
+[heat-admin@lab-controller01 ~]$ sudo docker logs nova_scheduler 2>&1 | less
+INFO:__main__:Loading config file at /var/lib/kolla/config_files/config.json
+INFO:__main__:Validating config file
+INFO:__main__:Kolla config strategy set to: COPY_ALWAYS
+INFO:__main__:Copying service configuration files
+INFO:__main__:Creating directory /etc/httpd
+INFO:__main__:Creating directory /etc/httpd/conf.d
+INFO:__main__:Copying /var/lib/kolla/config_files/src/etc/httpd/conf.d/10-nova_api_wsgi.conf to /etc/httpd/conf.d/10-nova_api_wsgi.conf
+INFO:__main__:Copying /var/lib/kolla/config_files/src/etc/httpd/conf.d/ssl.conf to /etc/httpd/conf.d/ssl.conf
+INFO:__main__:Creating directory /etc/httpd/conf.modules.d
+INFO:__main__:Copying /var/lib/kolla/config_files/src/etc/httpd/conf.modules.d/access_compat.load to /etc/httpd/conf.modules.d/access_compat.load
+INFO:__main__:Copying /var/lib/kolla/config_files/src/etc/httpd/conf.modules.d/actions.load to /etc/httpd/conf.modules.d/actions.load
+INFO:__main__:Copying /var/lib/kolla/config_files/src/etc/httpd/conf.modules.d/alias.conf to /etc/httpd/conf.modules.d/alias.conf
+(...)
+INFO:__main__:Writing out command to execute
+INFO:__main__:Setting permission for /var/log/nova
+INFO:__main__:Setting permission for /var/log/nova/nova-manage.log
+(...)
+```

@@ -14,6 +14,8 @@
 ## Lab Contents
 
 * **Lab 0:** Introduction
+  - OpenStack and Containers
+  - TripleO Terminology
 * **Lab 1:** Lab Environment
 * **Lab 2:** Looking Around
 * **Lab 3:** Everything else
@@ -1060,3 +1062,4 @@ INFO:__main__:Setting permission for /var/log/nova
 INFO:__main__:Setting permission for /var/log/nova/nova-manage.log
 (...)
 ```
+

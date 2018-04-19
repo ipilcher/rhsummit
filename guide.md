@@ -1259,3 +1259,12 @@ WantedBy=multi-user.target
   172.16.0.1:8787/ceph/rhceph-2-rhel7:latest
 (END)
 ```
+
+This concludes our whirlwind tour of the deployed overcloud.  Log out of the
+Ceph storage node, in preparation for the next lab.
+
+```
+[heat-admin@lab-ceph01 ~]$ exit
+logout
+Connection to 172.16.0.31 closed.
+```

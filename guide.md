@@ -1480,12 +1480,41 @@ no requirement that it be used.  It is entirely possible to use a different
 container image registry, such as Red Hat Satellite, Red Hat OpenShift Container
 Platform, etc.
 
-The other thing to note about ``docker-registry.yaml`` is the date-based tags
+The other thing to note about ``docker-registry.yaml`` is the date-based tags (``12.0-20180309.1``)
 that are used to specify the exact container image to use (other than the Ceph
 container).  This tag is important to TripleO, as it will only update the
 images used by the overcloud when the tag changes.  Thus, we do not follow the
 common practice of simply using ``latest``.
 
+So how did those images get into the registry running our undercloud?
+
+It turns out that Red Hat OpenStack Platform 12 provides a number of utility
+commands that help in this area.
+
+* ``openstack overcloud container image tag discover`` can be used to discover
+  the latest version of the OpenStack container images in the Red Hat Container
+  Catalog.  (Unfortunately, it won't work with the image registry on our
+  ``bastion`` host.)
+
+* ``openstack overcloud container image prepare`` performs two functions.
+  1. It creates a file that specifies the images to pulled from an upstream
+     image registry, such as the Red Hat Container Catalog.  This file already
+     exists on our undercloud as ``container-images.yaml``.
+  1. It creates the ``docker-registry.yaml`` file used for overcloud deployment
+     and updates.
+
+* ``openstack overcloud container image upload`` pulls the images and pushes
+  them into the undercloud registry.
+
+Because we already have the ``container-images.yaml`` and
+``docker-registry.yaml`` files from our deployment, we can simply use ``sed`` to
+update the tags in those files.  The latest version of the container images in
+the registry on our bastion host is ``20180319.1``.
+
+```
+(undercloud) [stack@undercloud ~]$ sed -i s/20180309.1/20180319.1/ container-images.yaml
+(undercloud) [stack@undercloud ~]$ sed -i s/20180309.1/20180319.1/ templates/docker-registry.yaml
+```
 
 
 #### Verify Undercloud Update Completion

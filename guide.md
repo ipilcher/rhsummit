@@ -31,6 +31,7 @@
     * Compute Nodes
     * Ceph Storage Nodes
 * **Lab 3:** Updating the Overcloud
+  - Step 1: Update the Undercloud
 * **Lab 4:** Troubleshooting and Testing
 * **Lab 5:** Deploying a New Overcloud
 
@@ -346,7 +347,7 @@ Start the instance and wait for it to become ``ACTIVE``.
 +--------------------------------------+-------+--------+--------------------------------+---------------------+---------+
 ```
 
-You should be able to log in to the the instance using the ``stack`` users's
+You should be able to log in to the the instance using the ``stack`` user's
 default SSH key.
 
 ```
@@ -461,7 +462,7 @@ running as containers.
 
 (In fact, one of the key things to understand about the containerized services
 in OSP 12 is that the overall architecture is **exactly the same** as
-non-containerized OSP 11.  Services all run in exactly the same place - as
+non-containerized OSP 11.  Services all run in exactly the same place &mdash; as
 determined by the standard/customer roles; they are just running as
 containers, rather than traditional services.)
 
@@ -1124,7 +1125,8 @@ b55823464afc        172.16.0.1:8787/rhosp12/openstack-nova-libvirt:12.0-20180309
 
 As one might expect, we see a number of Nova compute and libvirt containers
 running.  All of them are using ``kolla_start`` to set up their configuration
-files.
+files.  (The ``qemu-kvm`` process that represents our test instance, however, is
+not running in a container.)
 
 Also as expected, the compute services make extensive use of privileged
 containers to manage virtual machines.
@@ -1267,4 +1269,105 @@ Ceph storage node, in preparation for the next lab.
 [heat-admin@lab-ceph01 ~]$ exit
 logout
 Connection to 172.16.0.31 closed.
+```
+
+## Lab 3: Updating the Overcloud
+
+In this lab, we'll start to explore how the containerization of OSP 12 affects
+day-to-day operation of the environment.  Specifically, this lab will focus on
+the process used to update the overcloud.
+
+Note that Red Hat makes a strong distinction between **minor** updates (updating
+software to the latest packages, maintenance level, minor version, etc.) and
+**major** upgrades &mdash; such as upgrades from Red Hat Enterprise Linux 6 to
+Red Hat Enterprise Linux 7 or Red Hat OpenStack Platform 11 to Red Hat OpenStack
+Platform 12.
+
+### Step 1: Update the Undercloud
+
+This procedure has not changed significantly from previous releases.
+
+First, make a copy of ``/etc/sysconfig/docker``.  This is required because the
+undercloud update process may overwrite this file, and it has been modified to
+allow pulling container images from our ``bastion`` host, rather than directly
+from Red Hat.
+
+```
+(undercloud) [stack@undercloud ~]$ sudo cp /etc/sysconfig/docker /etc/sysconfig/docker.bak
+```
+
+Next, stop the the OpenStack services on the undercloud (many of which run as
+WSGI applications under ``httpd``).
+
+```
+(undercloud) [stack@undercloud ~]$ sudo systemctl stop 'openstack-*' 'neutron-*' httpd
+```
+
+Now, update the ``python-tripleoclient`` package.
+
+```
+(undercloud) [stack@undercloud ~]$ sudo yum -y update python-tripleoclient
+Loaded plugins: search-disabled-repos
+rhelosp-12.0-puddle                                                                               | 2.9 kB  00:00:00     
+rhelosp-ceph-2.0-mon                                                                              | 2.9 kB  00:00:00     
+rhelosp-ceph-2.0-osd                                                                              | 2.9 kB  00:00:00     
+rhelosp-ceph-2.0-tools                                                                            | 2.9 kB  00:00:00     
+rhelosp-rhel-7.4-extras                                                                           | 2.9 kB  00:00:00     
+rhelosp-rhel-7.4-ha                                                                               | 2.9 kB  00:00:00     
+rhelosp-rhel-7.4-server                                                                           | 2.9 kB  00:00:00     
+(1/7): rhelosp-ceph-2.0-osd/primary_db                                                            | 153 kB  00:00:00     
+(2/7): rhelosp-12.0-puddle/primary_db                                                             | 371 kB  00:00:00     
+(3/7): rhelosp-ceph-2.0-tools/primary_db                                                          | 171 kB  00:00:00     
+(4/7): rhelosp-rhel-7.4-ha/primary_db                                                             | 220 kB  00:00:00     
+(5/7): rhelosp-ceph-2.0-mon/primary_db                                                            | 170 kB  00:00:00     
+(6/7): rhelosp-rhel-7.4-extras/primary_db                                                         | 310 kB  00:00:00     
+(7/7): rhelosp-rhel-7.4-server/primary_db                                                         |  37 MB  00:00:00     
+Resolving Dependencies
+--> Running transaction check
+---> Package python-tripleoclient.noarch 0:7.3.3-7.el7ost will be updated
+---> Package python-tripleoclient.noarch 0:7.3.8-1.el7ost will be an update
+--> Finished Dependency Resolution
+
+Dependencies Resolved
+
+=========================================================================================================================
+ Package                          Arch               Version                       Repository                       Size
+=========================================================================================================================
+Updating:
+ python-tripleoclient             noarch             7.3.8-1.el7ost                rhelosp-12.0-puddle             259 k
+
+Transaction Summary
+=========================================================================================================================
+Upgrade  1 Package
+
+Total download size: 259 k
+Downloading packages:
+Delta RPMs disabled because /usr/bin/applydeltarpm not installed.
+python-tripleoclient-7.3.8-1.el7ost.noarch.rpm                                                    | 259 kB  00:00:00     
+Running transaction check
+Running transaction test
+Transaction test succeeded
+Running transaction
+  Updating   : python-tripleoclient-7.3.8-1.el7ost.noarch                                                            1/2 
+  Cleanup    : python-tripleoclient-7.3.3-7.el7ost.noarch                                                            2/2 
+  Verifying  : python-tripleoclient-7.3.8-1.el7ost.noarch                                                            1/2 
+  Verifying  : python-tripleoclient-7.3.3-7.el7ost.noarch                                                            2/2 
+
+Updated:
+  python-tripleoclient.noarch 0:7.3.8-1.el7ost                                                                           
+
+Complete!
+```
+
+Run the ``openstack undercloud upgrade`` (even though we're performing a minor
+**update**) command to update/install other packages and make any other required
+changes to the system.
+
+> **NOTE:** This command may take up to XX minutes to complete.  The yellow
+> warning text can be ignored.
+
+```
+(undercloud) [stack@undercloud ~]$ openstack undercloud upgrade
+(...)
+
 ```

@@ -32,6 +32,11 @@
     * Ceph Storage Nodes
 * **Lab 3:** Updating the Overcloud
   - Step 1: Update the Undercloud
+    * Prepare the Undercloud
+    * Start the Update
+    * Update Container Images
+    * Verify Undercloud Update Completion
+    * Update Overcloud Images
 * **Lab 4:** Troubleshooting and Testing
 * **Lab 5:** Deploying a New Overcloud
 
@@ -1287,6 +1292,8 @@ Platform 12.
 
 This procedure has not changed significantly from previous releases.
 
+#### Prepare the Undercloud
+
 First, make a copy of ``/etc/sysconfig/docker``.  This is required because the
 undercloud update process may overwrite this file, and it has been modified to
 allow pulling container images from our ``bastion`` host, rather than directly
@@ -1359,15 +1366,128 @@ Updated:
 Complete!
 ```
 
-Run the ``openstack undercloud upgrade`` (even though we're performing a minor
-**update**) command to update/install other packages and make any other required
-changes to the system.
+#### Start the Update
 
-> **NOTE:** This command may take up to XX minutes to complete.  The yellow
-> warning text can be ignored.
+Next, we need to run the ``openstack undercloud upgrade`` command (even though
+we're actually performing a minor **update**).  This will update/install other
+packages and make any other required changes to the undercloud.
 
-```
-(undercloud) [stack@undercloud ~]$ openstack undercloud upgrade
-(...)
+This command will take approximately 15 minutes to complete, so we'll run it in
+the background.
 
 ```
+(undercloud) [stack@undercloud ~]$ openstack undercloud upgrade &> /tmp/undercloud-upgrade.out &
+```
+
+#### Update Container Images
+
+While that command is running, let's take our first look at OSP 12's update (and
+deployment) mechanism for container images.
+
+During deployment and updates, TripleO parameters are used to specify the image
+used for each overcloud container.  In our deployment, these parameters are set
+in ``templates/docker-registry.yaml``.
+
+```
+(undercloud) [stack@undercloud ~]$ grep -v '^#' templates/docker-registry.yaml
+
+parameter_defaults:
+  DockerAodhApiImage: 172.16.0.1:8787/rhosp12/openstack-aodh-api:12.0-20180309.1
+  DockerAodhConfigImage: 172.16.0.1:8787/rhosp12/openstack-aodh-api:12.0-20180309.1
+  DockerAodhEvaluatorImage: 172.16.0.1:8787/rhosp12/openstack-aodh-evaluator:12.0-20180309.1
+  DockerAodhListenerImage: 172.16.0.1:8787/rhosp12/openstack-aodh-listener:12.0-20180309.1
+  DockerAodhNotifierImage: 172.16.0.1:8787/rhosp12/openstack-aodh-notifier:12.0-20180309.1
+  DockerCeilometerCentralImage: 172.16.0.1:8787/rhosp12/openstack-ceilometer-central:12.0-20180309.1
+  DockerCeilometerComputeImage: 172.16.0.1:8787/rhosp12/openstack-ceilometer-compute:12.0-20180309.1
+  DockerCeilometerConfigImage: 172.16.0.1:8787/rhosp12/openstack-ceilometer-central:12.0-20180309.1
+  DockerCeilometerNotificationImage: 172.16.0.1:8787/rhosp12/openstack-ceilometer-notification:12.0-20180309.1
+  DockerCephDaemonImage: 172.16.0.1:8787/ceph/rhceph-2-rhel7:latest
+  DockerClustercheckConfigImage: 172.16.0.1:8787/rhosp12/openstack-mariadb:12.0-20180309.1
+  DockerClustercheckImage: 172.16.0.1:8787/rhosp12/openstack-mariadb:12.0-20180309.1
+  DockerCrondConfigImage: 172.16.0.1:8787/rhosp12/openstack-cron:12.0-20180309.1
+  DockerCrondImage: 172.16.0.1:8787/rhosp12/openstack-cron:12.0-20180309.1
+  DockerGlanceApiConfigImage: 172.16.0.1:8787/rhosp12/openstack-glance-api:12.0-20180309.1
+  DockerGlanceApiImage: 172.16.0.1:8787/rhosp12/openstack-glance-api:12.0-20180309.1
+  DockerGnocchiApiImage: 172.16.0.1:8787/rhosp12/openstack-gnocchi-api:12.0-20180309.1
+  DockerGnocchiConfigImage: 172.16.0.1:8787/rhosp12/openstack-gnocchi-api:12.0-20180309.1
+  DockerGnocchiMetricdImage: 172.16.0.1:8787/rhosp12/openstack-gnocchi-metricd:12.0-20180309.1
+  DockerGnocchiStatsdImage: 172.16.0.1:8787/rhosp12/openstack-gnocchi-statsd:12.0-20180309.1
+  DockerHAProxyConfigImage: 172.16.0.1:8787/rhosp12/openstack-haproxy:12.0-20180309.1
+  DockerHAProxyImage: 172.16.0.1:8787/rhosp12/openstack-haproxy:12.0-20180309.1
+  DockerHeatApiCfnConfigImage: 172.16.0.1:8787/rhosp12/openstack-heat-api-cfn:12.0-20180309.1
+  DockerHeatApiCfnImage: 172.16.0.1:8787/rhosp12/openstack-heat-api-cfn:12.0-20180309.1
+  DockerHeatApiConfigImage: 172.16.0.1:8787/rhosp12/openstack-heat-api:12.0-20180309.1
+  DockerHeatApiImage: 172.16.0.1:8787/rhosp12/openstack-heat-api:12.0-20180309.1
+  DockerHeatConfigImage: 172.16.0.1:8787/rhosp12/openstack-heat-api:12.0-20180309.1
+  DockerHeatEngineImage: 172.16.0.1:8787/rhosp12/openstack-heat-engine:12.0-20180309.1
+  DockerHorizonConfigImage: 172.16.0.1:8787/rhosp12/openstack-horizon:12.0-20180309.1
+  DockerHorizonImage: 172.16.0.1:8787/rhosp12/openstack-horizon:12.0-20180309.1
+  DockerInsecureRegistryAddress:
+  - 172.16.0.1:8787
+  DockerKeystoneConfigImage: 172.16.0.1:8787/rhosp12/openstack-keystone:12.0-20180309.1
+  DockerKeystoneImage: 172.16.0.1:8787/rhosp12/openstack-keystone:12.0-20180309.1
+  DockerMemcachedConfigImage: 172.16.0.1:8787/rhosp12/openstack-memcached:12.0-20180309.1
+  DockerMemcachedImage: 172.16.0.1:8787/rhosp12/openstack-memcached:12.0-20180309.1
+  DockerMysqlClientConfigImage: 172.16.0.1:8787/rhosp12/openstack-mariadb:12.0-20180309.1
+  DockerMysqlConfigImage: 172.16.0.1:8787/rhosp12/openstack-mariadb:12.0-20180309.1
+  DockerMysqlImage: 172.16.0.1:8787/rhosp12/openstack-mariadb:12.0-20180309.1
+  DockerNovaApiImage: 172.16.0.1:8787/rhosp12/openstack-nova-api:12.0-20180309.1
+  DockerNovaComputeImage: 172.16.0.1:8787/rhosp12/openstack-nova-compute:12.0-20180309.1
+  DockerNovaConductorImage: 172.16.0.1:8787/rhosp12/openstack-nova-conductor:12.0-20180309.1
+  DockerNovaConfigImage: 172.16.0.1:8787/rhosp12/openstack-nova-api:12.0-20180309.1
+  DockerNovaConsoleauthImage: 172.16.0.1:8787/rhosp12/openstack-nova-consoleauth:12.0-20180309.1
+  DockerNovaLibvirtConfigImage: 172.16.0.1:8787/rhosp12/openstack-nova-compute:12.0-20180309.1
+  DockerNovaLibvirtImage: 172.16.0.1:8787/rhosp12/openstack-nova-libvirt:12.0-20180309.1
+  DockerNovaMetadataImage: 172.16.0.1:8787/rhosp12/openstack-nova-api:12.0-20180309.1
+  DockerNovaPlacementConfigImage: 172.16.0.1:8787/rhosp12/openstack-nova-placement-api:12.0-20180309.1
+  DockerNovaPlacementImage: 172.16.0.1:8787/rhosp12/openstack-nova-placement-api:12.0-20180309.1
+  DockerNovaSchedulerImage: 172.16.0.1:8787/rhosp12/openstack-nova-scheduler:12.0-20180309.1
+  DockerNovaVncProxyImage: 172.16.0.1:8787/rhosp12/openstack-nova-novncproxy:12.0-20180309.1
+  DockerPankoApiImage: 172.16.0.1:8787/rhosp12/openstack-panko-api:12.0-20180309.1
+  DockerPankoConfigImage: 172.16.0.1:8787/rhosp12/openstack-panko-api:12.0-20180309.1
+  DockerRabbitmqConfigImage: 172.16.0.1:8787/rhosp12/openstack-rabbitmq:12.0-20180309.1
+  DockerRabbitmqImage: 172.16.0.1:8787/rhosp12/openstack-rabbitmq:12.0-20180309.1
+  DockerRedisConfigImage: 172.16.0.1:8787/rhosp12/openstack-redis:12.0-20180309.1
+  DockerRedisImage: 172.16.0.1:8787/rhosp12/openstack-redis:12.0-20180309.1
+  DockerSwiftAccountImage: 172.16.0.1:8787/rhosp12/openstack-swift-account:12.0-20180309.1
+  DockerSwiftConfigImage: 172.16.0.1:8787/rhosp12/openstack-swift-proxy-server:12.0-20180309.1
+  DockerSwiftContainerImage: 172.16.0.1:8787/rhosp12/openstack-swift-container:12.0-20180309.1
+  DockerSwiftObjectImage: 172.16.0.1:8787/rhosp12/openstack-swift-object:12.0-20180309.1
+  DockerSwiftProxyImage: 172.16.0.1:8787/rhosp12/openstack-swift-proxy-server:12.0-20180309.1
+```
+
+We see that the overcloud nodes will use images from ``172.16.0.1:8787``, which
+is the undercloud's IP address.  In OSP 12, the undercloud automatically runs a
+container image registry.
+
+```
+(undercloud) [stack@undercloud ~]$ systemctl status docker-distribution
+● docker-distribution.service - v2 Registry server for Docker
+   Loaded: loaded (/usr/lib/systemd/system/docker-distribution.service; enabled; vendor preset: disabled)
+   Active: active (running) since Fri 2018-04-20 14:40:49 EDT; 1h 6min ago
+ Main PID: 531 (registry)
+   CGroup: /system.slice/docker-distribution.service
+           └─531 /usr/bin/registry serve /etc/docker-distribution/registry/config.yml
+```
+
+We can also see that ``DockerInsecureRegistryAddress`` is set to
+``172.16.0.1:8787``.  This will cause our overcloud nodes to use HTTP when
+pulling images from the undercloud &mdash; avoiding the need to generate and
+manage TLS certificates.
+
+The container registry on the undercloud is provided as a convenience; there is
+no requirement that it be used.  It is entirely possible to use a different
+container image registry, such as Red Hat Satellite, Red Hat OpenShift Container
+Platform, etc.
+
+The other thing to note about ``docker-registry.yaml`` is the date-based tags
+that are used to specify the exact container image to use (other than the Ceph
+container).  This tag is important to TripleO, as it will only update the
+images used by the overcloud when the tag changes.  Thus, we do not follow the
+common practice of simply using ``latest``.
+
+
+
+#### Verify Undercloud Update Completion
+
+#### Update Overcloud Images

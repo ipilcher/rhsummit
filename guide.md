@@ -711,7 +711,7 @@ automatically started by the Docker daemon.
 "always"
 ```
 
-### The Ananatomy of a Container
+### The Anatomy of a Container
 
 Let's take a detailed look at one of our running containers, to understand how
 it's been configured to run an OpenStack service.

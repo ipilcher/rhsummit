@@ -1377,6 +1377,7 @@ the background.
 
 ```
 (undercloud) [stack@undercloud ~]$ openstack undercloud upgrade &> /tmp/undercloud-upgrade.out &
+[1] 11606
 ```
 
 #### Update Container Images
@@ -1564,6 +1565,43 @@ daemon.
 
 (undercloud) [stack@undercloud ~]$ sudo systemctl restart docker
 ```
+
+Pull the new container images from the bastion host and push them into the
+image registry on the undercloud.
+
+```
+(test@overcloud) [stack@undercloud ~]$ openstack overcloud container image upload --verbose --config-file container-images.yaml
+START with options: [u'overcloud', u'container', u'image', u'upload', u'--verbose', u'--config-file', u'container-images.yaml']
+command: overcloud container image upload -> tripleoclient.v1.container_image.UploadImage (auth=False)
+Using config files: [u'container-images.yaml']
+imagename: 192.168.1.10:5000/rhosp12/openstack-aodh-api:12.0-20180319.1
+Completed upload for docker image 192.168.1.10:5000/rhosp12/openstack-aodh-api:12.0-20180319.1
+(...)
+imagename: 192.168.1.10:5000/rhosp12/openstack-swift-proxy-server:12.0-20180319.1
+Completed upload for docker image 192.168.1.10:5000/rhosp12/openstack-swift-proxy-server:12.0-20180319.1
+imagename: 192.168.1.10:5000/ceph/rhceph-2-rhel7:latest
+Completed upload for docker image 192.168.1.10:5000/ceph/rhceph-2-rhel7:latest
+END return value: 0
+```
+
+> **NOTE:** You can view a list of all images known to the ``docker`` daemon on
+> the undercloud with the ``docker images`` command.  For each OpenStack image,
+> it should now show 
+
+You can view a list of all images known to the local ``docker`` daemon with the
+``docker images`` command.  For each OpenStack image, it should now show both
+the old (``12.0-20180309.1``) and new (``12.0-20180319.1``) tags for both the
+bastion host (``192.168.1.10:5000``) and local (``172.16.0.1:8787``) registries.
+For example:
+
+```
+(test@overcloud) [stack@undercloud ~]$  docker images | grep openstack-nova-api
+172.16.0.1:8787/rhosp12/openstack-nova-api                    12.0-20180319.1     bc157a405e32        4 weeks ago         758 MB
+192.168.1.10:5000/rhosp12/openstack-nova-api                  12.0-20180319.1     bc157a405e32        4 weeks ago         758 MB
+172.16.0.1:8787/rhosp12/openstack-nova-api                    12.0-20180309.1     7f9d9a559a00        6 weeks ago         757 MB
+192.168.1.10:5000/rhosp12/openstack-nova-api                  12.0-20180309.1     7f9d9a559a00        6 weeks ago         757 MB
+```
+
 
 #### Verify Undercloud Update Completion
 

@@ -1584,10 +1584,6 @@ Completed upload for docker image 192.168.1.10:5000/ceph/rhceph-2-rhel7:latest
 END return value: 0
 ```
 
-> **NOTE:** You can view a list of all images known to the ``docker`` daemon on
-> the undercloud with the ``docker images`` command.  For each OpenStack image,
-> it should now show 
-
 You can view a list of all images known to the local ``docker`` daemon with the
 ``docker images`` command.  For each OpenStack image, it should now show both
 the old (``12.0-20180309.1``) and new (``12.0-20180319.1``) tags for both the
@@ -1602,7 +1598,58 @@ For example:
 192.168.1.10:5000/rhosp12/openstack-nova-api                  12.0-20180309.1     7f9d9a559a00        6 weeks ago         757 MB
 ```
 
-
 #### Verify Undercloud Update Completion
+
+Now let's check on the ``openstack undercloud upgrade`` command that we ran as
+a background process.
+
+```
+(test@overcloud) [stack@undercloud ~]$ jobs
+[1]+  Running                 openstack undercloud upgrade &>/tmp/undercloud-upgrade.out &
+```
+
+This indicates that the process is still running.  It's progress can be
+monitored with:
+
+```
+(test@overcloud) [stack@undercloud ~]$  tailf /tmp/undercloud-upgrade.out
+(...)
+```
+
+If ``jobs`` produces no output, it indicates that the update process has
+finished.  Check the output file, to verify that it was successful.
+
+```
+(test@overcloud) [stack@undercloud ~]$ tail -n 20 /tmp/undercloud-upgrade.out
+2018-04-23 14:09:03,962 INFO: Configuring Mistral workbooks
+2018-04-23 14:09:31,972 INFO: Mistral workbooks configured successfully
+2018-04-23 14:09:32,537 INFO: Not creating default plan "overcloud" because it already exists.
+2018-04-23 14:09:32,537 INFO: Configuring an hourly cron trigger for tripleo-ui logging
+2018-04-23 14:09:35,585 INFO: Added _member_ role to admin user
+2018-04-23 14:09:36,244 INFO: Starting and waiting for validation groups ['post-upgrade'] 
+2018-04-23 14:10:27,207 INFO: 
+#############################################################################
+Undercloud upgrade complete.
+
+The file containing this installation's passwords is at
+/home/stack/undercloud-passwords.conf.
+
+There is also a stackrc file at /home/stack/stackrc.
+
+These files are needed to interact with the OpenStack services, and should be
+secured.
+
+#############################################################################
+```
+
+Reboot the undercloud.
+
+```
+(test@overcloud) [stack@undercloud ~]$ sudo reboot
+PolicyKit daemon disconnected from the bus.
+We are no longer a registered authentication agent.
+Connection to undercloud.example.com closed by remote host.
+Connection to undercloud.example.com closed.
+```
 
 #### Update Overcloud Images

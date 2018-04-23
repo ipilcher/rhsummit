@@ -37,8 +37,9 @@
     * [Update Container Images](#update-container-images)
     * [Verify Undercloud Update Completion](#verify-undercloud-update-completion)
     * [Update Overcloud Images](#update-overcloud-images)
-* **Lab 4:** Troubleshooting and Testing
-* **Lab 5:** Deploying a New Overcloud
+  - [Step 2: Update the Overcloud](#step-2-update-the-overcloud)
+* [**Lab 4:** Troubleshooting and Testing](#lab-4-troubleshooting-and-testing)
+* [**Lab 5:** Deploying a New Overcloud](#lab-5-deploying-a-new-overcloud)
 
 ## Lab 0: Introduction
 
@@ -1850,3 +1851,16 @@ Finally, delete the old images from the undercloud's Glance service.
 | 37aa394f-e583-4bed-9947-d67b200d5b03 | overcloud-full-vmlinuz | active |
 +--------------------------------------+------------------------+--------+
 ```
+
+And return to our home directory.
+
+```
+(undercloud) [stack@undercloud images]$ cd
+(undercloud) [stack@undercloud ~]$
+```
+
+### Step 2: Update the Overcloud
+
+## Lab 4: Troubleshooting and Testing
+
+## Lab 5: Deploying a New Overcloud

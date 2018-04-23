@@ -3,10 +3,10 @@
 # Red Hat Summit 2018 - San Francisco, California
 
 **Title:** Understanding Containerized Red Hat OpenStack Platform (L1018)  
-**Date:** May 8, 2017
+**Date:** May 8, 2017  
+**Author:** Ian Pilcher <<ipilcher@redhat.com>>
 
-**Authors:**
-* Ian Pilcher <<ipilcher@redhat.com>>
+**Contributors:**
 * Greg Charot <<gcharot@redhat.com>>
 * Jacob Liberman <<jliberma@redhat.com>>
 * Rhys Oxenham <<roxenham@redhat.com>>
@@ -14,29 +14,29 @@
 ## Lab Contents
 
 * [**Lab 0:** Introduction](#lab-0-introduction)
-  - OpenStack and Containers
-  - TripleO Terminology
-* **Lab 1:** Lab Environment
-* **Lab 2:** Looking Around
-  - Is This Thing On?
-  - Containers (Three Different Ones)
-    * Pacemaker-Managed Containers
-    * Ceph Containers
-    * Everything Else
-  - The Anatomy of a Container
-    * Let Me Out! Let Me Out!
-    * Logging
-    * Configuration Files
-  - Other Node Types
-    * Compute Nodes
-    * Ceph Storage Nodes
-* **Lab 3:** Updating the Overcloud
-  - Step 1: Update the Undercloud
-    * Prepare the Undercloud
-    * Start the Update
-    * Update Container Images
-    * Verify Undercloud Update Completion
-    * Update Overcloud Images
+  - [OpenStack and Containers](#openstack-and-containers)
+  - [TripleO Terminology](#tripleo-terminology)
+* [**Lab 1:** Lab Environment](#lab-1-lab-environment)
+* [**Lab 2:** Looking Around](#lab-2-looking-around)
+  - [Is This Thing On?](#is-this-thing-on)
+  - [Containers (Three Different Ones)](#containers-three-different-ones)
+    * [Pacemaker-Managed Containers](#pacemaker-managed-containers)
+    * [Ceph Containers](#ceph-containers)
+    * [Everything Else](#everything-else)
+  - [The Anatomy of a Container](#the-anatomy-of-a-container)
+    * [Let Me Out! Let Me Out!](#let-me-out-let-me-out)
+    * [Logging](#logging)
+    * [Configuration Files](#configuration-files)
+  - [Other Node Types](#other-node-types)
+    * [Compute Nodes](#compute-nodes)
+    * [Ceph Storage Nodes](#ceph-storage-nodes)
+* [**Lab 3:** Updating the Overcloud](#lab-3-updating-the-overcloud)
+  - [Step 1: Update the Undercloud](#step-1-update-the-undercloud)
+    * [Prepare the Undercloud](#prepare-the-undercloud)
+    * [Start the Update](#start-the-update)
+    * [Update Container Images](#update-container-images)
+    * [Verify Undercloud Update Completion](#verify-undercloud-update-completion)
+    * [Update Overcloud Images](#update-over-cloud-images)
 * **Lab 4:** Troubleshooting and Testing
 * **Lab 5:** Deploying a New Overcloud
 

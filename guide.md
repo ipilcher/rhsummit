@@ -39,6 +39,7 @@
     * [Update Overcloud Images](#update-overcloud-images)
   - [Step 2: Update the Overcloud](#step-2-update-the-overcloud)
     * [Update the Plan](#update-the-plan)
+    * [Update the Nodes](#update-the-nodes)
 * [**Lab 4:** Troubleshooting and Testing](#lab-4-troubleshooting-and-testing)
 * [**Lab 5:** Deploying a New Overcloud](#lab-5-deploying-a-new-overcloud)
 
@@ -1910,8 +1911,14 @@ Started Mistral Workflow tripleo.validations.v1.check_pre_deployment_validations
 Waiting for messages on queue 'afb3aff1-fc38-4911-84c6-fa905b65ce0a' with no timeout.
 Removing the current plan files
 Uploading new plan files
-(...)
+Started Mistral Workflow tripleo.plan_management.v1.update_deployment_plan. Execution ID: dd6f5825-c198-4b97-8a7b-cdc876fba5a4
+Plan updated.
+Processing templates in the directory /tmp/tripleoclient-UazK7o/tripleo-heat-templates
+Started Mistral Workflow tripleo.plan_management.v1.get_deprecated_parameters. Execution ID: d33d6945-86c6-4dbb-a5e2-f5ae2a018887
 ```
+
+#### Update the Nodes
+
 
 ## Lab 4: Troubleshooting and Testing
 

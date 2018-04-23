@@ -1868,6 +1868,51 @@ simple.
 
 #### Update the Plan
 
+TripleO stores the details of a deployment in a "plan," which combines the
+templates and parameters that define the overcloud.  The first step in the
+overcloud update process is to update this plan.
+
+To do this, we re-run the command that was used to deploy the overcloud, adding
+the ``--update-plan-only`` parameter.  The command used to deploy our overcloud
+can be found in the ``overcloud-deploy.sh`` script, so we'll use this as the
+basis of an update script.
+
+```
+(undercloud) [stack@undercloud ~]$ sed '/overcloud deploy/a\\t--update-plan-only \\' overcloud-deploy.sh > overcloud-update.sh
+
+(undercloud) [stack@undercloud ~]$ cat overcloud-update.sh
+#!/bin/bash
+
+exec openstack overcloud deploy \
+        --update-plan-only \
+       --templates /usr/share/openstack-tripleo-heat-templates \
+        -e /home/stack/templates/global-config.yaml \
+        -e /usr/share/openstack-tripleo-heat-templates/environments/network-isolation.yaml \
+        -e /home/stack/templates/network-environment.yaml \
+        -e /home/stack/templates/HostnameMap.yaml \
+        -e /home/stack/templates/ips-from-pool-all.yaml \
+        -e /usr/share/openstack-tripleo-heat-templates/environments/ceph-ansible/ceph-ansible.yaml \
+        -e /home/stack/templates/ceph-config.yaml \
+        -e /home/stack/templates/docker-registry.yaml \
+        -e /home/stack/templates/enable-tls.yaml \
+        -e /home/stack/templates/inject-trust-anchor.yaml \
+        -e /usr/share/openstack-tripleo-heat-templates/environments/tls-endpoints-public-ip.yaml \
+        -e /home/stack/templates/public_vip.yaml \
+        -e /home/stack/templates/rsvd_host_memory.yaml \
+        --timeout 160
+
+(undercloud) [stack@undercloud ~]$ chmod 0755 overcloud-update.sh
+```
+
+```
+(undercloud) [stack@undercloud ~]$ ./overcloud-update.sh
+Started Mistral Workflow tripleo.validations.v1.check_pre_deployment_validations. Execution ID: 42059d0a-0457-405b-ac0b-2a1f4dd37b52
+Waiting for messages on queue 'afb3aff1-fc38-4911-84c6-fa905b65ce0a' with no timeout.
+Removing the current plan files
+Uploading new plan files
+(...)
+```
+
 ## Lab 4: Troubleshooting and Testing
 
 ## Lab 5: Deploying a New Overcloud

@@ -1653,3 +1653,200 @@ Connection to undercloud.example.com closed.
 ```
 
 #### Update Overcloud Images
+
+Log back into the undercloud and source ``stackrc``.  (The ``stack`` user's
+password is ``redhat``.)
+
+```
+[lab-user@bastion-3998 ~]$ ssh stack@undercloud.example.com
+stack@undercloud.example.com's password: 
+Last login: Mon Apr 23 13:08:56 2018 from bastion.example.com
+[stack@undercloud ~]$
+
+[stack@undercloud ~]$ . stackrc
+(undercloud) [stack@undercloud ~]$
+```
+
+> **NOTE:** The remainder of this section is optional in this lab.  We will not
+> be deploying any additional nodes (scaling out), so we do not strictly need
+> to update the image used for our overcloud nodes.
+
+Determine whether the undercloud update installed updated image packages.
+
+```
+(undercloud) [stack@undercloud ~]$ sudo grep images /var/log/yum.log
+Mar 15 20:37:56 Installed: rhosp-director-images-ipa-12.0-20180309.2.el7ost.noarch
+Mar 15 20:38:47 Installed: rhosp-director-images-12.0-20180309.2.el7ost.noarch
+Apr 23 14:01:05 Installed: rhosp-director-images-ipa-12.0-20180402.1.el7ost.noarch
+Apr 23 14:01:55 Installed: rhosp-director-images-12.0-20180402.1.el7ost.noarch
+```
+
+It did, so let's update the images used to deploy new nodes.  First, uninstall
+the old RPMs.  (This is not absolutely necessary, but the old packages do use a
+fair bit of disk space.)
+
+```
+(undercloud) [stack@undercloud ~]$ rpm -qa rhosp-director-images*
+rhosp-director-images-ipa-12.0-20180309.2.el7ost.noarch
+rhosp-director-images-12.0-20180402.1.el7ost.noarch
+rhosp-director-images-12.0-20180309.2.el7ost.noarch
+rhosp-director-images-ipa-12.0-20180402.1.el7ost.noarch
+
+(undercloud) [stack@undercloud ~]$ sudo yum -y remove rhosp-director-images-ipa-12.0-20180309.2.el7ost.noarch rhosp-director-images-12.0-20180309.2.el7ost.noarch
+Loaded plugins: search-disabled-repos
+Resolving Dependencies
+--> Running transaction check
+---> Package rhosp-director-images.noarch 0:12.0-20180309.2.el7ost will be erased
+---> Package rhosp-director-images-ipa.noarch 0:12.0-20180309.2.el7ost will be erased
+--> Finished Dependency Resolution
+
+Dependencies Resolved
+
+===============================================================================================================================================================
+ Package                                     Arch                     Version                                     Repository                              Size
+===============================================================================================================================================================
+Removing:
+ rhosp-director-images                       noarch                   12.0-20180309.2.el7ost                      @rhelosp-12.0-puddle                   1.3 G
+ rhosp-director-images-ipa                   noarch                   12.0-20180309.2.el7ost                      @rhelosp-12.0-puddle                   369 M
+
+Transaction Summary
+===============================================================================================================================================================
+Remove  2 Packages
+
+Installed size: 1.6 G
+Downloading packages:
+Running transaction check
+Running transaction test
+Transaction test succeeded
+Running transaction
+  Erasing    : rhosp-director-images-12.0-20180309.2.el7ost.noarch                                                                                         1/2 
+  Erasing    : rhosp-director-images-ipa-12.0-20180309.2.el7ost.noarch                                                                                     2/2 
+  Verifying  : rhosp-director-images-ipa-12.0-20180309.2.el7ost.noarch                                                                                     1/2 
+  Verifying  : rhosp-director-images-12.0-20180309.2.el7ost.noarch                                                                                         2/2 
+
+Removed:
+  rhosp-director-images.noarch 0:12.0-20180309.2.el7ost                        rhosp-director-images-ipa.noarch 0:12.0-20180309.2.el7ost                       
+
+Complete!
+```
+
+Change to the ``images`` directory and extract the new images.
+
+```
+(undercloud) [stack@undercloud ~]$ cd images
+
+(undercloud) [stack@undercloud images]$ rpm -qa rhosp-director-images*
+rhosp-director-images-12.0-20180402.1.el7ost.noarch
+rhosp-director-images-ipa-12.0-20180402.1.el7ost.noarch
+
+(undercloud) [stack@undercloud images]$ rpm -ql rhosp-director-images-12.0-20180402.1.el7ost.noarch rhosp-director-images-ipa-12.0-20180402.1.el7ost.noarch
+/usr/share/rhosp-director-images/overcloud-full-12.0-20180402.1.el7ost.tar
+/usr/share/rhosp-director-images/version-12.0-20180402.1.el7ost.txt
+/usr/share/rhosp-director-images/ironic-python-agent-12.0-20180402.1.el7ost.tar
+
+(undercloud) [stack@undercloud images]$ tar xvf /usr/share/rhosp-director-images/overcloud-full-12.0-20180402.1.el7ost.tar
+overcloud-full.qcow2
+overcloud-full.initrd
+overcloud-full.vmlinuz
+overcloud-full-rpm.manifest
+overcloud-full-signature.manifest
+
+(undercloud) [stack@undercloud images]$ tar xvf /usr/share/rhosp-director-images/ironic-python-agent-12.0-20180402.1.el7ost.tar
+ironic-python-agent.initramfs
+ironic-python-agent.kernel
+```
+
+Customize the overcloud image, so it will use the bastion host as its ``yum``
+repository.
+
+```
+(undercloud) [stack@undercloud images]$ virt-customize -a overcloud-full.qcow2 --copy-in /etc/yum.repos.d/lab.repo:/etc/yum.repos.d/ --selinux-relabel
+[   0.0] Examining the guest ...
+[   3.4] Setting a random seed
+[   3.5] Copying: /etc/yum.repos.d/lab.repo to /etc/yum.repos.d/
+[   3.5] SELinux relabelling
+[  57.3] Finishing off
+```
+
+Upload the new images.
+
+```
+(undercloud) [stack@undercloud images]$ openstack overcloud image upload --update-existing
+Image "overcloud-full-vmlinuz" was uploaded.
++--------------------------------------+------------------------+-------------+---------+--------+
+|                  ID                  |          Name          | Disk Format |   Size  | Status |
++--------------------------------------+------------------------+-------------+---------+--------+
+| 37aa394f-e583-4bed-9947-d67b200d5b03 | overcloud-full-vmlinuz |     aki     | 6381872 | active |
++--------------------------------------+------------------------+-------------+---------+--------+
+Image "overcloud-full-initrd" was uploaded.
++--------------------------------------+-----------------------+-------------+----------+--------+
+|                  ID                  |          Name         | Disk Format |   Size   | Status |
++--------------------------------------+-----------------------+-------------+----------+--------+
+| 0d830007-5bd3-41b6-97ce-8dab1035fb60 | overcloud-full-initrd |     ari     | 62806684 | active |
++--------------------------------------+-----------------------+-------------+----------+--------+
+Image "overcloud-full" was uploaded.
++--------------------------------------+----------------+-------------+------------+--------+
+|                  ID                  |      Name      | Disk Format |    Size    | Status |
++--------------------------------------+----------------+-------------+------------+--------+
+| c22fe1c8-0f6e-4dac-8e58-16fae39ac738 | overcloud-full |    qcow2    | 1322778624 | active |
++--------------------------------------+----------------+-------------+------------+--------+
+Image "bm-deploy-kernel" was uploaded.
++--------------------------------------+------------------+-------------+---------+--------+
+|                  ID                  |       Name       | Disk Format |   Size  | Status |
++--------------------------------------+------------------+-------------+---------+--------+
+| 8c641282-2db0-4aa5-9461-2fc354b69e79 | bm-deploy-kernel |     aki     | 6381872 | active |
++--------------------------------------+------------------+-------------+---------+--------+
+Image "bm-deploy-ramdisk" was uploaded.
++--------------------------------------+-------------------+-------------+-----------+--------+
+|                  ID                  |        Name       | Disk Format |    Size   | Status |
++--------------------------------------+-------------------+-------------+-----------+--------+
+| f7fcad54-801c-45ef-b692-ccb284095cc9 | bm-deploy-ramdisk |     ari     | 426133936 | active |
++--------------------------------------+-------------------+-------------+-----------+--------+
+```
+
+Update the Ironic node configuration to use the new deployment kernal and
+RAM disk.
+
+```
+(undercloud) [stack@undercloud images]$ NODES=`openstack baremetal node list -f csv -c Name --quote none | sed 1d | paste -s -d ' '`
+
+(undercloud) [stack@undercloud images]$ openstack overcloud node configure $NODES
+Started Mistral Workflow tripleo.baremetal.v1.configure. Execution ID: d987630f-389f-4a44-898c-a7a3f45d7b6e
+Waiting for messages on queue 'f83ccfc6-8425-4d4e-b730-1741c62a9247' with no timeout.
+Successfully configured the nodes.
+```
+
+Finally, delete the old images from the undercloud's Glance service.
+
+```
+(undercloud) [stack@undercloud images]$  openstack image list
++--------------------------------------+-----------------------------------------+--------+
+| ID                                   | Name                                    | Status |
++--------------------------------------+-----------------------------------------+--------+
+| 8c641282-2db0-4aa5-9461-2fc354b69e79 | bm-deploy-kernel                        | active |
+| 3ac4bb8b-1197-4893-9450-854de210a35e | bm-deploy-kernel_20180316T123554Z       | active |
+| f7fcad54-801c-45ef-b692-ccb284095cc9 | bm-deploy-ramdisk                       | active |
+| 25c9caec-6344-4ece-bd39-09e6d776d0ae | bm-deploy-ramdisk_20180316T123556Z      | active |
+| c22fe1c8-0f6e-4dac-8e58-16fae39ac738 | overcloud-full                          | active |
+| 0d830007-5bd3-41b6-97ce-8dab1035fb60 | overcloud-full-initrd                   | active |
+| a6410509-a8c2-470e-9875-a1cfd078668d | overcloud-full-initrd_20180316T123533Z  | active |
+| 37aa394f-e583-4bed-9947-d67b200d5b03 | overcloud-full-vmlinuz                  | active |
+| 72d6708b-6706-488c-94ef-2c3e54eb2848 | overcloud-full-vmlinuz_20180316T123531Z | active |
+| 37bdc1c0-3b85-4c2e-a37f-0638faf442a8 | overcloud-full_20180412T194559Z         | active |
++--------------------------------------+-----------------------------------------+--------+
+
+(undercloud) [stack@undercloud images]$ IMAGES=`openstack image list -f csv -c Name --quote none | grep 2018`
+
+(undercloud) [stack@undercloud images]$ for IMAGE in $IMAGES ; do openstack image delete $IMAGE ; done
+
+(undercloud) [stack@undercloud images]$ openstack image list
++--------------------------------------+------------------------+--------+
+| ID                                   | Name                   | Status |
++--------------------------------------+------------------------+--------+
+| 8c641282-2db0-4aa5-9461-2fc354b69e79 | bm-deploy-kernel       | active |
+| f7fcad54-801c-45ef-b692-ccb284095cc9 | bm-deploy-ramdisk      | active |
+| c22fe1c8-0f6e-4dac-8e58-16fae39ac738 | overcloud-full         | active |
+| 0d830007-5bd3-41b6-97ce-8dab1035fb60 | overcloud-full-initrd  | active |
+| 37aa394f-e583-4bed-9947-d67b200d5b03 | overcloud-full-vmlinuz | active |
++--------------------------------------+------------------------+--------+
+```

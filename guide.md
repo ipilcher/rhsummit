@@ -13,7 +13,7 @@
 
 ## Lab Contents
 
-* **Lab 0:** Introduction
+* [**Lab 0:** Introduction](#lab-0-introduction)
   - OpenStack and Containers
   - TripleO Terminology
 * **Lab 1:** Lab Environment
@@ -1516,6 +1516,54 @@ the registry on our bastion host is ``20180319.1``.
 (undercloud) [stack@undercloud ~]$ sed -i s/20180309.1/20180319.1/ templates/docker-registry.yaml
 ```
 
+Before running ``openstack overcloud container image upload``, we need to check
+the status of the ``docker`` service.  The ``openstack undercloud upgrade``
+process that is running in the background will modify ``/etc/sysconfig/docker``
+and restart the service; we need wait until it has performed these steps and
+then revert the change.
+
+First, check on the configuration file.
+
+```
+(undercloud) [stack@undercloud ~]$ diff -u /etc/sysconfig/docker.bak /etc/sysconfig/docker
+--- /etc/sysconfig/docker.bak   2018-04-20 18:08:13.687203918 -0400
++++ /etc/sysconfig/docker       2018-04-20 18:09:27.782825832 -0400
+@@ -29,5 +29,4 @@
+ #DOCKERDBINARY=/usr/bin/dockerd-latest
+ #DOCKER_CONTAINERD_BINARY=/usr/bin/docker-containerd-latest
+ #DOCKER_CONTAINERD_SHIM_BINARY=/usr/bin/docker-containerd-shim-latest
+-INSECURE_REGISTRY="--insecure-registry 172.16.0.1:8787 --insecure-registry 172.16.0.11:8787 --insecure-registry 192.168.1.10:5000"
+-
++INSECURE_REGISTRY="--insecure-registry 172.16.0.1:8787 --insecure-registry 172.16.0.11:8787"
+```
+
+If the ``diff`` command produces no output, the background process has not yet
+modified the file.  You can use the ``watch`` command to wait until it does so.
+
+```
+(undercloud) [stack@undercloud ~]$ watch -n 5 diff -u /etc/sysconfig/docker.bak /etc/sysconfig/docker
+```
+
+Wait until the ``diff`` command produces output and terminate ``watch`` with
+**Ctrl-C**.
+
+``openstack undercloud upgrade`` restarts the ``docker`` daemon shortly after
+it modifies ``/etc/sydconfig/docker``.  Verify that the service has recently
+been restarted.
+
+```
+(undercloud) [stack@undercloud ~]$ systemctl status docker | grep Active
+   Active: active (running) since Fri 2018-04-20 18:09:30 EDT; 1min ago
+```
+
+Now revert the change to the configuration file and restart (re-restart?) the
+daemon.
+
+```
+(undercloud) [stack@undercloud ~]$ sudo cp -f /etc/sysconfig/docker.bak /etc/sysconfig/docker
+
+(undercloud) [stack@undercloud ~]$ sudo systemctl restart docker
+```
 
 #### Verify Undercloud Update Completion
 

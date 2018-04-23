@@ -38,6 +38,7 @@
     * [Verify Undercloud Update Completion](#verify-undercloud-update-completion)
     * [Update Overcloud Images](#update-overcloud-images)
   - [Step 2: Update the Overcloud](#step-2-update-the-overcloud)
+    * [Update the Plan](#update-the-plan)
 * [**Lab 4:** Troubleshooting and Testing](#lab-4-troubleshooting-and-testing)
 * [**Lab 5:** Deploying a New Overcloud](#lab-5-deploying-a-new-overcloud)
 
@@ -1860,6 +1861,12 @@ And return to our home directory.
 ```
 
 ### Step 2: Update the Overcloud
+
+Like painting, most of the work involved in an overcloud update actually occurs
+during the preparation.  The steps that actually update the overcloud are fairly
+simple.
+
+#### Update the Plan
 
 ## Lab 4: Troubleshooting and Testing
 

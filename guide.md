@@ -36,7 +36,7 @@
     * [Start the Update](#start-the-update)
     * [Update Container Images](#update-container-images)
     * [Verify Undercloud Update Completion](#verify-undercloud-update-completion)
-    * [Update Overcloud Images](#update-over-cloud-images)
+    * [Update Overcloud Images](#update-overcloud-images)
 * **Lab 4:** Troubleshooting and Testing
 * **Lab 5:** Deploying a New Overcloud
 

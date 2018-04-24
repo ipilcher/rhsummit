@@ -38,7 +38,8 @@
     * [Verify Undercloud Update Completion](#verify-undercloud-update-completion)
     * [Update Overcloud Images](#update-overcloud-images)
   - [Step 2: Update the Overcloud](#step-2-update-the-overcloud)
-    * [Update the Plan](#update-the-plan)
+    * [What's Getting Updated?](#whats-getting-updated)
+    * [Update the Stack](#update-the-stack)
     * [Update the Nodes](#update-the-nodes)
 * [**Lab 4:** Troubleshooting and Testing](#lab-4-troubleshooting-and-testing)
 * [**Lab 5:** Deploying a New Overcloud](#lab-5-deploying-a-new-overcloud)
@@ -1863,62 +1864,143 @@ And return to our home directory.
 
 ### Step 2: Update the Overcloud
 
-Like painting, most of the work involved in an overcloud update actually occurs
-during the preparation.  The steps that actually update the overcloud are fairly
-simple.
+If you've ever painted a room, you know that most of the actual work lies in the
+preparation.  The good news that OSP updates are similar.
 
-#### Update the Plan
+Before we actually update the overcloud nodes, let's take a quick look at what
+we **expect** to be updated.
 
-TripleO stores the details of a deployment in a "plan," which combines the
-templates and parameters that define the overcloud.  The first step in the
-overcloud update process is to update this plan.
-
-To do this, we re-run the command that was used to deploy the overcloud, adding
-the ``--update-plan-only`` parameter.  The command used to deploy our overcloud
-can be found in the ``overcloud-deploy.sh`` script, so we'll use this as the
-basis of an update script.
+#### What's Getting Updated?
 
 ```
-(undercloud) [stack@undercloud ~]$ sed '/overcloud deploy/a\\t--update-plan-only \\' overcloud-deploy.sh > overcloud-update.sh
+(undercloud) [stack@undercloud ~]$ openstack server list
++--------------------------------------+------------------+--------+----------------------+----------------+--------------+
+| ID                                   | Name             | Status | Networks             | Image          | Flavor       |
++--------------------------------------+------------------+--------+----------------------+----------------+--------------+
+| 47e02f2f-b3fe-4f0a-83b6-d0305004aec9 | lab-ceph02       | ACTIVE | ctlplane=172.16.0.23 | overcloud-full | ceph-storage |
+| 5c2f6fd7-3351-4ca6-bd41-3fafb1de5162 | lab-controller03 | ACTIVE | ctlplane=172.16.0.36 | overcloud-full | control      |
+| b837722d-0d91-4e50-a359-223487fbdb2e | lab-controller01 | ACTIVE | ctlplane=172.16.0.32 | overcloud-full | control      |
+| f8c7a2b3-73c8-476f-87a9-4c0af28e7595 | lab-controller02 | ACTIVE | ctlplane=172.16.0.22 | overcloud-full | control      |
+| 9e7924fd-4611-41de-a29a-c600502e12a0 | lab-ceph03       | ACTIVE | ctlplane=172.16.0.33 | overcloud-full | ceph-storage |
+| 66515ba8-15eb-480a-ad37-c3e91da47df8 | lab-ceph01       | ACTIVE | ctlplane=172.16.0.31 | overcloud-full | ceph-storage |
+| 87920ee2-dd27-432d-b8b1-52a2ab49a9ff | lab-compute01    | ACTIVE | ctlplane=172.16.0.25 | overcloud-full | compute      |
++--------------------------------------+------------------+--------+----------------------+----------------+--------------+
 
-(undercloud) [stack@undercloud ~]$ cat overcloud-update.sh
-#!/bin/bash
+(undercloud) [stack@undercloud ~]$ ssh heat-admin@172.16.0.32
+Last login: Mon Apr 23 21:49:24 2018 from 172.16.0.1
 
-exec openstack overcloud deploy \
-        --update-plan-only \
-       --templates /usr/share/openstack-tripleo-heat-templates \
-        -e /home/stack/templates/global-config.yaml \
-        -e /usr/share/openstack-tripleo-heat-templates/environments/network-isolation.yaml \
-        -e /home/stack/templates/network-environment.yaml \
-        -e /home/stack/templates/HostnameMap.yaml \
-        -e /home/stack/templates/ips-from-pool-all.yaml \
-        -e /usr/share/openstack-tripleo-heat-templates/environments/ceph-ansible/ceph-ansible.yaml \
-        -e /home/stack/templates/ceph-config.yaml \
-        -e /home/stack/templates/docker-registry.yaml \
-        -e /home/stack/templates/enable-tls.yaml \
-        -e /home/stack/templates/inject-trust-anchor.yaml \
-        -e /usr/share/openstack-tripleo-heat-templates/environments/tls-endpoints-public-ip.yaml \
-        -e /home/stack/templates/public_vip.yaml \
-        -e /home/stack/templates/rsvd_host_memory.yaml \
-        --timeout 160
+[heat-admin@lab-controller01 ~]$ sudo docker ps
+CONTAINER ID        IMAGE                                                                       COMMAND                  CREATED             STATUS                       PORTS               NAMES
+5683b1b78f5e        172.16.0.1:8787/rhosp12/openstack-haproxy:pcmklatest                        "/bin/bash /usr/lo..."   About an hour ago   Up About an hour                                 haproxy-bundle-docker-0
+1659ade0a095        172.16.0.1:8787/rhosp12/openstack-redis:pcmklatest                          "/bin/bash /usr/lo..."   About an hour ago   Up About an hour                                 redis-bundle-docker-0
+c574ef4437fa        172.16.0.1:8787/rhosp12/openstack-mariadb:pcmklatest                        "/bin/bash /usr/lo..."   About an hour ago   Up About an hour                                 galera-bundle-docker-1
+468736bdb063        172.16.0.1:8787/rhosp12/openstack-rabbitmq:pcmklatest                       "/bin/bash /usr/lo..."   About an hour ago   Up About an hour (healthy)                       rabbitmq-bundle-docker-0
+74e6a7297225        172.16.0.1:8787/ceph/rhceph-2-rhel7:latest                                  "/entrypoint.sh"         About an hour ago   Up About an hour                                 ceph-mon-lab-controller01
+aac508a9e1b7        172.16.0.1:8787/rhosp12/openstack-gnocchi-api:12.0-20180309.1               "kolla_start"            11 days ago         Up About an hour                                 gnocchi_api
+fbd82bec10d2        172.16.0.1:8787/rhosp12/openstack-gnocchi-statsd:12.0-20180309.1            "kolla_start"            11 days ago         Up About an hour                                 gnocchi_statsd
+239cc2d1e27f        172.16.0.1:8787/rhosp12/openstack-gnocchi-metricd:12.0-20180309.1           "kolla_start"            11 days ago         Up About an hour                                 gnocchi_metricd
+fc2ec5181b0f        172.16.0.1:8787/rhosp12/openstack-panko-api:12.0-20180309.1                 "kolla_start"            11 days ago         Up About an hour                                 panko_api
+6daf33d978b1        172.16.0.1:8787/rhosp12/openstack-nova-api:12.0-20180309.1                  "kolla_start"            11 days ago         Up About an hour (healthy)                       nova_metadata
+29a778ff874d        172.16.0.1:8787/rhosp12/openstack-nova-api:12.0-20180309.1                  "kolla_start"            11 days ago         Up About an hour (healthy)                       nova_api
+0933cf235b28        172.16.0.1:8787/rhosp12/openstack-glance-api:12.0-20180309.1                "kolla_start"            11 days ago         Up About an hour (healthy)                       glance_api
+39aaba03d12c        172.16.0.1:8787/rhosp12/openstack-swift-account:12.0-20180309.1             "kolla_start"            11 days ago         Up About an hour (healthy)                       swift_account_server
+6f3f80430fe1        172.16.0.1:8787/rhosp12/openstack-aodh-listener:12.0-20180309.1             "kolla_start"            11 days ago         Up About an hour (healthy)                       aodh_listener
+95d6aea9aa80        172.16.0.1:8787/rhosp12/openstack-swift-container:12.0-20180309.1           "kolla_start"            11 days ago         Up About an hour (healthy)                       swift_container_auditor
+975b83fc3b72        172.16.0.1:8787/rhosp12/openstack-heat-api:12.0-20180309.1                  "kolla_start"            11 days ago         Up About an hour (healthy)                       heat_api_cron
+a1a9cb580dfc        172.16.0.1:8787/rhosp12/openstack-swift-proxy-server:12.0-20180309.1        "kolla_start"            11 days ago         Up About an hour (healthy)                       swift_object_expirer
+2bb87c565d5a        172.16.0.1:8787/rhosp12/openstack-swift-object:12.0-20180309.1              "kolla_start"            11 days ago         Up About an hour (healthy)                       swift_object_updater
+9d7dad2c82b9        172.16.0.1:8787/rhosp12/openstack-swift-container:12.0-20180309.1           "kolla_start"            11 days ago         Up About an hour (healthy)                       swift_container_replicator
+2eaebf03043b        172.16.0.1:8787/rhosp12/openstack-swift-account:12.0-20180309.1             "kolla_start"            11 days ago         Up About an hour (healthy)                       swift_account_auditor
+947d4ac93e31        172.16.0.1:8787/rhosp12/openstack-cron:12.0-20180309.1                      "kolla_start"            11 days ago         Up About an hour                                 logrotate_crond
+4b3b73d4462a        172.16.0.1:8787/rhosp12/openstack-heat-api-cfn:12.0-20180309.1              "kolla_start"            11 days ago         Up About an hour (healthy)                       heat_api_cfn
+c49ece44bdb0        172.16.0.1:8787/rhosp12/openstack-nova-conductor:12.0-20180309.1            "kolla_start"            11 days ago         Up About an hour (healthy)                       nova_conductor
+6245d6b572e7        172.16.0.1:8787/rhosp12/openstack-swift-object:12.0-20180309.1              "kolla_start"            11 days ago         Up About an hour (healthy)                       swift_object_replicator
+83e73ff5b689        172.16.0.1:8787/rhosp12/openstack-swift-container:12.0-20180309.1           "kolla_start"            11 days ago         Up About an hour (healthy)                       swift_container_server
+1177bb32afc4        172.16.0.1:8787/rhosp12/openstack-heat-engine:12.0-20180309.1               "kolla_start"            11 days ago         Up About an hour (healthy)                       heat_engine
+c41932eea6a4        172.16.0.1:8787/rhosp12/openstack-aodh-api:12.0-20180309.1                  "kolla_start"            11 days ago         Up About an hour                                 aodh_api
+2a2cfd159237        172.16.0.1:8787/rhosp12/openstack-swift-object:12.0-20180309.1              "kolla_start"            11 days ago         Up About an hour (healthy)                       swift_rsync
+f016068c3a0d        172.16.0.1:8787/rhosp12/openstack-nova-novncproxy:12.0-20180309.1           "kolla_start"            11 days ago         Up About an hour (healthy)                       nova_vnc_proxy
+97ba84956183        172.16.0.1:8787/rhosp12/openstack-ceilometer-notification:12.0-20180309.1   "kolla_start"            11 days ago         Up About an hour (healthy)                       ceilometer_agent_notification
+d3e3b00c11aa        172.16.0.1:8787/rhosp12/openstack-swift-account:12.0-20180309.1             "kolla_start"            11 days ago         Up About an hour (healthy)                       swift_account_reaper
+285a675d9cd9        172.16.0.1:8787/rhosp12/openstack-nova-consoleauth:12.0-20180309.1          "kolla_start"            11 days ago         Up About an hour (healthy)                       nova_consoleauth
+07ba693a6e11        172.16.0.1:8787/rhosp12/openstack-nova-api:12.0-20180309.1                  "kolla_start"            11 days ago         Up About an hour (healthy)                       nova_api_cron
+c8932637db4b        172.16.0.1:8787/rhosp12/openstack-aodh-notifier:12.0-20180309.1             "kolla_start"            11 days ago         Up About an hour (healthy)                       aodh_notifier
+c93cb7b9e75a        172.16.0.1:8787/rhosp12/openstack-ceilometer-central:12.0-20180309.1        "kolla_start"            11 days ago         Up About an hour (healthy)                       ceilometer_agent_central
+48e8befd1dc2        172.16.0.1:8787/rhosp12/openstack-swift-account:12.0-20180309.1             "kolla_start"            11 days ago         Up About an hour (healthy)                       swift_account_replicator
+f578f22a8357        172.16.0.1:8787/rhosp12/openstack-swift-object:12.0-20180309.1              "kolla_start"            11 days ago         Up About an hour (healthy)                       swift_object_auditor
+055c87a99e69        172.16.0.1:8787/rhosp12/openstack-heat-api:12.0-20180309.1                  "kolla_start"            11 days ago         Up About an hour (healthy)                       heat_api
+32ad554e92d6        172.16.0.1:8787/rhosp12/openstack-swift-proxy-server:12.0-20180309.1        "kolla_start"            11 days ago         Up About an hour (healthy)                       swift_proxy
+d662bfec9a1f        172.16.0.1:8787/rhosp12/openstack-swift-object:12.0-20180309.1              "kolla_start"            11 days ago         Up About an hour (healthy)                       swift_object_server
+c8801163d88b        172.16.0.1:8787/rhosp12/openstack-nova-scheduler:12.0-20180309.1            "kolla_start"            11 days ago         Up About an hour (healthy)                       nova_scheduler
+c9aa47cfce16        172.16.0.1:8787/rhosp12/openstack-swift-container:12.0-20180309.1           "kolla_start"            11 days ago         Up About an hour (healthy)                       swift_container_updater
+68d372e5242b        172.16.0.1:8787/rhosp12/openstack-aodh-evaluator:12.0-20180309.1            "kolla_start"            11 days ago         Up About an hour (healthy)                       aodh_evaluator
+f4bbdda9a0c4        172.16.0.1:8787/rhosp12/openstack-keystone:12.0-20180309.1                  "/bin/bash -c '/us..."   11 days ago         Up About an hour (healthy)                       keystone_cron
+6788a5076fba        172.16.0.1:8787/rhosp12/openstack-keystone:12.0-20180309.1                  "kolla_start"            11 days ago         Up About an hour (healthy)                       keystone
+9aaac2cb4978        172.16.0.1:8787/rhosp12/openstack-nova-placement-api:12.0-20180309.1        "kolla_start"            11 days ago         Up About an hour                                 nova_placement
+a5b320025088        172.16.0.1:8787/rhosp12/openstack-horizon:12.0-20180309.1                   "kolla_start"            11 days ago         Up About an hour                                 horizon
+db5b448fc09a        172.16.0.1:8787/rhosp12/openstack-mariadb:12.0-20180309.1                   "kolla_start"            11 days ago         Up About an hour                                 clustercheck
+3248787f3cfc        172.16.0.1:8787/rhosp12/openstack-memcached:12.0-20180309.1                 "/bin/bash -c 'sou..."   11 days ago         Up About an hour                                 memcached
 
-(undercloud) [stack@undercloud ~]$ chmod 0755 overcloud-update.sh
+[heat-admin@lab-controller01 ~]$ sudo yum check-update
+Loaded plugins: product-id, search-disabled-repos, subscription-manager
+This system is not registered with an entitlement server. You can use subscription-manager to register.
+
+dhclient.x86_64                                  12:4.2.5-58.el7_4.3                      rhelosp-rhel-7.4-server
+dhcp-common.x86_64                               12:4.2.5-58.el7_4.3                      rhelosp-rhel-7.4-server
+dhcp-libs.x86_64                                 12:4.2.5-58.el7_4.3                      rhelosp-rhel-7.4-server
+puppet-tripleo.noarch                            7.4.8-5.el7ost                           rhelosp-12.0-puddle    
+python-paramiko.noarch                           2.1.1-4.el7                              rhelosp-rhel-7.4-extras
+qemu-img-rhev.x86_64                             10:2.10.0-21.el7                         rhelosp-12.0-puddle    
+qemu-kvm-common-rhev.x86_64                      10:2.10.0-21.el7                         rhelosp-12.0-puddle    
+qemu-kvm-rhev.x86_64                             10:2.10.0-21.el7                         rhelosp-12.0-puddle    
+tzdata.noarch                                    2018d-1.el7                              rhelosp-rhel-7.4-server
+
+[heat-admin@lab-controller01 ~]$ exit
+logout
+Connection to 172.16.0.32 closed.
 ```
 
+After the update is complete, all of the OpenStack containers should be using
+the ``12.0-20180319.1`` images, and ``yum`` should show no updates available.
+
+#### Update the Stack
+
+First, update the Heat stack (on the undercloud) that represents the overcloud
+with the new container image information.
+
 ```
-(undercloud) [stack@undercloud ~]$ ./overcloud-update.sh
-Started Mistral Workflow tripleo.validations.v1.check_pre_deployment_validations. Execution ID: 42059d0a-0457-405b-ac0b-2a1f4dd37b52
-Waiting for messages on queue 'afb3aff1-fc38-4911-84c6-fa905b65ce0a' with no timeout.
-Removing the current plan files
-Uploading new plan files
-Started Mistral Workflow tripleo.plan_management.v1.update_deployment_plan. Execution ID: dd6f5825-c198-4b97-8a7b-cdc876fba5a4
-Plan updated.
-Processing templates in the directory /tmp/tripleoclient-UazK7o/tripleo-heat-templates
-Started Mistral Workflow tripleo.plan_management.v1.get_deprecated_parameters. Execution ID: d33d6945-86c6-4dbb-a5e2-f5ae2a018887
+(undercloud) [stack@undercloud ~]$ openstack overcloud update stack --init-minor-update --container-registry-file templates/docker-registry.yaml
+Started Mistral Workflow tripleo.package_update.v1.package_update_plan. Execution ID: a7139fbe-eb38-499e-a7cd-2b17745a9fc6
+Waiting for messages on queue '49d147c9-8bed-497a-af1b-487cc4d33eb7' with no timeout.
+2018-04-23 23:36:29Z [Networks]: UPDATE_IN_PROGRESS  state changed
+2018-04-23 23:36:30Z [overcloud-Networks-4h35q5lk6wvw]: UPDATE_IN_PROGRESS  Stack UPDATE started
+2018-04-23 23:36:30Z [overcloud-Networks-4h35q5lk6wvw.StorageNetwork]: UPDATE_IN_PROGRESS  state changed
+(...)
+2018-04-23 23:52:49Z [overcloud-AllNodesDeploySteps-n76v7q3l7pyf-ControllerDeployment_Step5-sq6liadvrcob.1]: DELETE_COMPLETE  state changed
+2018-04-23 23:52:49Z [overcloud-AllNodesDeploySteps-n76v7q3l7pyf-CephStorageDeployment_Step5-hbdpg6yav4ua.0]: DELETE_COMPLETE  state changed
+2018-04-23 23:53:39Z [overcloud-AllNodesDeploySteps-n76v7q3l7pyf]: UPDATE_COMPLETE  Stack UPDATE completed successfully
+2018-04-23 23:53:40Z [AllNodesDeploySteps]: UPDATE_COMPLETE  state changed
+2018-04-23 23:53:55Z [overcloud]: UPDATE_COMPLETE  Stack UPDATE completed successfully
+
+ Stack overcloud UPDATE_COMPLETE 
+
+Heat stack update init on overcloud complete.
+Started Mistral Workflow tripleo.package_update.v1.get_config. Execution ID: b43a8270-9770-488f-8d56-aebae3a3ae8a
+Waiting for messages on queue 'tripleo' with no timeout.
+Success
+Init minor update on stack overcloud complete.
 ```
 
 #### Update the Nodes
 
+
+
+```
+(undercloud) [stack@undercloud ~]$ openstack overcloud update stack --nodes Controller
+
+```
+
+#### Update the Nodes
 
 ## Lab 4: Troubleshooting and Testing
 

@@ -31,6 +31,9 @@
     * [Compute Nodes](#compute-nodes)
     * [Ceph Storage Nodes](#ceph-storage-nodes)
 * [**Lab 3:** Troubleshooting and Testing](#lab-3-troubleshooting-and-testing)
+  - [Honey, I Shrunk the Cluster](#honey-i-shrunk-the-cluster)
+    * [Normal Services](#normal-services)
+    * [Pacemaker-Managed Services](#pacemaker-managed-services)
 * [**Lab 4:** Deploying a New Overcloud](#lab-4-deploying-a-new-overcloud)
 
 ## Lab 0: Introduction
@@ -1630,6 +1633,9 @@ satifies the colocation constraints.  We can re-distribute them by restarting
 the Pacemaker resources.
 
 ```
+(undercloud) [stack@undercloud ~]$ ssh heat-admin@172.16.0.32
+Last login: Wed Apr 25 20:08:11 2018 from 172.16.0.1
+
 [heat-admin@lab-controller01 ~]$ VIPS=`sudo pcs status | grep 'ip-' | awk '{ print $1 }'`
 
 [heat-admin@lab-controller01 ~]$ for VIP in $VIPS ; do sudo pcs resource restart $VIP ; done

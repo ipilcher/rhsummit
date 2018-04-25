@@ -30,19 +30,8 @@
   - [Other Node Types](#other-node-types)
     * [Compute Nodes](#compute-nodes)
     * [Ceph Storage Nodes](#ceph-storage-nodes)
-* [**Lab 3:** Updating the Overcloud](#lab-3-updating-the-overcloud)
-  - [Step 1: Update the Undercloud](#step-1-update-the-undercloud)
-    * [Prepare the Undercloud](#prepare-the-undercloud)
-    * [Start the Update](#start-the-update)
-    * [Update Container Images](#update-container-images)
-    * [Verify Undercloud Update Completion](#verify-undercloud-update-completion)
-    * [Update Overcloud Images](#update-overcloud-images)
-  - [Step 2: Update the Overcloud](#step-2-update-the-overcloud)
-    * [What's Getting Updated?](#whats-getting-updated)
-    * [Update the Stack](#update-the-stack)
-    * [Update the Nodes](#update-the-nodes)
-* [**Lab 4:** Troubleshooting and Testing](#lab-4-troubleshooting-and-testing)
-* [**Lab 5:** Deploying a New Overcloud](#lab-5-deploying-a-new-overcloud)
+* [**Lab 3:** Troubleshooting and Testing](#lab-3-troubleshooting-and-testing)
+* [**Lab 4:** Deploying a New Overcloud](#lab-4-deploying-a-new-overcloud)
 
 ## Lab 0: Introduction
 
@@ -1280,728 +1269,201 @@ logout
 Connection to 172.16.0.31 closed.
 ```
 
-## Lab 3: Updating the Overcloud
+## Lab 3: Troubleshooting and Testing
 
-In this lab, we'll start to explore how the containerization of OSP 12 affects
-day-to-day operation of the environment.  Specifically, this lab will focus on
-the process used to update the overcloud.
+### Honey, I Shrunk the Cluster
 
-Note that Red Hat makes a strong distinction between **minor** updates (updating
-software to the latest packages, maintenance level, minor version, etc.) and
-**major** upgrades &mdash; such as upgrades from Red Hat Enterprise Linux 6 to
-Red Hat Enterprise Linux 7 or Red Hat OpenStack Platform 11 to Red Hat OpenStack
-Platform 12.
+Troubleshooting OpenStack issues can be challenging, but a highly available
+deployment with active/active services running across multiple hosts adds an
+extra layer of complexity.  Fortunately, most services can be temporarily
+set to run on a single host.
 
-### Step 1: Update the Undercloud
+> **WARNING:** Reducing the number of instances of a service is a disruptive
+> action that will limit the performance of an OpenStack deployment.  The
+> techniques in this section should generally not be used in a production
+> environment.
 
-This procedure has not changed significantly from previous releases.
-
-#### Prepare the Undercloud
-
-First, make a copy of ``/etc/sysconfig/docker``.  This is required because the
-undercloud update process may overwrite this file, and it has been modified to
-allow pulling container images from our ``bastion`` host, rather than directly
-from Red Hat.
+#### Normal Services
 
 ```
-(undercloud) [stack@undercloud ~]$ sudo cp /etc/sysconfig/docker /etc/sysconfig/docker.bak
 ```
 
-Next, stop the the OpenStack services on the undercloud (many of which run as
-WSGI applications under ``httpd``).
+#### Pacemaker-Managed Services
+
+Services managed by Pacemaker require a different approach.  In fact, of the
+four such services in our deployment &mdash; RabbitMQ, Galera, Redis, and
+HAProxy &mdash; the technique in this lab can only be safely applied to HAProxy.
+
+Let's look at the current status of our Pacemaker cluster.
 
 ```
-(undercloud) [stack@undercloud ~]$ sudo systemctl stop 'openstack-*' 'neutron-*' httpd
+[heat-admin@lab-controller01 ~]$  sudo pcs status
+Cluster name: tripleo_cluster
+Stack: corosync
+Current DC: lab-controller01 (version 1.1.16-12.el7_4.8-94ff4df) - partition with quorum
+Last updated: Wed Apr 25 16:40:58 2018
+Last change: Wed Apr 25 16:40:30 2018 by root via cibadmin on lab-controller01
+
+12 nodes configured
+37 resources configured
+
+Online: [ lab-controller01 lab-controller02 lab-controller03 ]
+GuestOnline: [ galera-bundle-0@lab-controller01 galera-bundle-1@lab-controller02 galera-bundle-2@lab-controller03 rabbitmq-bundle-0@lab-controller01 rabbitmq-bundle-1@lab-controller02 rabbitmq-bundle-2@lab-controller03 redis-bundle-0@lab-controller01 redis-bundle-1@lab-controller02 redis-bundle-2@lab-controller03 ]
+
+Full list of resources:
+
+ Docker container set: rabbitmq-bundle [172.16.0.1:8787/rhosp12/openstack-rabbitmq:pcmklatest]
+   rabbitmq-bundle-0    (ocf::heartbeat:rabbitmq-cluster):      Started lab-controller01
+   rabbitmq-bundle-1    (ocf::heartbeat:rabbitmq-cluster):      Started lab-controller02
+   rabbitmq-bundle-2    (ocf::heartbeat:rabbitmq-cluster):      Started lab-controller03
+ Docker container set: galera-bundle [172.16.0.1:8787/rhosp12/openstack-mariadb:pcmklatest]
+   galera-bundle-0      (ocf::heartbeat:galera):        Master lab-controller01
+   galera-bundle-1      (ocf::heartbeat:galera):        Master lab-controller02
+   galera-bundle-2      (ocf::heartbeat:galera):        Master lab-controller03
+ Docker container set: redis-bundle [172.16.0.1:8787/rhosp12/openstack-redis:pcmklatest]
+   redis-bundle-0       (ocf::heartbeat:redis): Master lab-controller01
+   redis-bundle-1       (ocf::heartbeat:redis): Slave lab-controller02
+   redis-bundle-2       (ocf::heartbeat:redis): Slave lab-controller03
+ ip-172.16.0.250        (ocf::heartbeat:IPaddr2):       Started lab-controller02
+ ip-192.168.122.150     (ocf::heartbeat:IPaddr2):       Started lab-controller02
+ ip-172.17.1.10 (ocf::heartbeat:IPaddr2):       Started lab-controller03
+ ip-172.17.1.150        (ocf::heartbeat:IPaddr2):       Started lab-controller01
+ ip-172.17.3.150        (ocf::heartbeat:IPaddr2):       Started lab-controller02
+ ip-172.17.4.150        (ocf::heartbeat:IPaddr2):       Started lab-controller01
+ Docker container set: haproxy-bundle [172.16.0.1:8787/rhosp12/openstack-haproxy:pcmklatest]
+   haproxy-bundle-docker-0      (ocf::heartbeat:docker):        Started lab-controller01
+   haproxy-bundle-docker-1      (ocf::heartbeat:docker):        Started lab-controller02
+   haproxy-bundle-docker-2      (ocf::heartbeat:docker):        Started lab-controller03
+ openstack-cinder-volume        (systemd:openstack-cinder-volume):      Started lab-controller01
+
+Daemon Status:
+  corosync: active/enabled
+  pacemaker: active/enabled
+  pcsd: active/enabled
 ```
 
-Now, update the ``python-tripleoclient`` package.
+HAProxy is running on all 3 of our controllers, and number of virtual IP
+addresses (VIPs) are distributed across the cluster.
+
+> **NOTE:** The VIPs may be distributed differently in your environment.
+
+Placement of the VIPs is important, because they must be assigned to hosts on
+which HAProxy is running.  Red Hat OpenStack Platform's cluster configuration
+includes constraints to ensure this.
 
 ```
-(undercloud) [stack@undercloud ~]$ sudo yum -y update python-tripleoclient
-Loaded plugins: search-disabled-repos
-rhelosp-12.0-puddle                                                                               | 2.9 kB  00:00:00     
-rhelosp-ceph-2.0-mon                                                                              | 2.9 kB  00:00:00     
-rhelosp-ceph-2.0-osd                                                                              | 2.9 kB  00:00:00     
-rhelosp-ceph-2.0-tools                                                                            | 2.9 kB  00:00:00     
-rhelosp-rhel-7.4-extras                                                                           | 2.9 kB  00:00:00     
-rhelosp-rhel-7.4-ha                                                                               | 2.9 kB  00:00:00     
-rhelosp-rhel-7.4-server                                                                           | 2.9 kB  00:00:00     
-(1/7): rhelosp-ceph-2.0-osd/primary_db                                                            | 153 kB  00:00:00     
-(2/7): rhelosp-12.0-puddle/primary_db                                                             | 371 kB  00:00:00     
-(3/7): rhelosp-ceph-2.0-tools/primary_db                                                          | 171 kB  00:00:00     
-(4/7): rhelosp-rhel-7.4-ha/primary_db                                                             | 220 kB  00:00:00     
-(5/7): rhelosp-ceph-2.0-mon/primary_db                                                            | 170 kB  00:00:00     
-(6/7): rhelosp-rhel-7.4-extras/primary_db                                                         | 310 kB  00:00:00     
-(7/7): rhelosp-rhel-7.4-server/primary_db                                                         |  37 MB  00:00:00     
-Resolving Dependencies
---> Running transaction check
----> Package python-tripleoclient.noarch 0:7.3.3-7.el7ost will be updated
----> Package python-tripleoclient.noarch 0:7.3.8-1.el7ost will be an update
---> Finished Dependency Resolution
-
-Dependencies Resolved
-
-=========================================================================================================================
- Package                          Arch               Version                       Repository                       Size
-=========================================================================================================================
-Updating:
- python-tripleoclient             noarch             7.3.8-1.el7ost                rhelosp-12.0-puddle             259 k
-
-Transaction Summary
-=========================================================================================================================
-Upgrade  1 Package
-
-Total download size: 259 k
-Downloading packages:
-Delta RPMs disabled because /usr/bin/applydeltarpm not installed.
-python-tripleoclient-7.3.8-1.el7ost.noarch.rpm                                                    | 259 kB  00:00:00     
-Running transaction check
-Running transaction test
-Transaction test succeeded
-Running transaction
-  Updating   : python-tripleoclient-7.3.8-1.el7ost.noarch                                                            1/2 
-  Cleanup    : python-tripleoclient-7.3.3-7.el7ost.noarch                                                            2/2 
-  Verifying  : python-tripleoclient-7.3.8-1.el7ost.noarch                                                            1/2 
-  Verifying  : python-tripleoclient-7.3.3-7.el7ost.noarch                                                            2/2 
-
-Updated:
-  python-tripleoclient.noarch 0:7.3.8-1.el7ost                                                                           
-
-Complete!
+[heat-admin@lab-controller01 ~]$ sudo pcs constraint colocation
+Colocation Constraints:
+  ip-172.16.0.250 with haproxy-bundle (score:INFINITY)
+  ip-192.168.122.150 with haproxy-bundle (score:INFINITY)
+  ip-172.17.1.10 with haproxy-bundle (score:INFINITY)
+  ip-172.17.1.150 with haproxy-bundle (score:INFINITY)
+  ip-172.17.3.150 with haproxy-bundle (score:INFINITY)
+  ip-172.17.4.150 with haproxy-bundle (score:INFINITY)
 ```
 
-#### Start the Update
-
-Next, we need to run the ``openstack undercloud upgrade`` command (even though
-we're actually performing a minor **update**).  This will update/install other
-packages and make any other required changes to the undercloud.
-
-This command will take approximately 15 minutes to complete, so we'll run it in
-the background.
+Let's run HAProxy **only** on ``lab-controller01``.  We might want to do this
+before capturing network traffic with ``tcpdump``, for example.  We'll use the
+``pcs resource ban`` command to prevent our ``haproxy-bundle`` from running on
+``lab-controller02`` or ``lab-controller03``.
 
 ```
-(undercloud) [stack@undercloud ~]$ openstack undercloud upgrade &> /tmp/undercloud-upgrade.out &
-[1] 11606
-```
-
-#### Update Container Images
-
-While that command is running, let's take our first look at OSP 12's update (and
-deployment) mechanism for container images.
-
-During deployment and updates, TripleO parameters are used to specify the image
-used for each overcloud container.  In our deployment, these parameters are set
-in ``templates/docker-registry.yaml``.
-
-```
-(undercloud) [stack@undercloud ~]$ grep -v '^#' templates/docker-registry.yaml
-
-parameter_defaults:
-  DockerAodhApiImage: 172.16.0.1:8787/rhosp12/openstack-aodh-api:12.0-20180309.1
-  DockerAodhConfigImage: 172.16.0.1:8787/rhosp12/openstack-aodh-api:12.0-20180309.1
-  DockerAodhEvaluatorImage: 172.16.0.1:8787/rhosp12/openstack-aodh-evaluator:12.0-20180309.1
-  DockerAodhListenerImage: 172.16.0.1:8787/rhosp12/openstack-aodh-listener:12.0-20180309.1
-  DockerAodhNotifierImage: 172.16.0.1:8787/rhosp12/openstack-aodh-notifier:12.0-20180309.1
-  DockerCeilometerCentralImage: 172.16.0.1:8787/rhosp12/openstack-ceilometer-central:12.0-20180309.1
-  DockerCeilometerComputeImage: 172.16.0.1:8787/rhosp12/openstack-ceilometer-compute:12.0-20180309.1
-  DockerCeilometerConfigImage: 172.16.0.1:8787/rhosp12/openstack-ceilometer-central:12.0-20180309.1
-  DockerCeilometerNotificationImage: 172.16.0.1:8787/rhosp12/openstack-ceilometer-notification:12.0-20180309.1
-  DockerCephDaemonImage: 172.16.0.1:8787/ceph/rhceph-2-rhel7:latest
-  DockerClustercheckConfigImage: 172.16.0.1:8787/rhosp12/openstack-mariadb:12.0-20180309.1
-  DockerClustercheckImage: 172.16.0.1:8787/rhosp12/openstack-mariadb:12.0-20180309.1
-  DockerCrondConfigImage: 172.16.0.1:8787/rhosp12/openstack-cron:12.0-20180309.1
-  DockerCrondImage: 172.16.0.1:8787/rhosp12/openstack-cron:12.0-20180309.1
-  DockerGlanceApiConfigImage: 172.16.0.1:8787/rhosp12/openstack-glance-api:12.0-20180309.1
-  DockerGlanceApiImage: 172.16.0.1:8787/rhosp12/openstack-glance-api:12.0-20180309.1
-  DockerGnocchiApiImage: 172.16.0.1:8787/rhosp12/openstack-gnocchi-api:12.0-20180309.1
-  DockerGnocchiConfigImage: 172.16.0.1:8787/rhosp12/openstack-gnocchi-api:12.0-20180309.1
-  DockerGnocchiMetricdImage: 172.16.0.1:8787/rhosp12/openstack-gnocchi-metricd:12.0-20180309.1
-  DockerGnocchiStatsdImage: 172.16.0.1:8787/rhosp12/openstack-gnocchi-statsd:12.0-20180309.1
-  DockerHAProxyConfigImage: 172.16.0.1:8787/rhosp12/openstack-haproxy:12.0-20180309.1
-  DockerHAProxyImage: 172.16.0.1:8787/rhosp12/openstack-haproxy:12.0-20180309.1
-  DockerHeatApiCfnConfigImage: 172.16.0.1:8787/rhosp12/openstack-heat-api-cfn:12.0-20180309.1
-  DockerHeatApiCfnImage: 172.16.0.1:8787/rhosp12/openstack-heat-api-cfn:12.0-20180309.1
-  DockerHeatApiConfigImage: 172.16.0.1:8787/rhosp12/openstack-heat-api:12.0-20180309.1
-  DockerHeatApiImage: 172.16.0.1:8787/rhosp12/openstack-heat-api:12.0-20180309.1
-  DockerHeatConfigImage: 172.16.0.1:8787/rhosp12/openstack-heat-api:12.0-20180309.1
-  DockerHeatEngineImage: 172.16.0.1:8787/rhosp12/openstack-heat-engine:12.0-20180309.1
-  DockerHorizonConfigImage: 172.16.0.1:8787/rhosp12/openstack-horizon:12.0-20180309.1
-  DockerHorizonImage: 172.16.0.1:8787/rhosp12/openstack-horizon:12.0-20180309.1
-  DockerInsecureRegistryAddress:
-  - 172.16.0.1:8787
-  DockerKeystoneConfigImage: 172.16.0.1:8787/rhosp12/openstack-keystone:12.0-20180309.1
-  DockerKeystoneImage: 172.16.0.1:8787/rhosp12/openstack-keystone:12.0-20180309.1
-  DockerMemcachedConfigImage: 172.16.0.1:8787/rhosp12/openstack-memcached:12.0-20180309.1
-  DockerMemcachedImage: 172.16.0.1:8787/rhosp12/openstack-memcached:12.0-20180309.1
-  DockerMysqlClientConfigImage: 172.16.0.1:8787/rhosp12/openstack-mariadb:12.0-20180309.1
-  DockerMysqlConfigImage: 172.16.0.1:8787/rhosp12/openstack-mariadb:12.0-20180309.1
-  DockerMysqlImage: 172.16.0.1:8787/rhosp12/openstack-mariadb:12.0-20180309.1
-  DockerNovaApiImage: 172.16.0.1:8787/rhosp12/openstack-nova-api:12.0-20180309.1
-  DockerNovaComputeImage: 172.16.0.1:8787/rhosp12/openstack-nova-compute:12.0-20180309.1
-  DockerNovaConductorImage: 172.16.0.1:8787/rhosp12/openstack-nova-conductor:12.0-20180309.1
-  DockerNovaConfigImage: 172.16.0.1:8787/rhosp12/openstack-nova-api:12.0-20180309.1
-  DockerNovaConsoleauthImage: 172.16.0.1:8787/rhosp12/openstack-nova-consoleauth:12.0-20180309.1
-  DockerNovaLibvirtConfigImage: 172.16.0.1:8787/rhosp12/openstack-nova-compute:12.0-20180309.1
-  DockerNovaLibvirtImage: 172.16.0.1:8787/rhosp12/openstack-nova-libvirt:12.0-20180309.1
-  DockerNovaMetadataImage: 172.16.0.1:8787/rhosp12/openstack-nova-api:12.0-20180309.1
-  DockerNovaPlacementConfigImage: 172.16.0.1:8787/rhosp12/openstack-nova-placement-api:12.0-20180309.1
-  DockerNovaPlacementImage: 172.16.0.1:8787/rhosp12/openstack-nova-placement-api:12.0-20180309.1
-  DockerNovaSchedulerImage: 172.16.0.1:8787/rhosp12/openstack-nova-scheduler:12.0-20180309.1
-  DockerNovaVncProxyImage: 172.16.0.1:8787/rhosp12/openstack-nova-novncproxy:12.0-20180309.1
-  DockerPankoApiImage: 172.16.0.1:8787/rhosp12/openstack-panko-api:12.0-20180309.1
-  DockerPankoConfigImage: 172.16.0.1:8787/rhosp12/openstack-panko-api:12.0-20180309.1
-  DockerRabbitmqConfigImage: 172.16.0.1:8787/rhosp12/openstack-rabbitmq:12.0-20180309.1
-  DockerRabbitmqImage: 172.16.0.1:8787/rhosp12/openstack-rabbitmq:12.0-20180309.1
-  DockerRedisConfigImage: 172.16.0.1:8787/rhosp12/openstack-redis:12.0-20180309.1
-  DockerRedisImage: 172.16.0.1:8787/rhosp12/openstack-redis:12.0-20180309.1
-  DockerSwiftAccountImage: 172.16.0.1:8787/rhosp12/openstack-swift-account:12.0-20180309.1
-  DockerSwiftConfigImage: 172.16.0.1:8787/rhosp12/openstack-swift-proxy-server:12.0-20180309.1
-  DockerSwiftContainerImage: 172.16.0.1:8787/rhosp12/openstack-swift-container:12.0-20180309.1
-  DockerSwiftObjectImage: 172.16.0.1:8787/rhosp12/openstack-swift-object:12.0-20180309.1
-  DockerSwiftProxyImage: 172.16.0.1:8787/rhosp12/openstack-swift-proxy-server:12.0-20180309.1
-```
-
-We see that the overcloud nodes will use images from ``172.16.0.1:8787``, which
-is the undercloud's IP address.  In OSP 12, the undercloud automatically runs a
-container image registry.
-
-```
-(undercloud) [stack@undercloud ~]$ systemctl status docker-distribution
-● docker-distribution.service - v2 Registry server for Docker
-   Loaded: loaded (/usr/lib/systemd/system/docker-distribution.service; enabled; vendor preset: disabled)
-   Active: active (running) since Fri 2018-04-20 14:40:49 EDT; 1h 6min ago
- Main PID: 531 (registry)
-   CGroup: /system.slice/docker-distribution.service
-           └─531 /usr/bin/registry serve /etc/docker-distribution/registry/config.yml
-```
-
-We can also see that ``DockerInsecureRegistryAddress`` is set to
-``172.16.0.1:8787``.  This will cause our overcloud nodes to use HTTP when
-pulling images from the undercloud &mdash; avoiding the need to generate and
-manage TLS certificates.
-
-The container registry on the undercloud is provided as a convenience; there is
-no requirement that it be used.  It is entirely possible to use a different
-container image registry, such as Red Hat Satellite, Red Hat OpenShift Container
-Platform, etc.
-
-The other thing to note about ``docker-registry.yaml`` is the date-based tags (``12.0-20180309.1``)
-that are used to specify the exact container image to use (other than the Ceph
-container).  This tag is important to TripleO, as it will only update the
-images used by the overcloud when the tag changes.  Thus, we do not follow the
-common practice of simply using ``latest``.
-
-So how did those images get into the registry running our undercloud?
-
-It turns out that Red Hat OpenStack Platform 12 provides a number of utility
-commands that help in this area.
-
-* ``openstack overcloud container image tag discover`` can be used to discover
-  the latest version of the OpenStack container images in the Red Hat Container
-  Catalog.  (Unfortunately, it won't work with the image registry on our
-  ``bastion`` host.)
-
-* ``openstack overcloud container image prepare`` performs two functions.
-  1. It creates a file that specifies the images to pulled from an upstream
-     image registry, such as the Red Hat Container Catalog.  This file already
-     exists on our undercloud as ``container-images.yaml``.
-  1. It creates the ``docker-registry.yaml`` file used for overcloud deployment
-     and updates.
-
-* ``openstack overcloud container image upload`` pulls the images and pushes
-  them into the undercloud registry.
-
-Because we already have the ``container-images.yaml`` and
-``docker-registry.yaml`` files from our deployment, we can simply use ``sed`` to
-update the tags in those files.  The latest version of the container images in
-the registry on our bastion host is ``20180319.1``.
-
-```
-(undercloud) [stack@undercloud ~]$ sed -i s/20180309.1/20180319.1/ container-images.yaml
-(undercloud) [stack@undercloud ~]$ sed -i s/20180309.1/20180319.1/ templates/docker-registry.yaml
-```
-
-Before running ``openstack overcloud container image upload``, we need to check
-the status of the ``docker`` service.  The ``openstack undercloud upgrade``
-process that is running in the background will modify ``/etc/sysconfig/docker``
-and restart the service; we need wait until it has performed these steps and
-then revert the change.
-
-First, check on the configuration file.
-
-```
-(undercloud) [stack@undercloud ~]$ diff -u /etc/sysconfig/docker.bak /etc/sysconfig/docker
---- /etc/sysconfig/docker.bak   2018-04-20 18:08:13.687203918 -0400
-+++ /etc/sysconfig/docker       2018-04-20 18:09:27.782825832 -0400
-@@ -29,5 +29,4 @@
- #DOCKERDBINARY=/usr/bin/dockerd-latest
- #DOCKER_CONTAINERD_BINARY=/usr/bin/docker-containerd-latest
- #DOCKER_CONTAINERD_SHIM_BINARY=/usr/bin/docker-containerd-shim-latest
--INSECURE_REGISTRY="--insecure-registry 172.16.0.1:8787 --insecure-registry 172.16.0.11:8787 --insecure-registry 192.168.1.10:5000"
--
-+INSECURE_REGISTRY="--insecure-registry 172.16.0.1:8787 --insecure-registry 172.16.0.11:8787"
-```
-
-If the ``diff`` command produces no output, the background process has not yet
-modified the file.  You can use the ``watch`` command to wait until it does so.
-
-```
-(undercloud) [stack@undercloud ~]$ watch -n 5 diff -u /etc/sysconfig/docker.bak /etc/sysconfig/docker
-```
-
-Wait until the ``diff`` command produces output and terminate ``watch`` with
-**Ctrl-C**.
-
-``openstack undercloud upgrade`` restarts the ``docker`` daemon shortly after
-it modifies ``/etc/sydconfig/docker``.  Verify that the service has recently
-been restarted.
-
-```
-(undercloud) [stack@undercloud ~]$ systemctl status docker | grep Active
-   Active: active (running) since Fri 2018-04-20 18:09:30 EDT; 1min ago
-```
-
-Now revert the change to the configuration file and restart (re-restart?) the
-daemon.
-
-```
-(undercloud) [stack@undercloud ~]$ sudo cp -f /etc/sysconfig/docker.bak /etc/sysconfig/docker
-
-(undercloud) [stack@undercloud ~]$ sudo systemctl restart docker
-```
-
-Pull the new container images from the bastion host and push them into the
-image registry on the undercloud.
-
-```
-(test@overcloud) [stack@undercloud ~]$ openstack overcloud container image upload --verbose --config-file container-images.yaml
-START with options: [u'overcloud', u'container', u'image', u'upload', u'--verbose', u'--config-file', u'container-images.yaml']
-command: overcloud container image upload -> tripleoclient.v1.container_image.UploadImage (auth=False)
-Using config files: [u'container-images.yaml']
-imagename: 192.168.1.10:5000/rhosp12/openstack-aodh-api:12.0-20180319.1
-Completed upload for docker image 192.168.1.10:5000/rhosp12/openstack-aodh-api:12.0-20180319.1
-(...)
-imagename: 192.168.1.10:5000/rhosp12/openstack-swift-proxy-server:12.0-20180319.1
-Completed upload for docker image 192.168.1.10:5000/rhosp12/openstack-swift-proxy-server:12.0-20180319.1
-imagename: 192.168.1.10:5000/ceph/rhceph-2-rhel7:latest
-Completed upload for docker image 192.168.1.10:5000/ceph/rhceph-2-rhel7:latest
-END return value: 0
-```
-
-You can view a list of all images known to the local ``docker`` daemon with the
-``docker images`` command.  For each OpenStack image, it should now show both
-the old (``12.0-20180309.1``) and new (``12.0-20180319.1``) tags for both the
-bastion host (``192.168.1.10:5000``) and local (``172.16.0.1:8787``) registries.
-For example:
-
-```
-(test@overcloud) [stack@undercloud ~]$  docker images | grep openstack-nova-api
-172.16.0.1:8787/rhosp12/openstack-nova-api                    12.0-20180319.1     bc157a405e32        4 weeks ago         758 MB
-192.168.1.10:5000/rhosp12/openstack-nova-api                  12.0-20180319.1     bc157a405e32        4 weeks ago         758 MB
-172.16.0.1:8787/rhosp12/openstack-nova-api                    12.0-20180309.1     7f9d9a559a00        6 weeks ago         757 MB
-192.168.1.10:5000/rhosp12/openstack-nova-api                  12.0-20180309.1     7f9d9a559a00        6 weeks ago         757 MB
-```
-
-#### Verify Undercloud Update Completion
-
-Now let's check on the ``openstack undercloud upgrade`` command that we ran as
-a background process.
-
-```
-(test@overcloud) [stack@undercloud ~]$ jobs
-[1]+  Running                 openstack undercloud upgrade &>/tmp/undercloud-upgrade.out &
-```
-
-This indicates that the process is still running.  It's progress can be
-monitored with:
-
-```
-(test@overcloud) [stack@undercloud ~]$  tailf /tmp/undercloud-upgrade.out
-(...)
-```
-
-If ``jobs`` produces no output, it indicates that the update process has
-finished.  Check the output file, to verify that it was successful.
-
-```
-(test@overcloud) [stack@undercloud ~]$ tail -n 20 /tmp/undercloud-upgrade.out
-2018-04-23 14:09:03,962 INFO: Configuring Mistral workbooks
-2018-04-23 14:09:31,972 INFO: Mistral workbooks configured successfully
-2018-04-23 14:09:32,537 INFO: Not creating default plan "overcloud" because it already exists.
-2018-04-23 14:09:32,537 INFO: Configuring an hourly cron trigger for tripleo-ui logging
-2018-04-23 14:09:35,585 INFO: Added _member_ role to admin user
-2018-04-23 14:09:36,244 INFO: Starting and waiting for validation groups ['post-upgrade'] 
-2018-04-23 14:10:27,207 INFO: 
-#############################################################################
-Undercloud upgrade complete.
-
-The file containing this installation's passwords is at
-/home/stack/undercloud-passwords.conf.
-
-There is also a stackrc file at /home/stack/stackrc.
-
-These files are needed to interact with the OpenStack services, and should be
-secured.
-
-#############################################################################
-```
-
-Reboot the undercloud.
-
-```
-(test@overcloud) [stack@undercloud ~]$ sudo reboot
-PolicyKit daemon disconnected from the bus.
-We are no longer a registered authentication agent.
-Connection to undercloud.example.com closed by remote host.
-Connection to undercloud.example.com closed.
-```
-
-#### Update Overcloud Images
-
-Log back into the undercloud and source ``stackrc``.  (The ``stack`` user's
-password is ``redhat``.)
-
-```
-[lab-user@bastion-3998 ~]$ ssh stack@undercloud.example.com
-stack@undercloud.example.com's password: 
-Last login: Mon Apr 23 13:08:56 2018 from bastion.example.com
-[stack@undercloud ~]$
-
-[stack@undercloud ~]$ . stackrc
-(undercloud) [stack@undercloud ~]$
-```
-
-> **NOTE:** The remainder of this section is optional in this lab.  We will not
-> be deploying any additional nodes (scaling out), so we do not strictly need
-> to update the image used for our overcloud nodes.
-
-Determine whether the undercloud update installed updated image packages.
-
-```
-(undercloud) [stack@undercloud ~]$ sudo grep images /var/log/yum.log
-Mar 15 20:37:56 Installed: rhosp-director-images-ipa-12.0-20180309.2.el7ost.noarch
-Mar 15 20:38:47 Installed: rhosp-director-images-12.0-20180309.2.el7ost.noarch
-Apr 23 14:01:05 Installed: rhosp-director-images-ipa-12.0-20180402.1.el7ost.noarch
-Apr 23 14:01:55 Installed: rhosp-director-images-12.0-20180402.1.el7ost.noarch
-```
-
-It did, so let's update the images used to deploy new nodes.  First, uninstall
-the old RPMs.  (This is not absolutely necessary, but the old packages do use a
-fair bit of disk space.)
-
-```
-(undercloud) [stack@undercloud ~]$ rpm -qa rhosp-director-images*
-rhosp-director-images-ipa-12.0-20180309.2.el7ost.noarch
-rhosp-director-images-12.0-20180402.1.el7ost.noarch
-rhosp-director-images-12.0-20180309.2.el7ost.noarch
-rhosp-director-images-ipa-12.0-20180402.1.el7ost.noarch
-
-(undercloud) [stack@undercloud ~]$ sudo yum -y remove rhosp-director-images-ipa-12.0-20180309.2.el7ost.noarch rhosp-director-images-12.0-20180309.2.el7ost.noarch
-Loaded plugins: search-disabled-repos
-Resolving Dependencies
---> Running transaction check
----> Package rhosp-director-images.noarch 0:12.0-20180309.2.el7ost will be erased
----> Package rhosp-director-images-ipa.noarch 0:12.0-20180309.2.el7ost will be erased
---> Finished Dependency Resolution
-
-Dependencies Resolved
-
-===============================================================================================================================================================
- Package                                     Arch                     Version                                     Repository                              Size
-===============================================================================================================================================================
-Removing:
- rhosp-director-images                       noarch                   12.0-20180309.2.el7ost                      @rhelosp-12.0-puddle                   1.3 G
- rhosp-director-images-ipa                   noarch                   12.0-20180309.2.el7ost                      @rhelosp-12.0-puddle                   369 M
-
-Transaction Summary
-===============================================================================================================================================================
-Remove  2 Packages
-
-Installed size: 1.6 G
-Downloading packages:
-Running transaction check
-Running transaction test
-Transaction test succeeded
-Running transaction
-  Erasing    : rhosp-director-images-12.0-20180309.2.el7ost.noarch                                                                                         1/2 
-  Erasing    : rhosp-director-images-ipa-12.0-20180309.2.el7ost.noarch                                                                                     2/2 
-  Verifying  : rhosp-director-images-ipa-12.0-20180309.2.el7ost.noarch                                                                                     1/2 
-  Verifying  : rhosp-director-images-12.0-20180309.2.el7ost.noarch                                                                                         2/2 
-
-Removed:
-  rhosp-director-images.noarch 0:12.0-20180309.2.el7ost                        rhosp-director-images-ipa.noarch 0:12.0-20180309.2.el7ost                       
-
-Complete!
-```
-
-Change to the ``images`` directory and extract the new images.
-
-```
-(undercloud) [stack@undercloud ~]$ cd images
-
-(undercloud) [stack@undercloud images]$ rpm -qa rhosp-director-images*
-rhosp-director-images-12.0-20180402.1.el7ost.noarch
-rhosp-director-images-ipa-12.0-20180402.1.el7ost.noarch
-
-(undercloud) [stack@undercloud images]$ rpm -ql rhosp-director-images-12.0-20180402.1.el7ost.noarch rhosp-director-images-ipa-12.0-20180402.1.el7ost.noarch
-/usr/share/rhosp-director-images/overcloud-full-12.0-20180402.1.el7ost.tar
-/usr/share/rhosp-director-images/version-12.0-20180402.1.el7ost.txt
-/usr/share/rhosp-director-images/ironic-python-agent-12.0-20180402.1.el7ost.tar
-
-(undercloud) [stack@undercloud images]$ tar xvf /usr/share/rhosp-director-images/overcloud-full-12.0-20180402.1.el7ost.tar
-overcloud-full.qcow2
-overcloud-full.initrd
-overcloud-full.vmlinuz
-overcloud-full-rpm.manifest
-overcloud-full-signature.manifest
-
-(undercloud) [stack@undercloud images]$ tar xvf /usr/share/rhosp-director-images/ironic-python-agent-12.0-20180402.1.el7ost.tar
-ironic-python-agent.initramfs
-ironic-python-agent.kernel
-```
-
-Customize the overcloud image, so it will use the bastion host as its ``yum``
-repository.
-
-```
-(undercloud) [stack@undercloud images]$ virt-customize -a overcloud-full.qcow2 --copy-in /etc/yum.repos.d/lab.repo:/etc/yum.repos.d/ --selinux-relabel
-[   0.0] Examining the guest ...
-[   3.4] Setting a random seed
-[   3.5] Copying: /etc/yum.repos.d/lab.repo to /etc/yum.repos.d/
-[   3.5] SELinux relabelling
-[  57.3] Finishing off
-```
-
-Upload the new images.
-
-```
-(undercloud) [stack@undercloud images]$ openstack overcloud image upload --update-existing
-Image "overcloud-full-vmlinuz" was uploaded.
-+--------------------------------------+------------------------+-------------+---------+--------+
-|                  ID                  |          Name          | Disk Format |   Size  | Status |
-+--------------------------------------+------------------------+-------------+---------+--------+
-| 37aa394f-e583-4bed-9947-d67b200d5b03 | overcloud-full-vmlinuz |     aki     | 6381872 | active |
-+--------------------------------------+------------------------+-------------+---------+--------+
-Image "overcloud-full-initrd" was uploaded.
-+--------------------------------------+-----------------------+-------------+----------+--------+
-|                  ID                  |          Name         | Disk Format |   Size   | Status |
-+--------------------------------------+-----------------------+-------------+----------+--------+
-| 0d830007-5bd3-41b6-97ce-8dab1035fb60 | overcloud-full-initrd |     ari     | 62806684 | active |
-+--------------------------------------+-----------------------+-------------+----------+--------+
-Image "overcloud-full" was uploaded.
-+--------------------------------------+----------------+-------------+------------+--------+
-|                  ID                  |      Name      | Disk Format |    Size    | Status |
-+--------------------------------------+----------------+-------------+------------+--------+
-| c22fe1c8-0f6e-4dac-8e58-16fae39ac738 | overcloud-full |    qcow2    | 1322778624 | active |
-+--------------------------------------+----------------+-------------+------------+--------+
-Image "bm-deploy-kernel" was uploaded.
-+--------------------------------------+------------------+-------------+---------+--------+
-|                  ID                  |       Name       | Disk Format |   Size  | Status |
-+--------------------------------------+------------------+-------------+---------+--------+
-| 8c641282-2db0-4aa5-9461-2fc354b69e79 | bm-deploy-kernel |     aki     | 6381872 | active |
-+--------------------------------------+------------------+-------------+---------+--------+
-Image "bm-deploy-ramdisk" was uploaded.
-+--------------------------------------+-------------------+-------------+-----------+--------+
-|                  ID                  |        Name       | Disk Format |    Size   | Status |
-+--------------------------------------+-------------------+-------------+-----------+--------+
-| f7fcad54-801c-45ef-b692-ccb284095cc9 | bm-deploy-ramdisk |     ari     | 426133936 | active |
-+--------------------------------------+-------------------+-------------+-----------+--------+
-```
-
-Update the Ironic node configuration to use the new deployment kernal and
-RAM disk.
-
-```
-(undercloud) [stack@undercloud images]$ NODES=`openstack baremetal node list -f csv -c Name --quote none | sed 1d | paste -s -d ' '`
-
-(undercloud) [stack@undercloud images]$ openstack overcloud node configure $NODES
-Started Mistral Workflow tripleo.baremetal.v1.configure. Execution ID: d987630f-389f-4a44-898c-a7a3f45d7b6e
-Waiting for messages on queue 'f83ccfc6-8425-4d4e-b730-1741c62a9247' with no timeout.
-Successfully configured the nodes.
-```
-
-Finally, delete the old images from the undercloud's Glance service.
-
-```
-(undercloud) [stack@undercloud images]$  openstack image list
-+--------------------------------------+-----------------------------------------+--------+
-| ID                                   | Name                                    | Status |
-+--------------------------------------+-----------------------------------------+--------+
-| 8c641282-2db0-4aa5-9461-2fc354b69e79 | bm-deploy-kernel                        | active |
-| 3ac4bb8b-1197-4893-9450-854de210a35e | bm-deploy-kernel_20180316T123554Z       | active |
-| f7fcad54-801c-45ef-b692-ccb284095cc9 | bm-deploy-ramdisk                       | active |
-| 25c9caec-6344-4ece-bd39-09e6d776d0ae | bm-deploy-ramdisk_20180316T123556Z      | active |
-| c22fe1c8-0f6e-4dac-8e58-16fae39ac738 | overcloud-full                          | active |
-| 0d830007-5bd3-41b6-97ce-8dab1035fb60 | overcloud-full-initrd                   | active |
-| a6410509-a8c2-470e-9875-a1cfd078668d | overcloud-full-initrd_20180316T123533Z  | active |
-| 37aa394f-e583-4bed-9947-d67b200d5b03 | overcloud-full-vmlinuz                  | active |
-| 72d6708b-6706-488c-94ef-2c3e54eb2848 | overcloud-full-vmlinuz_20180316T123531Z | active |
-| 37bdc1c0-3b85-4c2e-a37f-0638faf442a8 | overcloud-full_20180412T194559Z         | active |
-+--------------------------------------+-----------------------------------------+--------+
-
-(undercloud) [stack@undercloud images]$ IMAGES=`openstack image list -f csv -c Name --quote none | grep 2018`
-
-(undercloud) [stack@undercloud images]$ for IMAGE in $IMAGES ; do openstack image delete $IMAGE ; done
-
-(undercloud) [stack@undercloud images]$ openstack image list
-+--------------------------------------+------------------------+--------+
-| ID                                   | Name                   | Status |
-+--------------------------------------+------------------------+--------+
-| 8c641282-2db0-4aa5-9461-2fc354b69e79 | bm-deploy-kernel       | active |
-| f7fcad54-801c-45ef-b692-ccb284095cc9 | bm-deploy-ramdisk      | active |
-| c22fe1c8-0f6e-4dac-8e58-16fae39ac738 | overcloud-full         | active |
-| 0d830007-5bd3-41b6-97ce-8dab1035fb60 | overcloud-full-initrd  | active |
-| 37aa394f-e583-4bed-9947-d67b200d5b03 | overcloud-full-vmlinuz | active |
-+--------------------------------------+------------------------+--------+
-```
-
-And return to our home directory.
-
-```
-(undercloud) [stack@undercloud images]$ cd
-(undercloud) [stack@undercloud ~]$
-```
-
-### Step 2: Update the Overcloud
-
-If you've ever painted a room, you know that most of the actual work lies in the
-preparation.  The good news that OSP updates are similar.
-
-Before we actually update the overcloud nodes, let's take a quick look at what
-we **expect** to be updated.
-
-#### What's Getting Updated?
-
-```
-(undercloud) [stack@undercloud ~]$ openstack server list
-+--------------------------------------+------------------+--------+----------------------+----------------+--------------+
-| ID                                   | Name             | Status | Networks             | Image          | Flavor       |
-+--------------------------------------+------------------+--------+----------------------+----------------+--------------+
-| 47e02f2f-b3fe-4f0a-83b6-d0305004aec9 | lab-ceph02       | ACTIVE | ctlplane=172.16.0.23 | overcloud-full | ceph-storage |
-| 5c2f6fd7-3351-4ca6-bd41-3fafb1de5162 | lab-controller03 | ACTIVE | ctlplane=172.16.0.36 | overcloud-full | control      |
-| b837722d-0d91-4e50-a359-223487fbdb2e | lab-controller01 | ACTIVE | ctlplane=172.16.0.32 | overcloud-full | control      |
-| f8c7a2b3-73c8-476f-87a9-4c0af28e7595 | lab-controller02 | ACTIVE | ctlplane=172.16.0.22 | overcloud-full | control      |
-| 9e7924fd-4611-41de-a29a-c600502e12a0 | lab-ceph03       | ACTIVE | ctlplane=172.16.0.33 | overcloud-full | ceph-storage |
-| 66515ba8-15eb-480a-ad37-c3e91da47df8 | lab-ceph01       | ACTIVE | ctlplane=172.16.0.31 | overcloud-full | ceph-storage |
-| 87920ee2-dd27-432d-b8b1-52a2ab49a9ff | lab-compute01    | ACTIVE | ctlplane=172.16.0.25 | overcloud-full | compute      |
-+--------------------------------------+------------------+--------+----------------------+----------------+--------------+
-
-(undercloud) [stack@undercloud ~]$ ssh heat-admin@172.16.0.32
-Last login: Mon Apr 23 21:49:24 2018 from 172.16.0.1
-
-[heat-admin@lab-controller01 ~]$ sudo docker ps
-CONTAINER ID        IMAGE                                                                       COMMAND                  CREATED             STATUS                       PORTS               NAMES
-5683b1b78f5e        172.16.0.1:8787/rhosp12/openstack-haproxy:pcmklatest                        "/bin/bash /usr/lo..."   About an hour ago   Up About an hour                                 haproxy-bundle-docker-0
-1659ade0a095        172.16.0.1:8787/rhosp12/openstack-redis:pcmklatest                          "/bin/bash /usr/lo..."   About an hour ago   Up About an hour                                 redis-bundle-docker-0
-c574ef4437fa        172.16.0.1:8787/rhosp12/openstack-mariadb:pcmklatest                        "/bin/bash /usr/lo..."   About an hour ago   Up About an hour                                 galera-bundle-docker-1
-468736bdb063        172.16.0.1:8787/rhosp12/openstack-rabbitmq:pcmklatest                       "/bin/bash /usr/lo..."   About an hour ago   Up About an hour (healthy)                       rabbitmq-bundle-docker-0
-74e6a7297225        172.16.0.1:8787/ceph/rhceph-2-rhel7:latest                                  "/entrypoint.sh"         About an hour ago   Up About an hour                                 ceph-mon-lab-controller01
-aac508a9e1b7        172.16.0.1:8787/rhosp12/openstack-gnocchi-api:12.0-20180309.1               "kolla_start"            11 days ago         Up About an hour                                 gnocchi_api
-fbd82bec10d2        172.16.0.1:8787/rhosp12/openstack-gnocchi-statsd:12.0-20180309.1            "kolla_start"            11 days ago         Up About an hour                                 gnocchi_statsd
-239cc2d1e27f        172.16.0.1:8787/rhosp12/openstack-gnocchi-metricd:12.0-20180309.1           "kolla_start"            11 days ago         Up About an hour                                 gnocchi_metricd
-fc2ec5181b0f        172.16.0.1:8787/rhosp12/openstack-panko-api:12.0-20180309.1                 "kolla_start"            11 days ago         Up About an hour                                 panko_api
-6daf33d978b1        172.16.0.1:8787/rhosp12/openstack-nova-api:12.0-20180309.1                  "kolla_start"            11 days ago         Up About an hour (healthy)                       nova_metadata
-29a778ff874d        172.16.0.1:8787/rhosp12/openstack-nova-api:12.0-20180309.1                  "kolla_start"            11 days ago         Up About an hour (healthy)                       nova_api
-0933cf235b28        172.16.0.1:8787/rhosp12/openstack-glance-api:12.0-20180309.1                "kolla_start"            11 days ago         Up About an hour (healthy)                       glance_api
-39aaba03d12c        172.16.0.1:8787/rhosp12/openstack-swift-account:12.0-20180309.1             "kolla_start"            11 days ago         Up About an hour (healthy)                       swift_account_server
-6f3f80430fe1        172.16.0.1:8787/rhosp12/openstack-aodh-listener:12.0-20180309.1             "kolla_start"            11 days ago         Up About an hour (healthy)                       aodh_listener
-95d6aea9aa80        172.16.0.1:8787/rhosp12/openstack-swift-container:12.0-20180309.1           "kolla_start"            11 days ago         Up About an hour (healthy)                       swift_container_auditor
-975b83fc3b72        172.16.0.1:8787/rhosp12/openstack-heat-api:12.0-20180309.1                  "kolla_start"            11 days ago         Up About an hour (healthy)                       heat_api_cron
-a1a9cb580dfc        172.16.0.1:8787/rhosp12/openstack-swift-proxy-server:12.0-20180309.1        "kolla_start"            11 days ago         Up About an hour (healthy)                       swift_object_expirer
-2bb87c565d5a        172.16.0.1:8787/rhosp12/openstack-swift-object:12.0-20180309.1              "kolla_start"            11 days ago         Up About an hour (healthy)                       swift_object_updater
-9d7dad2c82b9        172.16.0.1:8787/rhosp12/openstack-swift-container:12.0-20180309.1           "kolla_start"            11 days ago         Up About an hour (healthy)                       swift_container_replicator
-2eaebf03043b        172.16.0.1:8787/rhosp12/openstack-swift-account:12.0-20180309.1             "kolla_start"            11 days ago         Up About an hour (healthy)                       swift_account_auditor
-947d4ac93e31        172.16.0.1:8787/rhosp12/openstack-cron:12.0-20180309.1                      "kolla_start"            11 days ago         Up About an hour                                 logrotate_crond
-4b3b73d4462a        172.16.0.1:8787/rhosp12/openstack-heat-api-cfn:12.0-20180309.1              "kolla_start"            11 days ago         Up About an hour (healthy)                       heat_api_cfn
-c49ece44bdb0        172.16.0.1:8787/rhosp12/openstack-nova-conductor:12.0-20180309.1            "kolla_start"            11 days ago         Up About an hour (healthy)                       nova_conductor
-6245d6b572e7        172.16.0.1:8787/rhosp12/openstack-swift-object:12.0-20180309.1              "kolla_start"            11 days ago         Up About an hour (healthy)                       swift_object_replicator
-83e73ff5b689        172.16.0.1:8787/rhosp12/openstack-swift-container:12.0-20180309.1           "kolla_start"            11 days ago         Up About an hour (healthy)                       swift_container_server
-1177bb32afc4        172.16.0.1:8787/rhosp12/openstack-heat-engine:12.0-20180309.1               "kolla_start"            11 days ago         Up About an hour (healthy)                       heat_engine
-c41932eea6a4        172.16.0.1:8787/rhosp12/openstack-aodh-api:12.0-20180309.1                  "kolla_start"            11 days ago         Up About an hour                                 aodh_api
-2a2cfd159237        172.16.0.1:8787/rhosp12/openstack-swift-object:12.0-20180309.1              "kolla_start"            11 days ago         Up About an hour (healthy)                       swift_rsync
-f016068c3a0d        172.16.0.1:8787/rhosp12/openstack-nova-novncproxy:12.0-20180309.1           "kolla_start"            11 days ago         Up About an hour (healthy)                       nova_vnc_proxy
-97ba84956183        172.16.0.1:8787/rhosp12/openstack-ceilometer-notification:12.0-20180309.1   "kolla_start"            11 days ago         Up About an hour (healthy)                       ceilometer_agent_notification
-d3e3b00c11aa        172.16.0.1:8787/rhosp12/openstack-swift-account:12.0-20180309.1             "kolla_start"            11 days ago         Up About an hour (healthy)                       swift_account_reaper
-285a675d9cd9        172.16.0.1:8787/rhosp12/openstack-nova-consoleauth:12.0-20180309.1          "kolla_start"            11 days ago         Up About an hour (healthy)                       nova_consoleauth
-07ba693a6e11        172.16.0.1:8787/rhosp12/openstack-nova-api:12.0-20180309.1                  "kolla_start"            11 days ago         Up About an hour (healthy)                       nova_api_cron
-c8932637db4b        172.16.0.1:8787/rhosp12/openstack-aodh-notifier:12.0-20180309.1             "kolla_start"            11 days ago         Up About an hour (healthy)                       aodh_notifier
-c93cb7b9e75a        172.16.0.1:8787/rhosp12/openstack-ceilometer-central:12.0-20180309.1        "kolla_start"            11 days ago         Up About an hour (healthy)                       ceilometer_agent_central
-48e8befd1dc2        172.16.0.1:8787/rhosp12/openstack-swift-account:12.0-20180309.1             "kolla_start"            11 days ago         Up About an hour (healthy)                       swift_account_replicator
-f578f22a8357        172.16.0.1:8787/rhosp12/openstack-swift-object:12.0-20180309.1              "kolla_start"            11 days ago         Up About an hour (healthy)                       swift_object_auditor
-055c87a99e69        172.16.0.1:8787/rhosp12/openstack-heat-api:12.0-20180309.1                  "kolla_start"            11 days ago         Up About an hour (healthy)                       heat_api
-32ad554e92d6        172.16.0.1:8787/rhosp12/openstack-swift-proxy-server:12.0-20180309.1        "kolla_start"            11 days ago         Up About an hour (healthy)                       swift_proxy
-d662bfec9a1f        172.16.0.1:8787/rhosp12/openstack-swift-object:12.0-20180309.1              "kolla_start"            11 days ago         Up About an hour (healthy)                       swift_object_server
-c8801163d88b        172.16.0.1:8787/rhosp12/openstack-nova-scheduler:12.0-20180309.1            "kolla_start"            11 days ago         Up About an hour (healthy)                       nova_scheduler
-c9aa47cfce16        172.16.0.1:8787/rhosp12/openstack-swift-container:12.0-20180309.1           "kolla_start"            11 days ago         Up About an hour (healthy)                       swift_container_updater
-68d372e5242b        172.16.0.1:8787/rhosp12/openstack-aodh-evaluator:12.0-20180309.1            "kolla_start"            11 days ago         Up About an hour (healthy)                       aodh_evaluator
-f4bbdda9a0c4        172.16.0.1:8787/rhosp12/openstack-keystone:12.0-20180309.1                  "/bin/bash -c '/us..."   11 days ago         Up About an hour (healthy)                       keystone_cron
-6788a5076fba        172.16.0.1:8787/rhosp12/openstack-keystone:12.0-20180309.1                  "kolla_start"            11 days ago         Up About an hour (healthy)                       keystone
-9aaac2cb4978        172.16.0.1:8787/rhosp12/openstack-nova-placement-api:12.0-20180309.1        "kolla_start"            11 days ago         Up About an hour                                 nova_placement
-a5b320025088        172.16.0.1:8787/rhosp12/openstack-horizon:12.0-20180309.1                   "kolla_start"            11 days ago         Up About an hour                                 horizon
-db5b448fc09a        172.16.0.1:8787/rhosp12/openstack-mariadb:12.0-20180309.1                   "kolla_start"            11 days ago         Up About an hour                                 clustercheck
-3248787f3cfc        172.16.0.1:8787/rhosp12/openstack-memcached:12.0-20180309.1                 "/bin/bash -c 'sou..."   11 days ago         Up About an hour                                 memcached
-
-[heat-admin@lab-controller01 ~]$ sudo yum check-update
-Loaded plugins: product-id, search-disabled-repos, subscription-manager
-This system is not registered with an entitlement server. You can use subscription-manager to register.
-
-dhclient.x86_64                                  12:4.2.5-58.el7_4.3                      rhelosp-rhel-7.4-server
-dhcp-common.x86_64                               12:4.2.5-58.el7_4.3                      rhelosp-rhel-7.4-server
-dhcp-libs.x86_64                                 12:4.2.5-58.el7_4.3                      rhelosp-rhel-7.4-server
-puppet-tripleo.noarch                            7.4.8-5.el7ost                           rhelosp-12.0-puddle    
-python-paramiko.noarch                           2.1.1-4.el7                              rhelosp-rhel-7.4-extras
-qemu-img-rhev.x86_64                             10:2.10.0-21.el7                         rhelosp-12.0-puddle    
-qemu-kvm-common-rhev.x86_64                      10:2.10.0-21.el7                         rhelosp-12.0-puddle    
-qemu-kvm-rhev.x86_64                             10:2.10.0-21.el7                         rhelosp-12.0-puddle    
-tzdata.noarch                                    2018d-1.el7                              rhelosp-rhel-7.4-server
-
-[heat-admin@lab-controller01 ~]$ exit
-logout
-Connection to 172.16.0.32 closed.
-```
-
-After the update is complete, all of the OpenStack containers should be using
-the ``12.0-20180319.1`` images, and ``yum`` should show no updates available.
-
-#### Update the Stack
-
-First, update the Heat stack (on the undercloud) that represents the overcloud
-with the new container image information.
-
-```
-(undercloud) [stack@undercloud ~]$ openstack overcloud update stack --init-minor-update --container-registry-file templates/docker-registry.yaml
-Started Mistral Workflow tripleo.package_update.v1.package_update_plan. Execution ID: a7139fbe-eb38-499e-a7cd-2b17745a9fc6
-Waiting for messages on queue '49d147c9-8bed-497a-af1b-487cc4d33eb7' with no timeout.
-2018-04-23 23:36:29Z [Networks]: UPDATE_IN_PROGRESS  state changed
-2018-04-23 23:36:30Z [overcloud-Networks-4h35q5lk6wvw]: UPDATE_IN_PROGRESS  Stack UPDATE started
-2018-04-23 23:36:30Z [overcloud-Networks-4h35q5lk6wvw.StorageNetwork]: UPDATE_IN_PROGRESS  state changed
-(...)
-2018-04-23 23:52:49Z [overcloud-AllNodesDeploySteps-n76v7q3l7pyf-ControllerDeployment_Step5-sq6liadvrcob.1]: DELETE_COMPLETE  state changed
-2018-04-23 23:52:49Z [overcloud-AllNodesDeploySteps-n76v7q3l7pyf-CephStorageDeployment_Step5-hbdpg6yav4ua.0]: DELETE_COMPLETE  state changed
-2018-04-23 23:53:39Z [overcloud-AllNodesDeploySteps-n76v7q3l7pyf]: UPDATE_COMPLETE  Stack UPDATE completed successfully
-2018-04-23 23:53:40Z [AllNodesDeploySteps]: UPDATE_COMPLETE  state changed
-2018-04-23 23:53:55Z [overcloud]: UPDATE_COMPLETE  Stack UPDATE completed successfully
-
- Stack overcloud UPDATE_COMPLETE 
-
-Heat stack update init on overcloud complete.
-Started Mistral Workflow tripleo.package_update.v1.get_config. Execution ID: b43a8270-9770-488f-8d56-aebae3a3ae8a
-Waiting for messages on queue 'tripleo' with no timeout.
-Success
-Init minor update on stack overcloud complete.
-```
-
-#### Update the Nodes
-
-
-
-```
-(undercloud) [stack@undercloud ~]$ openstack overcloud update stack --nodes Controller
+[heat-admin@lab-controller01 ~]$ sudo pcs resource ban haproxy-bundle lab-controller02
+Warning: Creating location constraint cli-ban-haproxy-bundle-on-lab-controller02 with a score of -INFINITY for resource haproxy-bundle on node lab-controller02.
+This will prevent haproxy-bundle from running on lab-controller02 until the constraint is removed. This will be the case even if lab-controller02 is the last node in the cluster.
+
+[heat-admin@lab-controller01 ~]$ sudo pcs status
+Cluster name: tripleo_cluster
+Stack: corosync
+Current DC: lab-controller01 (version 1.1.16-12.el7_4.8-94ff4df) - partition with quorum
+Last updated: Wed Apr 25 16:43:19 2018
+Last change: Wed Apr 25 16:42:18 2018 by root via crm_resource on lab-controller01
+
+12 nodes configured
+37 resources configured
+
+Online: [ lab-controller01 lab-controller02 lab-controller03 ]
+GuestOnline: [ galera-bundle-0@lab-controller01 galera-bundle-1@lab-controller02 galera-bundle-2@lab-controller03 rabbitmq-bundle-0@lab-controller01 rabbitmq-bundle-1@lab-controller02 rabbitmq-bundle-2@lab-controller03 redis-bundle-0@lab-controller01 redis-bundle-1@lab-controller02 redis-bundle-2@lab-controller03 ]
+
+Full list of resources:
+
+ Docker container set: rabbitmq-bundle [172.16.0.1:8787/rhosp12/openstack-rabbitmq:pcmklatest]
+   rabbitmq-bundle-0    (ocf::heartbeat:rabbitmq-cluster):      Started lab-controller01
+   rabbitmq-bundle-1    (ocf::heartbeat:rabbitmq-cluster):      Started lab-controller02
+   rabbitmq-bundle-2    (ocf::heartbeat:rabbitmq-cluster):      Started lab-controller03
+ Docker container set: galera-bundle [172.16.0.1:8787/rhosp12/openstack-mariadb:pcmklatest]
+   galera-bundle-0      (ocf::heartbeat:galera):        Master lab-controller01
+   galera-bundle-1      (ocf::heartbeat:galera):        Master lab-controller02
+   galera-bundle-2      (ocf::heartbeat:galera):        Master lab-controller03
+ Docker container set: redis-bundle [172.16.0.1:8787/rhosp12/openstack-redis:pcmklatest]
+   redis-bundle-0       (ocf::heartbeat:redis): Master lab-controller01
+   redis-bundle-1       (ocf::heartbeat:redis): Slave lab-controller02
+   redis-bundle-2       (ocf::heartbeat:redis): Slave lab-controller03
+ ip-172.16.0.250        (ocf::heartbeat:IPaddr2):       Started lab-controller01
+ ip-192.168.122.150     (ocf::heartbeat:IPaddr2):       Started lab-controller03
+ ip-172.17.1.10 (ocf::heartbeat:IPaddr2):       Started lab-controller03
+ ip-172.17.1.150        (ocf::heartbeat:IPaddr2):       Started lab-controller01
+ ip-172.17.3.150        (ocf::heartbeat:IPaddr2):       Started lab-controller01
+ ip-172.17.4.150        (ocf::heartbeat:IPaddr2):       Started lab-controller01
+ Docker container set: haproxy-bundle [172.16.0.1:8787/rhosp12/openstack-haproxy:pcmklatest]
+   haproxy-bundle-docker-0      (ocf::heartbeat:docker):        Started lab-controller01
+   haproxy-bundle-docker-1      (ocf::heartbeat:docker):        Stopped
+   haproxy-bundle-docker-2      (ocf::heartbeat:docker):        Started lab-controller03
+ openstack-cinder-volume        (systemd:openstack-cinder-volume):      Started lab-controller01
+
+Daemon Status:
+  corosync: active/enabled
+  pacemaker: active/enabled
+  pcsd: active/enabled
+
+[heat-admin@lab-controller01 ~]$ sudo pcs resource ban haproxy-bundle lab-controller03
+Warning: Creating location constraint cli-ban-haproxy-bundle-on-lab-controller03 with a score of -INFINITY for resource haproxy-bundle on node lab-controller03.
+This will prevent haproxy-bundle from running on lab-controller03 until the constraint is removed. This will be the case even if lab-controller03 is the last node in the cluster.
+
+[heat-admin@lab-controller01 ~]$ sudo pcs status
+Cluster name: tripleo_cluster
+Stack: corosync
+Current DC: lab-controller01 (version 1.1.16-12.el7_4.8-94ff4df) - partition with quorum
+Last updated: Wed Apr 25 18:32:39 2018
+Last change: Wed Apr 25 18:30:33 2018 by root via crm_resource on lab-controller01
+
+12 nodes configured
+37 resources configured
+
+Online: [ lab-controller01 lab-controller02 lab-controller03 ]
+GuestOnline: [ galera-bundle-0@lab-controller01 galera-bundle-1@lab-controller02 galera-bundle-2@lab-controller03 rabbitmq-bundle-0@lab-controller01 rabbitmq-bundle-1@lab-controller02 rabbitmq-bundle-2@lab-controller03 redis-bundle-0@lab-controller01 redis-bundle-1@lab-controller02 redis-bundle-2@lab-controller03 ]
+
+Full list of resources:
+
+ Docker container set: rabbitmq-bundle [172.16.0.1:8787/rhosp12/openstack-rabbitmq:pcmklatest]
+   rabbitmq-bundle-0    (ocf::heartbeat:rabbitmq-cluster):      Started lab-controller01
+   rabbitmq-bundle-1    (ocf::heartbeat:rabbitmq-cluster):      Started lab-controller02
+   rabbitmq-bundle-2    (ocf::heartbeat:rabbitmq-cluster):      Started lab-controller03
+ Docker container set: galera-bundle [172.16.0.1:8787/rhosp12/openstack-mariadb:pcmklatest]
+   galera-bundle-0      (ocf::heartbeat:galera):        Master lab-controller01
+   galera-bundle-1      (ocf::heartbeat:galera):        Master lab-controller02
+   galera-bundle-2      (ocf::heartbeat:galera):        Master lab-controller03
+ Docker container set: redis-bundle [172.16.0.1:8787/rhosp12/openstack-redis:pcmklatest]
+   redis-bundle-0       (ocf::heartbeat:redis): Master lab-controller01
+   redis-bundle-1       (ocf::heartbeat:redis): Slave lab-controller02
+   redis-bundle-2       (ocf::heartbeat:redis): Slave lab-controller03
+ ip-172.16.0.250        (ocf::heartbeat:IPaddr2):       Started lab-controller01
+ ip-192.168.122.150     (ocf::heartbeat:IPaddr2):       Started lab-controller01
+ ip-172.17.1.10 (ocf::heartbeat:IPaddr2):       Started lab-controller01
+ ip-172.17.1.150        (ocf::heartbeat:IPaddr2):       Started lab-controller01
+ ip-172.17.3.150        (ocf::heartbeat:IPaddr2):       Started lab-controller01
+ ip-172.17.4.150        (ocf::heartbeat:IPaddr2):       Started lab-controller01
+ Docker container set: haproxy-bundle [172.16.0.1:8787/rhosp12/openstack-haproxy:pcmklatest]
+   haproxy-bundle-docker-0      (ocf::heartbeat:docker):        Started lab-controller01
+   haproxy-bundle-docker-1      (ocf::heartbeat:docker):        Stopped
+   haproxy-bundle-docker-2      (ocf::heartbeat:docker):        Stopped
+ openstack-cinder-volume        (systemd:openstack-cinder-volume):      Started lab-controller01
+
+Daemon Status:
+  corosync: active/enabled
+  pacemaker: active/enabled
+  pcsd: active/enabled
 
 ```
 
-#### Update the Nodes
-
-## Lab 4: Troubleshooting and Testing
-
-## Lab 5: Deploying a New Overcloud
+## Lab 4: Deploying a New Overcloud

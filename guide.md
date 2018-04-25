@@ -1343,11 +1343,12 @@ Daemon Status:
 ```
 
 HAProxy is running on all 3 of our controllers, and number of virtual IP
-addresses (VIPs) are distributed across the cluster.
+addresses are distributed across the cluster.
 
-> **NOTE:** The VIPs may be distributed differently in your environment.
+> **NOTE:** The virtual IP addresses may be distributed differently in your
+> environment.
 
-Placement of the VIPs is important, because they must be assigned to hosts on
+Placement of the virtual IPs is important, because they must be assigned to hosts on
 which HAProxy is running.  Red Hat OpenStack Platform's cluster configuration
 includes constraints to ensure this.
 
@@ -1463,7 +1464,102 @@ Daemon Status:
   corosync: active/enabled
   pacemaker: active/enabled
   pcsd: active/enabled
+```
 
+Success!  HAProxy is now running only on ``lab-controller01``.  Pacemaker also
+moved all of the virtual IP addresses to that host.
+
+Note the warnings about location constraints.  ``pcs resource ban`` operates by
+creating constraints that **permanently** prevent a resource from running on a
+cluster node.  These constraints must be removed to restore the cluster to
+normal operation.
+
+```
+[heat-admin@lab-controller01 ~]$  sudo pcs constraint location --full | grep -A5 'Resource: haproxy-bundle'
+  Resource: haproxy-bundle
+    Disabled on: lab-controller02 (score:-INFINITY) (role: Started) (id:cli-ban-haproxy-bundle-on-lab-controller02)
+    Disabled on: lab-controller03 (score:-INFINITY) (role: Started) (id:cli-ban-haproxy-bundle-on-lab-controller03)
+    Constraint: location-haproxy-bundle (resource-discovery=exclusive)
+      Rule: score=0  (id:location-haproxy-bundle-rule)
+        Expression: haproxy-role eq true  (id:location-haproxy-bundle-rule-expr)
+```
+
+Since we won't actually be running ``tcpdump`` in this lab, let's go ahead and
+remove the constraints.
+
+```
+[heat-admin@lab-controller01 ~]$ sudo pcs constraint remove cli-ban-haproxy-bundle-on-lab-controller02
+
+[heat-admin@lab-controller01 ~]$ sudo pcs constraint remove cli-ban-haproxy-bundle-on-lab-controller03
+
+[heat-admin@lab-controller01 ~]$ sudo pcs status
+Cluster name: tripleo_cluster
+Stack: corosync
+Current DC: lab-controller01 (version 1.1.16-12.el7_4.8-94ff4df) - partition with quorum
+Last updated: Wed Apr 25 19:01:26 2018
+Last change: Wed Apr 25 19:00:50 2018 by root via cibadmin on lab-controller01
+
+12 nodes configured
+37 resources configured
+
+Online: [ lab-controller01 lab-controller02 lab-controller03 ]
+GuestOnline: [ galera-bundle-0@lab-controller01 galera-bundle-1@lab-controller02 galera-bundle-2@lab-controller03 rabbitmq-bundle-0@lab-controller01 rabbitmq-bundle-1@lab-controller02 rabbitmq-bundle-2@lab-controller03 redis-bundle-0@lab-controller01 redis-bundle-1@lab-controller02 redis-bundle-2@lab-controller03 ]
+
+Full list of resources:
+
+ Docker container set: rabbitmq-bundle [172.16.0.1:8787/rhosp12/openstack-rabbitmq:pcmklatest]
+   rabbitmq-bundle-0    (ocf::heartbeat:rabbitmq-cluster):      Started lab-controller01
+   rabbitmq-bundle-1    (ocf::heartbeat:rabbitmq-cluster):      Started lab-controller02
+   rabbitmq-bundle-2    (ocf::heartbeat:rabbitmq-cluster):      Started lab-controller03
+ Docker container set: galera-bundle [172.16.0.1:8787/rhosp12/openstack-mariadb:pcmklatest]
+   galera-bundle-0      (ocf::heartbeat:galera):        Master lab-controller01
+   galera-bundle-1      (ocf::heartbeat:galera):        Master lab-controller02
+   galera-bundle-2      (ocf::heartbeat:galera):        Master lab-controller03
+ Docker container set: redis-bundle [172.16.0.1:8787/rhosp12/openstack-redis:pcmklatest]
+   redis-bundle-0       (ocf::heartbeat:redis): Master lab-controller01
+   redis-bundle-1       (ocf::heartbeat:redis): Slave lab-controller02
+   redis-bundle-2       (ocf::heartbeat:redis): Slave lab-controller03
+ ip-172.16.0.250        (ocf::heartbeat:IPaddr2):       Started lab-controller01
+ ip-192.168.122.150     (ocf::heartbeat:IPaddr2):       Started lab-controller01
+ ip-172.17.1.10 (ocf::heartbeat:IPaddr2):       Started lab-controller01
+ ip-172.17.1.150        (ocf::heartbeat:IPaddr2):       Started lab-controller01
+ ip-172.17.3.150        (ocf::heartbeat:IPaddr2):       Started lab-controller01
+ ip-172.17.4.150        (ocf::heartbeat:IPaddr2):       Started lab-controller01
+ Docker container set: haproxy-bundle [172.16.0.1:8787/rhosp12/openstack-haproxy:pcmklatest]
+   haproxy-bundle-docker-0      (ocf::heartbeat:docker):        Started lab-controller01
+   haproxy-bundle-docker-1      (ocf::heartbeat:docker):        Started lab-controller02
+   haproxy-bundle-docker-2      (ocf::heartbeat:docker):        Started lab-controller03
+ openstack-cinder-volume        (systemd:openstack-cinder-volume):      Started lab-controller01
+
+Daemon Status:
+  corosync: active/enabled
+  pacemaker: active/enabled
+  pcsd: active/enabled
+```
+
+HAProxy is once again running on all of the controllers.  Note, however, that
+the virtual IPs are still all running on ``lab-controller01``, because that
+satifies the colocation constraints.  We can re-distribute them by restarting
+the Pacemaker resources.
+
+```
+[heat-admin@lab-controller01 ~]$ VIPS=`sudo pcs status | grep 'ip-' | awk '{ print $1 }'`
+
+[heat-admin@lab-controller01 ~]$ for VIP in $VIPS ; do sudo pcs resource restart $VIP ; done
+ip-172.16.0.250 successfully restarted
+ip-192.168.122.150 successfully restarted
+ip-172.17.1.10 successfully restarted
+ip-172.17.1.150 successfully restarted
+ip-172.17.3.150 successfully restarted
+ip-172.17.4.150 successfully restarted
+
+[heat-admin@lab-controller01 ~]$ sudo pcs status | grep 'ip-'
+ ip-172.16.0.250        (ocf::heartbeat:IPaddr2):       Started lab-controller01
+ ip-192.168.122.150     (ocf::heartbeat:IPaddr2):       Started lab-controller02
+ ip-172.17.1.10 (ocf::heartbeat:IPaddr2):       Started lab-controller03
+ ip-172.17.1.150        (ocf::heartbeat:IPaddr2):       Started lab-controller01
+ ip-172.17.3.150        (ocf::heartbeat:IPaddr2):       Started lab-controller02
+ ip-172.17.4.150        (ocf::heartbeat:IPaddr2):       Started lab-controller03
 ```
 
 ## Lab 4: Deploying a New Overcloud

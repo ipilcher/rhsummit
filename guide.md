@@ -1294,8 +1294,6 @@ Assume that we are troubleshooting a Nova issue.  Rather than worrying about
 multiple Nova logs on multiple hosts, let's stop all Nova containers on
 ``lab-controller02`` and ``lab-controller03``.
 
-First, what Nova containers are running?
-
 ```
 (undercloud) [stack@undercloud ~]$ openstack server list
 +--------------------------------------+------------------+--------+----------------------+----------------+--------------+
@@ -1310,7 +1308,8 @@ First, what Nova containers are running?
 | 87920ee2-dd27-432d-b8b1-52a2ab49a9ff | lab-compute01    | ACTIVE | ctlplane=172.16.0.25 | overcloud-full | compute      |
 +--------------------------------------+------------------+--------+----------------------+----------------+--------------+
 
-(undercloud) [stack@undercloud ~]$ for C in 172.16.0.{32,22,36} ; do ssh heat-admin@$C sudo docker ps --format "'{{ .Names }}'" | grep nova ; echo ; done
+(undercloud) [stack@undercloud ~]$ for C in 172.16.0.{32,22,36} ; do echo $C ; ssh heat-admin@$C sudo docker ps --format "'{{ .Names }}'" | grep nova ; echo ; done
+172.16.0.32
 nova_metadata
 nova_api
 nova_conductor
@@ -1320,6 +1319,7 @@ nova_api_cron
 nova_scheduler
 nova_placement
 
+172.16.0.22
 nova_metadata
 nova_api
 nova_conductor
@@ -1329,6 +1329,7 @@ nova_api_cron
 nova_scheduler
 nova_placement
 
+172.16.0.36
 nova_metadata
 nova_api
 nova_conductor
@@ -1337,6 +1338,41 @@ nova_consoleauth
 nova_api_cron
 nova_scheduler
 nova_placement
+
+
+(undercloud) [stack@undercloud ~]$ for C in 172.16.0.{22,36} ; do ssh heat-admin@$C sudo docker stop nova_{metadata,api,conductor,vnc_proxy,consoleauth,api_cron,scheduler,placement} ; done
+nova_metadata
+nova_api
+nova_conductor
+nova_vnc_proxy
+nova_consoleauth
+nova_api_cron
+nova_scheduler
+nova_placement
+nova_metadata
+nova_api
+nova_conductor
+nova_vnc_proxy
+nova_consoleauth
+nova_api_cron
+nova_scheduler
+nova_placement
+
+(undercloud) [stack@undercloud ~]$ for C in 172.16.0.{32,22,36} ; do echo $C ; ssh heat-admin@$C sudo docker ps --format "'{{ .Names }}'" | grep nova ; echo ; done
+172.16.0.32
+nova_metadata
+nova_api
+nova_conductor
+nova_vnc_proxy
+nova_consoleauth
+nova_api_cron
+nova_scheduler
+nova_placement
+
+172.16.0.22
+
+172.16.0.36
+
 ```
 
 #### Pacemaker-Managed Services

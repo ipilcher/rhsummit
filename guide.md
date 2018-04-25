@@ -1285,7 +1285,58 @@ set to run on a single host.
 
 #### Normal Services
 
+Recall our definition of a "normal" containerized service from lab 2 &mdash; a
+containerized service that is not a Ceph service or managed by Pacemaker.  These
+containers can be temporarily stopped on a particular host with the ``docker
+stop`` command.
+
+Assume that we are troubleshooting a Nova issue.  Rather than worrying about
+multiple Nova logs on multiple hosts, let's stop all Nova containers on
+``lab-controller02`` and ``lab-controller03``.
+
+First, what Nova containers are running?
+
 ```
+(undercloud) [stack@undercloud ~]$ openstack server list
++--------------------------------------+------------------+--------+----------------------+----------------+--------------+
+| ID                                   | Name             | Status | Networks             | Image          | Flavor       |
++--------------------------------------+------------------+--------+----------------------+----------------+--------------+
+| 47e02f2f-b3fe-4f0a-83b6-d0305004aec9 | lab-ceph02       | ACTIVE | ctlplane=172.16.0.23 | overcloud-full | ceph-storage |
+| 5c2f6fd7-3351-4ca6-bd41-3fafb1de5162 | lab-controller03 | ACTIVE | ctlplane=172.16.0.36 | overcloud-full | control      |
+| b837722d-0d91-4e50-a359-223487fbdb2e | lab-controller01 | ACTIVE | ctlplane=172.16.0.32 | overcloud-full | control      |
+| f8c7a2b3-73c8-476f-87a9-4c0af28e7595 | lab-controller02 | ACTIVE | ctlplane=172.16.0.22 | overcloud-full | control      |
+| 9e7924fd-4611-41de-a29a-c600502e12a0 | lab-ceph03       | ACTIVE | ctlplane=172.16.0.33 | overcloud-full | ceph-storage |
+| 66515ba8-15eb-480a-ad37-c3e91da47df8 | lab-ceph01       | ACTIVE | ctlplane=172.16.0.31 | overcloud-full | ceph-storage |
+| 87920ee2-dd27-432d-b8b1-52a2ab49a9ff | lab-compute01    | ACTIVE | ctlplane=172.16.0.25 | overcloud-full | compute      |
++--------------------------------------+------------------+--------+----------------------+----------------+--------------+
+
+(undercloud) [stack@undercloud ~]$ for C in 172.16.0.{32,22,36} ; do ssh heat-admin@$C sudo docker ps --format "'{{ .Names }}'" | grep nova ; echo ; done
+nova_metadata
+nova_api
+nova_conductor
+nova_vnc_proxy
+nova_consoleauth
+nova_api_cron
+nova_scheduler
+nova_placement
+
+nova_metadata
+nova_api
+nova_conductor
+nova_vnc_proxy
+nova_consoleauth
+nova_api_cron
+nova_scheduler
+nova_placement
+
+nova_metadata
+nova_api
+nova_conductor
+nova_vnc_proxy
+nova_consoleauth
+nova_api_cron
+nova_scheduler
+nova_placement
 ```
 
 #### Pacemaker-Managed Services

@@ -34,6 +34,8 @@
   - [Honey, I Shrunk the Cluster](#honey-i-shrunk-the-cluster)
     * [Normal Services](#normal-services)
     * [Pacemaker-Managed Services](#pacemaker-managed-services)
+  - [Testing Configuration Changes](#testing-configuration-changes)
+    * [Non-Persistent Configuration Changes](#non-persistent-configuration-changes)
 * [**Lab 4:** Deploying a New Overcloud](#lab-4-deploying-a-new-overcloud)
 
 ## Lab 0: Introduction
@@ -1654,5 +1656,87 @@ ip-172.17.4.150 successfully restarted
  ip-172.17.3.150        (ocf::heartbeat:IPaddr2):       Started lab-controller02
  ip-172.17.4.150        (ocf::heartbeat:IPaddr2):       Started lab-controller03
 ```
+
+### Testing Configuration Changes
+
+One very common troubleshooting task is testing a configuration file change.
+Lab 2 described the ``kolla_start`` mechanism that Red Hat OpenStack Platform 12
+uses to "inject" configuration files into containers.
+
+Prior to containerization, testing a configuration file change was a matter of
+modifying the file and restarting the appropriate service.  Let's try this with
+one of our containerized services.
+
+```
+[heat-admin@lab-controller01 ~]$ sudo docker exec -it nova_api /bin/sh
+()[root@lab-controller01 /]$ 
+
+()[root@lab-controller01 /]$ crudini --get /etc/nova/nova.conf DEFAULT service_down_time
+60
+
+()[root@lab-controller01 /]$ crudini --set /etc/nova/nova.conf DEFAULT service_down_time 120
+
+()[root@lab-controller01 /]$ crudini --get /etc/nova/nova.conf DEFAULT service_down_time
+120
+```
+
+That's all well and good, but how do we restart the service from within the
+container?  In fact, there's no way to do so, because the service is the
+container.  If the service stops, the container will stop.
+
+```
+()[root@lab-controller01 /]$ ps ax
+    PID TTY      STAT   TIME COMMAND
+      1 ?        Ss     0:00 /usr/sbin/httpd -DFOREGROUND
+     14 ?        Sl     0:22 nova_api_wsgi   -DFOREGROUND
+     15 ?        S      0:00 /usr/sbin/httpd -DFOREGROUND
+     16 ?        S      0:00 /usr/sbin/httpd -DFOREGROUND
+     17 ?        S      0:00 /usr/sbin/httpd -DFOREGROUND
+     18 ?        S      0:00 /usr/sbin/httpd -DFOREGROUND
+     19 ?        S      0:00 /usr/sbin/httpd -DFOREGROUND
+     20 ?        S      0:00 /usr/sbin/httpd -DFOREGROUND
+     21 ?        S      0:00 /usr/sbin/httpd -DFOREGROUND
+     22 ?        S      0:00 /usr/sbin/httpd -DFOREGROUND
+   1481 ?        Ss     0:00 /bin/sh
+   1743 ?        R+     0:00 ps ax
+
+()[root@lab-controller01 /]$ kill -TERM 1
+()[root@lab-controller01 /]$ [heat-admin@lab-controller01 ~]$
+```
+
+Indeed, killing ``httpd`` terminated the container rather abruptly.
+
+Recall from lab 2 that "normal" containers have a Docker restart policy of
+``always``, so we would expect the ``docker`` daemon to automatically restart
+the ``nova_api`` container.
+
+```
+[heat-admin@lab-controller01 ~]$ sudo docker ps | grep nova_api
+29a778ff874d        172.16.0.1:8787/rhosp12/openstack-nova-api:12.0-20180309.1                  "kolla_start"            13 days ago         Up About a minute (healthy)                       nova_api
+07ba693a6e11        172.16.0.1:8787/rhosp12/openstack-nova-api:12.0-20180309.1                  "kolla_start"            13 days ago         Up About an hour (healthy)                        nova_api_cron
+```
+
+That worked as expected.  But what about our configuration file change.
+
+```
+[heat-admin@lab-controller01 ~]$ sudo docker exec -it nova_api /bin/sh
+()[root@lab-controller01 /]$
+
+()[root@lab-controller01 /]$ crudini --get /etc/nova/nova.conf DEFAULT service_down_time
+60
+```
+
+As expected, ``nova.conf`` has reverted to the persistent version from
+``/var/lib/config-data/puppet-generated/nova``.
+
+In this section, we'll look at 2 different techniques for testing configuration
+files changes &mdash; one which leverages ``kolla_start`` and a simpler
+mechanism that does not required modifying any persistent configuration files.
+
+#### Non-Persistent Configuration Changes
+
+As you can see from the ``ps`` output above, the ``nova_api`` container is
+actually running ``httpd`` (Apache).  One nice feature of Apache is that it can
+be made to reload its configuration by sending it a ``SIGHUP`` signal.
 
 ## Lab 4: Deploying a New Overcloud

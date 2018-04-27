@@ -18,7 +18,8 @@
   - [TripleO Terminology](#tripleo-terminology)
 * [**Lab 1:** Lab Environment](#lab-1-lab-environment)
 * [**Lab 2:** Containers on the Undercloud](#lab-2-containers-on-the-undercloud)
-  - [Image is Everything](#image-is-everything)
+  - [Image Is Everything](#image-is-everything)
+  - [Push It Real Good](#push-it-real-good)
 * [**Lab 3:** Containers on the Overcloud](#lab-3-containers-on-the-overcloud)
   - [Is This Thing On?](#is-this-thing-on)
   - [Containers (Three Different Ones)](#containers-three-different-ones)
@@ -323,7 +324,7 @@ Instead, the impact of containerization on the undercloud is all about telling
 OSP director what container image to use for each service and making those
 images available to the overcloud nodes.
 
-### Image is Everything
+### Image Is Everything
 
 During deployment and updates, TripleO parameters are used to specify the image
 used for each overcloud container.  In our deployment, these parameters are set
@@ -411,17 +412,72 @@ parameter_defaults:
   DockerSwiftProxyImage: 172.16.0.1:8787/rhosp12/openstack-swift-proxy-server:12.0-20180309.1
 ```
 
-The comment at the beginning of this file conveniently shows the command that
-was used to generate it when this environment was first deployed.  This will
-enable us to easily regenerate the file when updated container images are
-released.
+There are a number of interesting things about this file.
 
-> **NOTE:** During a minor update of the overcloud, a containers is only
-> recreated with an updated image if the image tag (``12.0-20180309.1`` above)
-> has changed.  Thus, we cannot simply use ``latest`` as the tag.
+Most of the parameters in this file specify an image that will be
+used to run one or more services in the overcloud; the image specified by
+``DockerKeystoneImage`` will be used to run Keystone containers,
+``DockerMemcachedImage`` will be used for memcached containers, and so on.
+There are also a number of ``...ConfigImage`` parameters whose purpose is not
+so clear (particularly since they all seem to specify the same image as one
+of the service containers).  These images are used during deployments and
+updates to run special-purpose "one-shot" containers that perform various setup
+tasks &mdash; generating configuration files, creating database schema,
+populating the Keystone catalog, etc.
+
+The comment at the beginning of this file conveniently shows the 
+``openstack overcloud container image prepare`` command that was originally
+used to generate it.  The parameters that were passed to the command deserve
+some explanation.
+
+* ``--environment-file ...`` &mdash; All of the environment files that were used
+  when deploying the overcloud (see ``overcloud-deploy.sh``) were first included
+  in this command.  Doing this ensures that the generated
+  ``docker-registry.yaml`` includes all of the image parameters that are
+  required by our overcloud.  (The Ceph image, for example, will not be included
+  by default.)
+* ``--namespace 172.16.0.1:8787/rhosp12`` &mdash; This specifies both the
+  namespace for the OpenStack Platform 12 containers (``/rhosp12``) and the image registry
+  from which the overcloud nodes should pull the images (``172.16.0.1:8787``).
+* ``--tag 12.0-20180309.1`` &mdash; The tag specifies the specific version of
+  the OpenStack Platform images.
+* ``--set ceph_namespace=172.16.0.1:8787/ceph`` &mdash;
+
+command that
+was used to generate it when this environment was first deployed, which will
+enable us to easily regenerate the file when updated container images are
+released.  The parameters that were
+
+
+The contents of this file (aside from the opening comment) are TripleO
+parameters, and the names of the parameters are generally self-explanatory;
+the image specified by ``DockerKeystoneImage`` will be used to run Keystone
+containers and so forth.  The meaning of the ``...ConfigImage`` parameters may
+be less obvious.  These images are used during deployments and updates to run
+special "one-shot" containers that execute setup and configuration tasks such
+as generating configuration files, creating and migrating database schema, or
+populating the Keystone catalog.
+
+The comment at the beginning of this file conveniently shows the command that
+was used to generate it when this environment was first deployed, which will
+enable us to easily regenerate the file when updated container images are
+released.  There are several interesting things about this file and the command
+with which it was generated.
+
+
+
+First, notice the large number of environment files (``--environment-file``)
+that were specified on the command line.  These are the same environment files
+that were later used to deploy the overcloud.  Passing all of these environment
+files to the ``openstack overcloud container image prepare`` ensures that the
+output will include all of the container images required by the deployment.  (In
+particular, the Ceph image, ``DockerCephDaemonImage``, is not included by
+default.)
+
+Second, 
 
 How does one know what tag to use when generating this file? Red Hat OpenStack
-platform 12 includes a command that can discover the latest version of an
+Platform 12 includes a command that can discover the latest version of an
 OpenStack container image in the Red Hat Container Catalog.
 
 ```
@@ -431,7 +487,34 @@ OpenStack container image in the Red Hat Container Catalog.
 12.0-20180405.1
 ```
 
+> **NOTE:** During a minor update of the overcloud, a containers is only
+> recreated with an updated image if the image tag &mdash; ``12.0-20180309.1``
+> above &mdash; has changed.  Thus, we cannot simply use ``latest`` as the tag.
 
+### Push It Real Good
+
+The ``openstack overcloud container image prepare`` command (from our
+``docker-registry.yaml``) also specifies the docker image registry from which
+the overcloud nodes should pull the images &mdash; ``172.16.0.1:8787``.  This
+is actually the IP address of the undercloud itself.  In OpenStack Plaftorm 12,
+the undercloud automatically runs a container image registry.
+
+```
+[stack@undercloud ~]$ systemctl status docker-distribution
+● docker-distribution.service - v2 Registry server for Docker
+   Loaded: loaded (/usr/lib/systemd/system/docker-distribution.service; enabled; vendor preset: disabled)
+   Active: active (running) since Fri 2018-04-20 14:40:49 EDT; 1h 6min ago
+ Main PID: 531 (registry)
+   CGroup: /system.slice/docker-distribution.service
+           └─531 /usr/bin/registry serve /etc/docker-distribution/registry/config.yml
+```
+
+> **NOTE:** The image registry on the undercloud is provided as a convenience;
+> there is no requirement that it be used.  It is possible to use a different
+> container image registry, such as the registries provided by Red Hat Satellite
+> or Red Hat OpenShift Container Platform.
+
+OSP 12 also includes a utility command to upload the 
 
 ## Lab 3: Containers on the Overcloud
 

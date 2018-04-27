@@ -1022,7 +1022,7 @@ so we'll use a Python module to format the JSON.)
 }
 ```
 
-This is pretty straitforward.  ``kolla_set_configs`` is going to copy the
+This is pretty straightforward.  ``kolla_set_configs`` is going to copy the
 contents of ``/var/lib/kolla/config_files/src`` (which is a read-only bind mount
 of ``/var/lib/config-data/puppet-generated/nova``) to the root directory of the
 container, merging the two directory trees and preserving the properties of the
@@ -1668,75 +1668,220 @@ modifying the file and restarting the appropriate service.  Let's try this with
 one of our containerized services.
 
 ```
-[heat-admin@lab-controller01 ~]$ sudo docker exec -it nova_api /bin/sh
-()[root@lab-controller01 /]$ 
+[heat-admin@lab-controller01 ~]$ sudo docker exec -it -u root nova_scheduler /bin/sh
+()[root@lab-controller01 /]$
 
-()[root@lab-controller01 /]$ crudini --get /etc/nova/nova.conf DEFAULT service_down_time
-60
+()[root@lab-controller01 /]$ crudini --get /etc/nova/nova.conf DEFAULT debug
+Parameter not found: debug
 
-()[root@lab-controller01 /]$ crudini --set /etc/nova/nova.conf DEFAULT service_down_time 120
+()[root@lab-controller01 /]$ crudini --set /etc/nova/nova.conf DEFAULT debug True
 
-()[root@lab-controller01 /]$ crudini --get /etc/nova/nova.conf DEFAULT service_down_time
-120
+()[root@lab-controller01 /]$ crudini --get /etc/nova/nova.conf DEFAULT debug
+True
 ```
 
 That's all well and good, but how do we restart the service from within the
-container?  In fact, there's no way to do so, because the service is the
+container?  In fact, there's no way to do so, because the service **is** the
 container.  If the service stops, the container will stop.
 
 ```
-()[root@lab-controller01 /]$ ps ax
-    PID TTY      STAT   TIME COMMAND
-      1 ?        Ss     0:00 /usr/sbin/httpd -DFOREGROUND
-     14 ?        Sl     0:22 nova_api_wsgi   -DFOREGROUND
-     15 ?        S      0:00 /usr/sbin/httpd -DFOREGROUND
-     16 ?        S      0:00 /usr/sbin/httpd -DFOREGROUND
-     17 ?        S      0:00 /usr/sbin/httpd -DFOREGROUND
-     18 ?        S      0:00 /usr/sbin/httpd -DFOREGROUND
-     19 ?        S      0:00 /usr/sbin/httpd -DFOREGROUND
-     20 ?        S      0:00 /usr/sbin/httpd -DFOREGROUND
-     21 ?        S      0:00 /usr/sbin/httpd -DFOREGROUND
-     22 ?        S      0:00 /usr/sbin/httpd -DFOREGROUND
-   1481 ?        Ss     0:00 /bin/sh
-   1743 ?        R+     0:00 ps ax
+()[root@lab-controller01 /]$ ps aux
+USER         PID %CPU %MEM    VSZ   RSS TTY      STAT START   TIME COMMAND
+nova           1  0.2  0.7 272912 96260 ?        Ss   19:12   0:09 /usr/bin/python2 /usr/bin/nova-scheduler
+root        1272  0.0  0.0  11772  1728 ?        Ss   20:29   0:00 /bin/sh
+root        1350  0.0  0.0  47448  1676 ?        R+   20:31   0:00 ps aux
 
 ()[root@lab-controller01 /]$ kill -TERM 1
 ()[root@lab-controller01 /]$ [heat-admin@lab-controller01 ~]$
 ```
 
-Indeed, killing ``httpd`` terminated the container rather abruptly.
+Indeed, killing ``nova-scheduler`` terminated the container rather abruptly.
 
 Recall from lab 2 that "normal" containers have a Docker restart policy of
 ``always``, so we would expect the ``docker`` daemon to automatically restart
-the ``nova_api`` container.
+the ``nova_scheduler`` container.
 
 ```
-[heat-admin@lab-controller01 ~]$ sudo docker ps | grep nova_api
-29a778ff874d        172.16.0.1:8787/rhosp12/openstack-nova-api:12.0-20180309.1                  "kolla_start"            13 days ago         Up About a minute (healthy)                       nova_api
-07ba693a6e11        172.16.0.1:8787/rhosp12/openstack-nova-api:12.0-20180309.1                  "kolla_start"            13 days ago         Up About an hour (healthy)                        nova_api_cron
+[heat-admin@lab-controller01 ~]$ sudo docker ps | grep scheduler
+c8801163d88b        172.16.0.1:8787/rhosp12/openstack-nova-scheduler:12.0-20180309.1            "kolla_start"            13 days ago         Up About a minute (healthy)                       nova_scheduler
 ```
 
-That worked as expected.  But what about our configuration file change.
+That worked as expected.  But what about our configuration file change?
 
 ```
-[heat-admin@lab-controller01 ~]$ sudo docker exec -it nova_api /bin/sh
-()[root@lab-controller01 /]$
+[heat-admin@lab-controller01 ~]$ sudo docker exec -it -u root nova_scheduler /bin/sh
 
-()[root@lab-controller01 /]$ crudini --get /etc/nova/nova.conf DEFAULT service_down_time
-60
+()[root@lab-controller01 /]$ crudini --get /etc/nova/nova.conf DEFAULT debug
+Parameter not found: debug
 ```
 
-As expected, ``nova.conf`` has reverted to the persistent version from
+Unsurprisingly, ``nova.conf`` has reverted to the persistent version from
 ``/var/lib/config-data/puppet-generated/nova``.
 
-In this section, we'll look at 2 different techniques for testing configuration
+In this section, we'll look at different techniques for testing configuration
 files changes &mdash; one which leverages ``kolla_start`` and a simpler
 mechanism that does not required modifying any persistent configuration files.
 
-#### Non-Persistent Configuration Changes
+#### Non-Persistent Configuration Changes (v1)
 
-As you can see from the ``ps`` output above, the ``nova_api`` container is
-actually running ``httpd`` (Apache).  One nice feature of Apache is that it can
-be made to reload its configuration by sending it a ``SIGHUP`` signal.
+Starting with the Newton release (Red Hat OpenStack Platform 10), OpenStack
+supports "mutable" configuration options &dash; configuration options that can
+be changed without restarting a service.  Most options are not mutable, but the
+``debug`` setting was one of the primary reasons for adding this capability.
+Let's test this capability with our ``nova_scheduler`` container.
+
+First, verify that ``DEBUG`` messages are not being logged.
+
+```
+()[root@lab-controller01 /]$ grep DEBUG /var/log/nova/nova-scheduler.log
+```
+
+(The ``grep`` command should produce no output.)
+
+Now set the ``debug`` setting
+
+```
+()[root@lab-controller01 /]$ crudini --set /etc/nova/nova.conf DEFAULT debug True
+```
+
+Send a ``SIGHUP`` signal to the ``nova-scheduler`` process.
+
+```
+()[root@lab-controller01 /]$ ps aux
+USER         PID %CPU %MEM    VSZ   RSS TTY      STAT START   TIME COMMAND
+nova           1  0.3  0.7 272872 96068 ?        Ss   20:32   0:05 /usr/bin/python2 /usr/bin/nova-scheduler
+root         156  0.0  0.0  11772  1728 ?        Ss   20:41   0:00 /bin/sh
+root         461  0.0  0.0  47448  1672 ?        R+   20:56   0:00 ps aux
+
+()[root@lab-controller01 /]$ kill -HUP 1
+```
+
+Check the results.
+
+```
+()[root@lab-controller01 /]$ grep DEBUG /var/log/nova/nova-scheduler.log
+(...)
+```
+
+That worked.  Let's revert the change lazy way by restarting the container.
+
+```
+()[root@lab-controller01 /]$ exit
+exit
+
+[heat-admin@lab-controller01 ~]$ sudo docker restart nova_scheduler
+nova_scheduler
+```
+
+#### Non-Persistent Configuration Changes (v2)
+
+As mentioned in the previous section, most configuration options are not
+mutable.  But a similar effect can be achieved for any configuration option for
+those services which run under Apache ``httpd``.  This is because sending
+``SIGUSR1`` to ``httpd`` causes it to stop all of its worker processes, reload
+its configuration files, and spawn a new set of workers.  This allows us to
+effectively restart these OpenStack services without stopping the parent
+``httpd`` process.
+
+Let's test this with our ``nova_api`` container, which runs ``httpd``, and a 
+non-mutable configuration option &mdash; ``log_dir`` (chosen because it is easy
+to check).
+
+```
+[heat-admin@lab-controller01 ~]$ sudo docker exec -it nova_api /bin/sh
+
+()[root@lab-controller01 /]$ mkdir /var/log/nova-debug
+()[root@lab-controller01 /]$ chown nova:nova /var/log/nova-debug
+
+()[root@lab-controller01 /]$ crudini --set /etc/nova/nova.conf DEFAULT log_dir /var/log/nova-debug
+
+()[root@lab-controller01 /]$ ps aux      
+USER         PID %CPU %MEM    VSZ   RSS TTY      STAT START   TIME COMMAND
+root           1  0.0  0.0 260796  8232 ?        Ss   22:50   0:00 /usr/sbin/httpd -DFOREGROUND
+nova          14  1.4  1.0 710352 132376 ?       Sl   22:50   0:07 nova_api_wsgi   -DFOREGROUND
+apache        15  0.0  0.0 262928  8220 ?        S    22:50   0:00 /usr/sbin/httpd -DFOREGROUND
+apache        16  0.0  0.0 262928  8220 ?        S    22:50   0:00 /usr/sbin/httpd -DFOREGROUND
+apache        17  0.0  0.0 262928  8220 ?        S    22:50   0:00 /usr/sbin/httpd -DFOREGROUND
+apache        18  0.0  0.0 262928  8220 ?        S    22:50   0:00 /usr/sbin/httpd -DFOREGROUND
+apache        19  0.0  0.0 262928  8220 ?        S    22:50   0:00 /usr/sbin/httpd -DFOREGROUND
+apache        20  0.0  0.0 262928  8220 ?        S    22:50   0:00 /usr/sbin/httpd -DFOREGROUND
+apache        21  0.0  0.0 262928  8220 ?        S    22:50   0:00 /usr/sbin/httpd -DFOREGROUND
+apache        22  0.0  0.0 262928  8220 ?        S    22:50   0:00 /usr/sbin/httpd -DFOREGROUND
+apache        35  0.0  0.0 262928  8220 ?        S    22:50   0:00 /usr/sbin/httpd -DFOREGROUND
+apache        36  0.0  0.0 262928  8220 ?        S    22:50   0:00 /usr/sbin/httpd -DFOREGROUND
+apache        37  0.0  0.0 262928  8220 ?        S    22:50   0:00 /usr/sbin/httpd -DFOREGROUND
+apache        38  0.0  0.0 262928  8220 ?        S    22:50   0:00 /usr/sbin/httpd -DFOREGROUND
+apache        39  0.0  0.0 262928  8220 ?        S    22:50   0:00 /usr/sbin/httpd -DFOREGROUND
+root         268  0.0  0.0  11772  1740 ?        Ss   22:56   0:00 /bin/sh
+root         411  0.0  0.0  47448  1668 ?        R+   22:58   0:00 ps aux
+
+()[root@lab-controller01 /]$ kill -USR1 1
+
+()[root@lab-controller01 /]$ ps aux
+USER         PID %CPU %MEM    VSZ   RSS TTY      STAT START   TIME COMMAND
+root           1  0.0  0.0 260796  8240 ?        Ss   22:50   0:00 /usr/sbin/httpd -DFOREGROUND
+root         268  0.0  0.0  11772  1748 ?        Ss   22:56   0:00 /bin/sh
+nova         457 74.3  0.9 710428 115196 ?       Sl   22:59   0:04 nova_api_wsgi   -DFOREGROUND
+apache       458  0.1  0.0 262928  8212 ?        S    22:59   0:00 /usr/sbin/httpd -DFOREGROUND
+apache       459  0.3  0.0 262928  8212 ?        S    22:59   0:00 /usr/sbin/httpd -DFOREGROUND
+apache       460  0.1  0.0 262928  7708 ?        S    22:59   0:00 /usr/sbin/httpd -DFOREGROUND
+apache       461  0.1  0.0 262928  7708 ?        S    22:59   0:00 /usr/sbin/httpd -DFOREGROUND
+apache       462  0.1  0.0 262928  8212 ?        S    22:59   0:00 /usr/sbin/httpd -DFOREGROUND
+apache       463  0.0  0.0 262928  7708 ?        S    22:59   0:00 /usr/sbin/httpd -DFOREGROUND
+apache       464  0.1  0.0 262928  7708 ?        S    22:59   0:00 /usr/sbin/httpd -DFOREGROUND
+apache       465  0.0  0.0 262928  7708 ?        S    22:59   0:00 /usr/sbin/httpd -DFOREGROUND
+root         484  0.0  0.0  47448  1676 ?        R+   22:59   0:00 ps aux
+
+()[root@lab-controller01 /]$ ls /var/log/nova-debug
+nova-api.log
+```
+
+We can see that the PIDs of the ``httpd`` worker processes have all changed, and
+``nova-api.log`` is now being written to the new directory.
+
+#### Persistent Configuration Changes
+
+The final technique for testing configuration file changes is probably
+obvious.  We know that ``kolla_set_configs`` copies the service configuration
+files from a directory under ``/var/lib/config-data/puppet-generated``, so
+modifying the appropriate file within the correct sub-directory should change
+the file that gets used by the containerized service.
+
+Recall that the value of the ``debug`` parameter is not explicitly set in our
+``nova.conf`` file.  Let's explicitly set it to ``False`` (its default value).
+
+```
+()[root@lab-controller01 /]$ crudini --get /etc/nova/nova.conf DEFAULT debug
+Parameter not found: debug
+
+()[root@lab-controller01 /]$ exit
+exit
+
+[heat-admin@lab-controller01 ~]$ sudo crudini --get /var/lib/config-data/puppet-generated/nova/etc/nova/nova.conf DEFAULT debug
+Parameter not found: debug
+
+[heat-admin@lab-controller01 ~]$ sudo crudini --set /var/lib/config-data/puppet-generated/nova/etc/nova/nova.conf DEFAULT debug False
+
+[heat-admin@lab-controller01 ~]$ sudo docker restart nova_api
+nova_api
+
+[heat-admin@lab-controller01 ~]$ sudo docker exec -it nova_api crudini --get /etc/nova/nova.conf DEFAULT debug
+False
+```
+
+Do note that there may be multiple versions of a particular configuration file,
+used by different containers.
+
+```
+[heat-admin@lab-controller01 ~]$ sudo find /var/lib/config-data/puppet-generated -name nova.conf
+/var/lib/config-data/puppet-generated/nova_placement/etc/nova/nova.conf
+/var/lib/config-data/puppet-generated/nova/etc/nova/nova.conf
+```
+
+This is a benefit of containerization, because it allows different services to
+use different configuration values (without using non-standard file locations),
+but it does mean that you may need to check a container's definition (with
+``docker inspect``) to determine exactly which copy of a file should be
+modified.
 
 ## Lab 4: Deploying a New Overcloud

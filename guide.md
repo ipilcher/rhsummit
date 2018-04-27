@@ -412,7 +412,7 @@ parameter_defaults:
   DockerSwiftProxyImage: 172.16.0.1:8787/rhosp12/openstack-swift-proxy-server:12.0-20180309.1
 ```
 
-There are a number of interesting things about this file.
+There are a number of noteworthy things about this file.
 
 Most of the parameters in this file specify an image that will be
 used to run one or more services in the overcloud; the image specified by
@@ -436,15 +436,21 @@ some explanation.
   ``docker-registry.yaml`` includes all of the image parameters that are
   required by our overcloud.  (The Ceph image, for example, will not be included
   by default.)
+  
 * ``--namespace 172.16.0.1:8787/rhosp12`` &mdash; This specifies both the
-  namespace for the OpenStack Platform 12 containers (``/rhosp12``) and the image registry
-  from which the overcloud nodes should pull the images (``172.16.0.1:8787``).
+  namespace for the OpenStack Platform 12 containers (``/rhosp12``) and the image
+  registry from which the overcloud nodes should pull the images
+  (``172.16.0.1:8787``).  The ``DockerInsecureRegistryAddress`` parameter is set
+  to this registry, so that the overcloud nodes will use HTTP to pull images
+  from the undercloud.
+  
 * ``--tag 12.0-20180309.1`` &mdash; The tag specifies the specific version of
   the OpenStack Platform images to be used.
+
 * ``--set ceph_namespace=172.16.0.1:8787/ceph`` &mdash; Specifies the namespace
   and image registry for the Ceph image.
 
-How can one know what value should be used for the ``--tag`` parameter? Red Hat
+How can one know what value should be used for the ``--tag`` parameter?  Red Hat
 OpenStack Platform 12 includes a command that can discover the latest version of
 an OpenStack container image in the Red Hat Container Catalog.
 
@@ -462,7 +468,7 @@ an OpenStack container image in the Red Hat Container Catalog.
 ### Push It Real Good
 
 The ``openstack overcloud container image prepare`` command (from our
-``docker-registry.yaml``) also specifies the docker image registry from which
+``docker-registry.yaml``) specifies the docker image registry from which
 the overcloud nodes should pull the images &mdash; ``172.16.0.1:8787``.  This
 is actually the IP address of the undercloud itself.  In OpenStack Plaftorm 12,
 the undercloud automatically runs a container image registry.
@@ -482,7 +488,62 @@ the undercloud automatically runs a container image registry.
 > container image registry, such as the registries provided by Red Hat Satellite
 > or Red Hat OpenShift Container Platform.
 
-OSP 12 also includes a utility command to upload the 
+OSP 12 also includes a utility command to upload the required images to the
+local registry &mdash; ``openstack overcloud container image upload``.  This
+command expects a configuration file which specifies the container images to be
+pulled from an upstream registry, such as the Red Hat Container Catalog, and
+pushed to the local registry.  Let's look at the file that was used during the
+initial deployment of our environment.
+
+```
+[stack@undercloud ~]$ cat container-images.yaml
+container_images:
+- imagename: 192.168.1.10:5000/rhosp12/openstack-aodh-api:12.0-20180309.1
+- imagename: 192.168.1.10:5000/rhosp12/openstack-aodh-evaluator:12.0-20180309.1
+- imagename: 192.168.1.10:5000/rhosp12/openstack-aodh-listener:12.0-20180309.1
+- imagename: 192.168.1.10:5000/rhosp12/openstack-aodh-notifier:12.0-20180309.1
+- imagename: 192.168.1.10:5000/rhosp12/openstack-ceilometer-central:12.0-20180309.1
+- imagename: 192.168.1.10:5000/rhosp12/openstack-ceilometer-compute:12.0-20180309.1
+- imagename: 192.168.1.10:5000/rhosp12/openstack-ceilometer-notification:12.0-20180309.1
+- imagename: 192.168.1.10:5000/rhosp12/openstack-cron:12.0-20180309.1
+- imagename: 192.168.1.10:5000/rhosp12/openstack-glance-api:12.0-20180309.1
+- imagename: 192.168.1.10:5000/rhosp12/openstack-gnocchi-api:12.0-20180309.1
+- imagename: 192.168.1.10:5000/rhosp12/openstack-gnocchi-metricd:12.0-20180309.1
+- imagename: 192.168.1.10:5000/rhosp12/openstack-gnocchi-statsd:12.0-20180309.1
+- imagename: 192.168.1.10:5000/rhosp12/openstack-haproxy:12.0-20180309.1
+- imagename: 192.168.1.10:5000/rhosp12/openstack-heat-api-cfn:12.0-20180309.1
+- imagename: 192.168.1.10:5000/rhosp12/openstack-heat-api:12.0-20180309.1
+- imagename: 192.168.1.10:5000/rhosp12/openstack-heat-engine:12.0-20180309.1
+- imagename: 192.168.1.10:5000/rhosp12/openstack-horizon:12.0-20180309.1
+- imagename: 192.168.1.10:5000/rhosp12/openstack-keystone:12.0-20180309.1
+- imagename: 192.168.1.10:5000/rhosp12/openstack-mariadb:12.0-20180309.1
+- imagename: 192.168.1.10:5000/rhosp12/openstack-memcached:12.0-20180309.1
+- imagename: 192.168.1.10:5000/rhosp12/openstack-nova-api:12.0-20180309.1
+- imagename: 192.168.1.10:5000/rhosp12/openstack-nova-compute:12.0-20180309.1
+- imagename: 192.168.1.10:5000/rhosp12/openstack-nova-conductor:12.0-20180309.1
+- imagename: 192.168.1.10:5000/rhosp12/openstack-nova-consoleauth:12.0-20180309.1
+- imagename: 192.168.1.10:5000/rhosp12/openstack-nova-libvirt:12.0-20180309.1
+- imagename: 192.168.1.10:5000/rhosp12/openstack-nova-novncproxy:12.0-20180309.1
+- imagename: 192.168.1.10:5000/rhosp12/openstack-nova-placement-api:12.0-20180309.1
+- imagename: 192.168.1.10:5000/rhosp12/openstack-nova-scheduler:12.0-20180309.1
+- imagename: 192.168.1.10:5000/rhosp12/openstack-panko-api:12.0-20180309.1
+- imagename: 192.168.1.10:5000/rhosp12/openstack-rabbitmq:12.0-20180309.1
+- imagename: 192.168.1.10:5000/rhosp12/openstack-redis:12.0-20180309.1
+- imagename: 192.168.1.10:5000/rhosp12/openstack-swift-account:12.0-20180309.1
+- imagename: 192.168.1.10:5000/rhosp12/openstack-swift-container:12.0-20180309.1
+- imagename: 192.168.1.10:5000/rhosp12/openstack-swift-object:12.0-20180309.1
+- imagename: 192.168.1.10:5000/rhosp12/openstack-swift-proxy-server:12.0-20180309.1
+- imagename: 192.168.1.10:5000/ceph/rhceph-2-rhel7:latest
+```
+
+The first thing to note is that our images were not pulled directly from the
+Red Hat Container Catalog.  In fact, our ``bastion`` host is also running a
+container registry, and we're using that as a stand-in for the Red Hat site.
+
+More importantly, where did this file come from?  In fact, this file was also
+produced by ``openstack overcloud container image prepare``.  It has a large
+number of options, which can be seen with ``openstack overcloud container image
+prepare --help``
 
 ## Lab 3: Containers on the Overcloud
 

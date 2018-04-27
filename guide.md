@@ -1951,6 +1951,10 @@ FROM 172.16.0.1:8787/rhosp12/openstack-nova-scheduler:12.0-20180309.1
 RUN echo "Are you not entertained?!" > /fun
 EOF
 
+(undercloud) [stack@undercloud nova_scheduler]$ cat Dockerfile
+FROM 172.16.0.1:8787/rhosp12/openstack-nova-scheduler:12.0-20180309.1
+RUN echo "Are you not entertained?!" > /fun
+
 (undercloud) [stack@undercloud nova_scheduler]$ docker build -t 172.16.0.1:8787/rhosp12/openstack-nova-scheduler:12.0-20180309.1.fun .
 Sending build context to Docker daemon 2.048 kB
 Step 1 : FROM 172.16.0.1:8787/rhosp12/openstack-nova-scheduler:12.0-20180309.1
@@ -1965,6 +1969,48 @@ The command '/bin/sh -c echo "Are you not entertained?!" > /fun' returned a non-
 
 (undercloud) [stack@undercloud nova_scheduler]$ docker inspect 172.16.0.1:8787/rhosp12/openstack-haproxy:12.0-20180309.1 | jq .[0].ContainerConfig.User
 ""
+
+(undercloud) [stack@undercloud nova_scheduler]$ cat << 'EOF' > Dockerfile
+FROM 172.16.0.1:8787/rhosp12/openstack-nova-scheduler:12.0-20180309.1
+USER root
+RUN echo "Are you not entertained?!" > /fun
+USER nova
+EOF
+
+(undercloud) [stack@undercloud nova_scheduler]$ cat Dockerfile
+FROM 172.16.0.1:8787/rhosp12/openstack-nova-scheduler:12.0-20180309.1
+USER root
+RUN echo "Are you not entertained?!" > /fun
+USER nova
+
+(undercloud) [stack@undercloud nova_scheduler]$ docker build -t 172.16.0.1:8787/rhosp12/openstack-nova-scheduler:12.0-20180309.1.fun .
+Sending build context to Docker daemon 2.048 kB
+Step 1 : FROM 172.16.0.1:8787/rhosp12/openstack-nova-scheduler:12.0-20180309.1
+ ---> 27903e04824f
+Step 2 : USER root
+ ---> Running in ec98a03022c0
+ ---> d899ffa1bb5d
+Removing intermediate container ec98a03022c0
+Step 3 : RUN echo "Are you not entertained?!" > /fun
+ ---> Running in 0cbe4f52b986
+ ---> 279719ceeaf1
+Removing intermediate container 0cbe4f52b986
+Step 4 : USER nova
+ ---> Running in 454d7d895ea7
+ ---> 03f479435e32
+Removing intermediate container 454d7d895ea7
+Successfully built 03f479435e32
+
+(undercloud) [stack@undercloud nova_scheduler]$ docker push 172.16.0.1:8787/rhosp12/openstack-nova-scheduler:12.0-20180309.1.fun
+The push refers to a repository [172.16.0.1:8787/rhosp12/openstack-nova-scheduler]
+daede3fec6c3: Pushed 
+b9f60a193ebe: Layer already exists 
+514be612eee2: Layer already exists 
+b6ad7063eec0: Layer already exists 
+f03f67deb08c: Layer already exists 
+1b0bb3f6ad7e: Layer already exists 
+e9fb39060494: Layer already exists 
+12.0-20180309.1.fun: digest: sha256:6a15614f6e62f249c1096e4fb7bc153c2546a4d38b49154f875de0b9f60f32df size: 1791
 ```
 
 

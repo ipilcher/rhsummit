@@ -1903,7 +1903,11 @@ modified container images.
 Let's create a couple of modified container images &mdash; one for a
 Pacemaker-managed service (HAProxy) and one for a "normal" service (Nova
 scheduler).  For this test, we'll simply add an additional file to the root
-directory of the container image.
+directory of the images.
+
+First, return to the undercloud and create a subdirectory in which we will
+create the dockerfile for our new image.  (The ``docker build`` command takes a
+path to a **directory**, which must contain a dockerfile named ``Dockerfile``.)
 
 ```
 [heat-admin@lab-controller01 ~]$ exit
@@ -1913,7 +1917,12 @@ Connection to 172.16.0.32 closed.
 (undercloud) [stack@undercloud ~]$ mkdir /tmp/haproxy
 
 (undercloud) [stack@undercloud ~]$ cd /tmp/haproxy
+```
 
+Create a simple dockerfile and use it to build a new image, specifying an
+appropriate tag.
+
+```
 (undercloud) [stack@undercloud haproxy]$ cat << 'EOF' > Dockerfile
 FROM 172.16.0.1:8787/rhosp12/openstack-haproxy:12.0-20180309.1
 RUN echo "Are you not entertained?!" > /fun
@@ -1932,7 +1941,14 @@ Step 2 : RUN echo "Are you not entertained?!" > /fun
  ---> 95e7c11793a4
 Removing intermediate container 05288d8e08c0
 Successfully built 95e7c11793a4
+```
 
+Push the new image into the registry that is running on the undercloud.
+
+> **NOTE:** This registry will be discussed in the final lab, which covers
+> deployment and updates.
+
+```
 (undercloud) [stack@undercloud haproxy]$ docker push 172.16.0.1:8787/rhosp12/openstack-haproxy:12.0-20180309.1.fun
 The push refers to a repository [172.16.0.1:8787/rhosp12/openstack-haproxy]
 6e77bfc415dc: Pushed 
@@ -1941,7 +1957,11 @@ f03f67deb08c: Layer already exists
 1b0bb3f6ad7e: Layer already exists 
 e9fb39060494: Layer already exists 
 12.0-20180309.1.fun: digest: sha256:262bba45ccaa0dfc471c9965f9dcfd5fb69d3ed93bee4a274fbbd40cd9e1f00f size: 1369
+```
 
+Now, let's do the same thing for the ``nova_scheduler`` image.
+
+```
 (undercloud) [stack@undercloud haproxy]$ mkdir /tmp/nova_scheduler
 
 (undercloud) [stack@undercloud haproxy]$ cd /tmp/nova_scheduler
@@ -1963,13 +1983,34 @@ Step 2 : RUN echo "Are you not entertained?!" > /fun
  ---> Running in a36e6569888e
 /bin/sh: /fun: Permission denied
 The command '/bin/sh -c echo "Are you not entertained?!" > /fun' returned a non-zero code: 1
+```
 
+Oops.  What happened?
+
+You may recall that some of our containers start as the ``root`` user and rely
+on the either the containerized service (such as ``httpd``) or a wrapper program
+to drop superuser priviliges.  Other containers start as a non-root user, and
+potentially rely on ``sudo`` to temporarily elevate their privilege
+(``kolla_start`` for example).
+
+It turns out that the HAProxy container is the first type, and the Nova
+scheduler container is the second type.  This can be seen by inspecting the
+images.
+
+```
 (undercloud) [stack@undercloud nova_scheduler]$ docker inspect 172.16.0.1:8787/rhosp12/openstack-nova-scheduler:12.0-20180309.1 | jq .[0].ContainerConfig.User
 "nova"
 
 (undercloud) [stack@undercloud nova_scheduler]$ docker inspect 172.16.0.1:8787/rhosp12/openstack-haproxy:12.0-20180309.1 | jq .[0].ContainerConfig.User
 ""
+```
 
+The empty user (``""``) is equivalent to ``root``.
+
+Let's update our dockerfile to account for the fact that the ``nova_scheduler``
+container starts as the ``nova`` user.
+
+```
 (undercloud) [stack@undercloud nova_scheduler]$ cat << 'EOF' > Dockerfile
 FROM 172.16.0.1:8787/rhosp12/openstack-nova-scheduler:12.0-20180309.1
 USER root
@@ -1982,7 +2023,14 @@ FROM 172.16.0.1:8787/rhosp12/openstack-nova-scheduler:12.0-20180309.1
 USER root
 RUN echo "Are you not entertained?!" > /fun
 USER nova
+```
 
+When doing this, it is very important to set the user **back** to the correct
+non-root user.
+
+We should be able to build and push our image now.
+
+```
 (undercloud) [stack@undercloud nova_scheduler]$ docker build -t 172.16.0.1:8787/rhosp12/openstack-nova-scheduler:12.0-20180309.1.fun .
 Sending build context to Docker daemon 2.048 kB
 Step 1 : FROM 172.16.0.1:8787/rhosp12/openstack-nova-scheduler:12.0-20180309.1

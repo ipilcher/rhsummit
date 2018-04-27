@@ -41,8 +41,6 @@
   - [Testing Container Image Changes](#testing-container-image-changes)
     * [Modifying a Container Image](#modifying-a-container-image)
     * [Testing the Modified Image](#testing-the-modified-image)
-      - [Paunch](#paunch)
-      - [Pacemaker](#pacemaker)
 * [**Lab 4:** Deploying a New Overcloud](#lab-4-deploying-a-new-overcloud)
 
 ## Lab 0: Introduction
@@ -1890,5 +1888,87 @@ use different configuration values (without using non-standard file locations),
 but it does mean that you may need to check a container's definition (with
 ``docker inspect``) to determine exactly which copy of a file should be
 modified.
+
+### Testing Container Image Changes
+
+We've seen how we can modify the configuration files used by the containerized
+services in Red Hat OpenStack Platform 12, but there may be times when more
+extensive changes to a containerized services need to be tested &mdash; changes
+such as code fixes, filesystem access changes, installation of additional
+plug-ins or agents, etc.  These changes require the creation and testing of
+modified container images.
+
+#### Modifying Container Images
+
+Let's create a couple of modified container images &mdash; one for a
+Pacemaker-managed service (HAProxy) and one for a "normal" service (Nova
+scheduler).  For this test, we'll simply add an additional file to the root
+directory of the container image.
+
+```
+[heat-admin@lab-controller01 ~]$ exit
+logout
+Connection to 172.16.0.32 closed.
+
+(undercloud) [stack@undercloud ~]$ mkdir /tmp/haproxy
+
+(undercloud) [stack@undercloud ~]$ cd /tmp/haproxy
+
+(undercloud) [stack@undercloud haproxy]$ cat << 'EOF' > Dockerfile
+FROM 172.16.0.1:8787/rhosp12/openstack-haproxy:12.0-20180309.1
+RUN echo "Are you not entertained?!" > /fun
+EOF
+
+(undercloud) [stack@undercloud haproxy]$ cat Dockerfile
+FROM 172.16.0.1:8787/rhosp12/openstack-haproxy:12.0-20180309.1
+RUN echo "Are you not entertained?!" > /fun
+
+(undercloud) [stack@undercloud haproxy]$ docker build -t 172.16.0.1:8787/rhosp12/openstack-haproxy:12.0-20180309.1.fun .
+Sending build context to Docker daemon 2.048 kB
+Step 1 : FROM 172.16.0.1:8787/rhosp12/openstack-haproxy:12.0-20180309.1
+ ---> 613946718d1e
+Step 2 : RUN echo "Are you not entertained?!" > /fun
+ ---> Running in 05288d8e08c0
+ ---> 95e7c11793a4
+Removing intermediate container 05288d8e08c0
+Successfully built 95e7c11793a4
+
+(undercloud) [stack@undercloud haproxy]$ docker push 172.16.0.1:8787/rhosp12/openstack-haproxy:12.0-20180309.1.fun
+The push refers to a repository [172.16.0.1:8787/rhosp12/openstack-haproxy]
+6e77bfc415dc: Pushed 
+38f4bbab5a7a: Layer already exists 
+f03f67deb08c: Layer already exists 
+1b0bb3f6ad7e: Layer already exists 
+e9fb39060494: Layer already exists 
+12.0-20180309.1.fun: digest: sha256:262bba45ccaa0dfc471c9965f9dcfd5fb69d3ed93bee4a274fbbd40cd9e1f00f size: 1369
+
+(undercloud) [stack@undercloud haproxy]$ mkdir /tmp/nova_scheduler
+
+(undercloud) [stack@undercloud haproxy]$ cd /tmp/nova_scheduler
+
+(undercloud) [stack@undercloud nova_scheduler]$ cat << 'EOF' > Dockerfile
+FROM 172.16.0.1:8787/rhosp12/openstack-nova-scheduler:12.0-20180309.1
+RUN echo "Are you not entertained?!" > /fun
+EOF
+
+(undercloud) [stack@undercloud nova_scheduler]$ docker build -t 172.16.0.1:8787/rhosp12/openstack-nova-scheduler:12.0-20180309.1.fun .
+Sending build context to Docker daemon 2.048 kB
+Step 1 : FROM 172.16.0.1:8787/rhosp12/openstack-nova-scheduler:12.0-20180309.1
+ ---> 27903e04824f
+Step 2 : RUN echo "Are you not entertained?!" > /fun
+ ---> Running in a36e6569888e
+/bin/sh: /fun: Permission denied
+The command '/bin/sh -c echo "Are you not entertained?!" > /fun' returned a non-zero code: 1
+
+(undercloud) [stack@undercloud nova_scheduler]$ docker inspect 172.16.0.1:8787/rhosp12/openstack-nova-scheduler:12.0-20180309.1 | jq .[0].ContainerConfig.User
+"nova"
+
+(undercloud) [stack@undercloud nova_scheduler]$ docker inspect 172.16.0.1:8787/rhosp12/openstack-haproxy:12.0-20180309.1 | jq .[0].ContainerConfig.User
+""
+```
+
+
+
+#### Testing the Modified Image
 
 ## Lab 4: Deploying a New Overcloud

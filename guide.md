@@ -17,7 +17,8 @@
   - [OpenStack and Containers](#openstack-and-containers)
   - [TripleO Terminology](#tripleo-terminology)
 * [**Lab 1:** Lab Environment](#lab-1-lab-environment)
-* [**Lab 2:** Looking Around](#lab-2-looking-around)
+* [**Lab 2:** Containers on the Undercloud](#lab-2-containers-on-the-undercloud)
+* [**Lab 3:** Containers on the Overcloud](#lab-3-containers-on-the-overcloud)
   - [Is This Thing On?](#is-this-thing-on)
   - [Containers (Three Different Ones)](#containers-three-different-ones)
     * [Pacemaker-Managed Containers](#pacemaker-managed-containers)
@@ -30,7 +31,7 @@
   - [Other Node Types](#other-node-types)
     * [Compute Nodes](#compute-nodes)
     * [Ceph Storage Nodes](#ceph-storage-nodes)
-* [**Lab 3:** Troubleshooting and Testing](#lab-3-troubleshooting-and-testing)
+* [**Lab 4:** Troubleshooting and Testing](#lab-4-troubleshooting-and-testing)
   - [Honey, I Shrunk the Cluster](#honey-i-shrunk-the-cluster)
     * [Normal Services](#normal-services)
     * [Pacemaker-Managed Services](#pacemaker-managed-services)
@@ -41,7 +42,7 @@
   - [Testing Container Image Changes](#testing-container-image-changes)
     * [Modifying a Container Image](#modifying-a-container-image)
     * [Testing the Modified Image](#testing-the-modified-image)
-* [**Lab 4:** Deploying a New Overcloud](#lab-4-deploying-a-new-overcloud)
+* [**Lab 5:** Deploying a New Overcloud](#lab-5-deploying-a-new-overcloud)
 
 ## Lab 0: Introduction
 
@@ -216,11 +217,11 @@ deployment.  So we'll start with a fully deployed environment in which we can
 do som exploration and testing.  As a final step, we'll delete the overcloud and
 look at the deployment process.
 
-## Lab 2: Looking Around
+## Lab 2: Containers on the Undercloud
 
-In this lab, we'll examine our containerized OSP 12 deployment.
-
-First, log in to the undercloud.  (Enter ``redhat`` as the password.)
+Let's take a look at how the containerized service in Red Hat OpenStack Platform
+12 affect the undercloud.  First, we need to log into it, using ``redhat`` as
+the ``stack`` user's password.
 
 ```
 [lab-user@bastion-XXXX ~]$ ssh stack@undercloud.example.com
@@ -232,6 +233,98 @@ Warning: Permanently added 'undercloud.example.com,192.168.122.253' (ECDSA) to t
 stack@undercloud.example.com's password:
 Last login: Thu Apr 12 19:37:45 2018 from bastion.example.com
 ```
+
+In Red Hat OpenStack Platform 12, only services running on the **overcloud** are
+containerized.  All of the services on the undercloud still run as traditional
+non-containerized services, managed directly by ``systemd``, or as WSGI services
+under Apache ``httpd``.
+
+```
+[stack@undercloud ~]$ docker ps
+CONTAINER ID        IMAGE               COMMAND             CREATED             STATUS              PORTS               NAMES
+
+[stack@undercloud ~]$ systemctl list-units 'openstack-*' 'neutron-*'
+UNIT                                         LOAD   ACTIVE SUB     DESCRIPTION
+neutron-destroy-patch-ports.service          loaded active exited  OpenStack Neutron Destroy Patch Ports
+neutron-dhcp-agent.service                   loaded active running OpenStack Neutron DHCP Agent
+neutron-openvswitch-agent.service            loaded active running OpenStack Neutron Open vSwitch Agent
+neutron-ovs-cleanup.service                  loaded active exited  OpenStack Neutron Open vSwitch Cleanup Utility
+neutron-server.service                       loaded active running OpenStack Neutron Server
+openstack-glance-api.service                 loaded active running OpenStack Image Service (code-named Glance) API server
+openstack-heat-engine.service                loaded active running Openstack Heat Engine Service
+openstack-ironic-conductor.service           loaded active running OpenStack Ironic Conductor service
+openstack-ironic-inspector-dnsmasq.service   loaded active running PXE boot dnsmasq service for Ironic Inspector
+openstack-ironic-inspector.service           loaded active running Hardware introspection service for OpenStack Ironic
+openstack-mistral-api.service                loaded active running Mistral API Server
+openstack-mistral-engine.service             loaded active running Mistral Engine Server
+openstack-mistral-executor.service           loaded active running Mistral Executor Server
+openstack-nova-api.service                   loaded active running OpenStack Nova API Server
+openstack-nova-compute.service               loaded active running OpenStack Nova Compute Server
+openstack-nova-conductor.service             loaded active running OpenStack Nova Conductor Server
+openstack-nova-scheduler.service             loaded active running OpenStack Nova Scheduler Server
+openstack-swift-account-reaper.service       loaded active running OpenStack Object Storage (swift) - Account Reaper
+openstack-swift-account.service              loaded active running OpenStack Object Storage (swift) - Account Server
+openstack-swift-container-sync.service       loaded active running OpenStack Object Storage (swift) - Container Sync
+openstack-swift-container-updater.service    loaded active running OpenStack Object Storage (swift) - Container Updater
+openstack-swift-container.service            loaded active running OpenStack Object Storage (swift) - Container Server
+openstack-swift-object-expirer.service       loaded active running OpenStack Object Storage (swift) - Object Expirer
+openstack-swift-object-reconstructor.service loaded active running OpenStack Object Storage (swift) - Object Reconstructor
+openstack-swift-object-updater.service       loaded active running OpenStack Object Storage (swift) - Object Updater
+openstack-swift-object.service               loaded active running OpenStack Object Storage (swift) - Object Server
+openstack-swift-proxy.service                loaded active running OpenStack Object Storage (swift) - Proxy Server
+openstack-zaqar@1.service                    loaded active running OpenStack Message Queuing Service (code-named Zaqar) Server Instance 1
+
+LOAD   = Reflects whether the unit definition was properly loaded.
+ACTIVE = The high-level unit activation state, i.e. generalization of SUB.
+SUB    = The low-level unit activation state, values depend on unit type.
+
+28 loaded units listed. Pass --all to see loaded but inactive units, too.
+To show all installed unit files use 'systemctl list-unit-files'.
+
+[stack@undercloud ~]$ systemctl status httpd
+● httpd.service - The Apache HTTP Server
+   Loaded: loaded (/usr/lib/systemd/system/httpd.service; enabled; vendor preset: disabled)
+   Active: active (running) since Thu 2018-04-26 15:05:18 EDT; 24h ago
+     Docs: man:httpd(8)
+           man:apachectl(8)
+  Process: 19944 ExecReload=/usr/sbin/httpd $OPTIONS -k graceful (code=exited, status=0/SUCCESS)
+ Main PID: 1398 (httpd)
+   Status: "Total requests: 0; Current requests/sec: 0; Current traffic:   0 B/sec"
+   CGroup: /system.slice/httpd.service
+           ├─ 1398 /usr/sbin/httpd -DFOREGROUND
+           ├─ 5954 /usr/sbin/httpd -DFOREGROUND
+           ├─10355 /usr/sbin/httpd -DFOREGROUND
+           ├─11211 /usr/sbin/httpd -DFOREGROUND
+           ├─19957 heat_api_cfn_ws -DFOREGROUND
+           ├─19958 heat_api_cfn_ws -DFOREGROUND
+           ├─19959 heat_api_wsgi   -DFOREGROUND
+           ├─19960 heat_api_wsgi   -DFOREGROUND
+           ├─19961 ironic_wsgi     -DFOREGROUND
+           ├─19962 keystone-admin  -DFOREGROUND
+           ├─19963 keystone-main   -DFOREGROUND
+           ├─19964 placement_wsgi  -DFOREGROUND
+           ├─19965 zaqar_wsgi      -DFOREGROUND
+           ├─19966 /usr/sbin/httpd -DFOREGROUND
+           ├─19967 /usr/sbin/httpd -DFOREGROUND
+           ├─19968 /usr/sbin/httpd -DFOREGROUND
+           ├─19969 /usr/sbin/httpd -DFOREGROUND
+           ├─19970 /usr/sbin/httpd -DFOREGROUND
+           ├─19971 /usr/sbin/httpd -DFOREGROUND
+           ├─19972 /usr/sbin/httpd -DFOREGROUND
+           ├─19973 /usr/sbin/httpd -DFOREGROUND
+           ├─20117 /usr/sbin/httpd -DFOREGROUND
+           └─24277 /usr/sbin/httpd -DFOREGROUND
+
+Warning: Journal has been rotated since unit was started. Log output is incomplete or unavailable.
+```
+
+Instead, the impact of containerization on the undercloud is all about telling
+OSP director what container image to use for each service and making those
+images available to the overcloud nodes.
+
+## Lab 3: Containers on the Overcloud
+
+In this lab, we'll examine our containerized OSP 12 deployment.
 
 ### Is This Thing On?
 
@@ -1279,7 +1372,7 @@ logout
 Connection to 172.16.0.31 closed.
 ```
 
-## Lab 3: Troubleshooting and Testing
+## Lab 4: Troubleshooting and Testing
 
 ### Honey, I Shrunk the Cluster
 
@@ -2061,8 +2154,18 @@ e9fb39060494: Layer already exists
 12.0-20180309.1.fun: digest: sha256:6a15614f6e62f249c1096e4fb7bc153c2546a4d38b49154f875de0b9f60f32df size: 1791
 ```
 
-
-
 #### Testing the Modified Image
 
-## Lab 4: Deploying a New Overcloud
+We've built modified images for the HAProxy and Nova scheduler containers and
+pushed them to the image registry on our undercloud, where they can be accessed
+by the overcloud nodes.  Now we need to actually run containers with those
+images.
+
+As you might expect, the process for doing this varies between Pacemaker-managed
+and "normal" containers.
+
+**Normal Containers**
+
+
+
+## Lab 5: Deploying a New Overcloud

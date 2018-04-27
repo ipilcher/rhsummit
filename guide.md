@@ -543,11 +543,286 @@ container registry, and we're using that as a stand-in for the Red Hat site.
 More importantly, where did this file come from?  In fact, this file was also
 produced by ``openstack overcloud container image prepare``.  It has a large
 number of options, which can be seen with ``openstack overcloud container image
-prepare --help``
+prepare --help``.
+
+Let's use what we've learned in this section to create updated versions of our
+two files &mdash; ``templates/docker-registry.yaml`` and ``container-images.yaml``
+&mdash; and push the newer images into our local registry.  These are the 
+container-related steps that we would take to prepare our templates and local
+image registry and for a minor update of the overcloud, although we won't
+actually perform such an update now, due to time constraints.
+
+You may recall that ``openstack overcloud container image tag discover``
+returned ``12.0-20180405.1`` as the most recent version of the OSP 12 container
+images.  (There may be a later image available when you are running this lab.)
+This version is not available from the image registry on the ``bastion`` host;
+the latest version available within the lab environment is ``12.0-20180309.1``.
+
+We'll need to run ``openstack overcloud container image prepare``, specifying
+different namespaces for the two different files.  First, let's generate the
+list of images for use by ``openstack overcloud container image upload``.
+
+> **NOTE:** For the sake of brevity, the commands below include only the
+> environment files required to generate the image list and registry for our
+> deployment.  Including **all** environment files that will be used for the
+> deployment/update is recommended.
+
+```
+[stack@undercloud ~]$ cp container-images.yaml{,.bak}
+
+[stack@undercloud ~]$ openstack overcloud container image prepare \
+>     --environment-file /usr/share/openstack-tripleo-heat-templates/environments/ceph-ansible/ceph-ansible.yaml \
+>     --namespace 192.168.1.10:5000/rhosp12 \
+>     --tag 12.0-20180319.1 \
+>     --set ceph_namespace=192.168.1.10:5000/ceph \
+>     --output-images-file container-images.yaml
+container_images:
+- imagename: 192.168.1.10:5000/rhosp12/openstack-aodh-api:12.0-20180319.1
+- imagename: 192.168.1.10:5000/rhosp12/openstack-aodh-evaluator:12.0-20180319.1
+- imagename: 192.168.1.10:5000/rhosp12/openstack-aodh-listener:12.0-20180319.1
+- imagename: 192.168.1.10:5000/rhosp12/openstack-aodh-notifier:12.0-20180319.1
+- imagename: 192.168.1.10:5000/rhosp12/openstack-ceilometer-central:12.0-20180319.1
+- imagename: 192.168.1.10:5000/rhosp12/openstack-ceilometer-compute:12.0-20180319.1
+- imagename: 192.168.1.10:5000/rhosp12/openstack-ceilometer-notification:12.0-20180319.1
+- imagename: 192.168.1.10:5000/rhosp12/openstack-cron:12.0-20180319.1
+- imagename: 192.168.1.10:5000/rhosp12/openstack-glance-api:12.0-20180319.1
+- imagename: 192.168.1.10:5000/rhosp12/openstack-gnocchi-api:12.0-20180319.1
+- imagename: 192.168.1.10:5000/rhosp12/openstack-gnocchi-metricd:12.0-20180319.1
+- imagename: 192.168.1.10:5000/rhosp12/openstack-gnocchi-statsd:12.0-20180319.1
+- imagename: 192.168.1.10:5000/rhosp12/openstack-haproxy:12.0-20180319.1
+- imagename: 192.168.1.10:5000/rhosp12/openstack-heat-api-cfn:12.0-20180319.1
+- imagename: 192.168.1.10:5000/rhosp12/openstack-heat-api:12.0-20180319.1
+- imagename: 192.168.1.10:5000/rhosp12/openstack-heat-engine:12.0-20180319.1
+- imagename: 192.168.1.10:5000/rhosp12/openstack-horizon:12.0-20180319.1
+- imagename: 192.168.1.10:5000/rhosp12/openstack-keystone:12.0-20180319.1
+- imagename: 192.168.1.10:5000/rhosp12/openstack-mariadb:12.0-20180319.1
+- imagename: 192.168.1.10:5000/rhosp12/openstack-memcached:12.0-20180319.1
+- imagename: 192.168.1.10:5000/rhosp12/openstack-nova-api:12.0-20180319.1
+- imagename: 192.168.1.10:5000/rhosp12/openstack-nova-compute:12.0-20180319.1
+- imagename: 192.168.1.10:5000/rhosp12/openstack-nova-conductor:12.0-20180319.1
+- imagename: 192.168.1.10:5000/rhosp12/openstack-nova-consoleauth:12.0-20180319.1
+- imagename: 192.168.1.10:5000/rhosp12/openstack-nova-libvirt:12.0-20180319.1
+- imagename: 192.168.1.10:5000/rhosp12/openstack-nova-novncproxy:12.0-20180319.1
+- imagename: 192.168.1.10:5000/rhosp12/openstack-nova-placement-api:12.0-20180319.1
+- imagename: 192.168.1.10:5000/rhosp12/openstack-nova-scheduler:12.0-20180319.1
+- imagename: 192.168.1.10:5000/rhosp12/openstack-panko-api:12.0-20180319.1
+- imagename: 192.168.1.10:5000/rhosp12/openstack-rabbitmq:12.0-20180319.1
+- imagename: 192.168.1.10:5000/rhosp12/openstack-redis:12.0-20180319.1
+- imagename: 192.168.1.10:5000/rhosp12/openstack-swift-account:12.0-20180319.1
+- imagename: 192.168.1.10:5000/rhosp12/openstack-swift-container:12.0-20180319.1
+- imagename: 192.168.1.10:5000/rhosp12/openstack-swift-object:12.0-20180319.1
+- imagename: 192.168.1.10:5000/rhosp12/openstack-swift-proxy-server:12.0-20180319.1
+- imagename: 192.168.1.10:5000/ceph/rhceph-2-rhel7:latest
+```
+
+This command always writes the image list to standard output.  The
+``--output-images-file`` parameter causes it to **also** write the list to a file.
+
+```
+[stack@undercloud ~]$ cat container-images.yaml
+container_images:
+- imagename: 192.168.1.10:5000/rhosp12/openstack-aodh-api:12.0-20180319.1
+- imagename: 192.168.1.10:5000/rhosp12/openstack-aodh-evaluator:12.0-20180319.1
+- imagename: 192.168.1.10:5000/rhosp12/openstack-aodh-listener:12.0-20180319.1
+- imagename: 192.168.1.10:5000/rhosp12/openstack-aodh-notifier:12.0-20180319.1
+- imagename: 192.168.1.10:5000/rhosp12/openstack-ceilometer-central:12.0-20180319.1
+- imagename: 192.168.1.10:5000/rhosp12/openstack-ceilometer-compute:12.0-20180319.1
+- imagename: 192.168.1.10:5000/rhosp12/openstack-ceilometer-notification:12.0-20180319.1
+- imagename: 192.168.1.10:5000/rhosp12/openstack-cron:12.0-20180319.1
+- imagename: 192.168.1.10:5000/rhosp12/openstack-glance-api:12.0-20180319.1
+- imagename: 192.168.1.10:5000/rhosp12/openstack-gnocchi-api:12.0-20180319.1
+- imagename: 192.168.1.10:5000/rhosp12/openstack-gnocchi-metricd:12.0-20180319.1
+- imagename: 192.168.1.10:5000/rhosp12/openstack-gnocchi-statsd:12.0-20180319.1
+- imagename: 192.168.1.10:5000/rhosp12/openstack-haproxy:12.0-20180319.1
+- imagename: 192.168.1.10:5000/rhosp12/openstack-heat-api-cfn:12.0-20180319.1
+- imagename: 192.168.1.10:5000/rhosp12/openstack-heat-api:12.0-20180319.1
+- imagename: 192.168.1.10:5000/rhosp12/openstack-heat-engine:12.0-20180319.1
+- imagename: 192.168.1.10:5000/rhosp12/openstack-horizon:12.0-20180319.1
+- imagename: 192.168.1.10:5000/rhosp12/openstack-keystone:12.0-20180319.1
+- imagename: 192.168.1.10:5000/rhosp12/openstack-mariadb:12.0-20180319.1
+- imagename: 192.168.1.10:5000/rhosp12/openstack-memcached:12.0-20180319.1
+- imagename: 192.168.1.10:5000/rhosp12/openstack-nova-api:12.0-20180319.1
+- imagename: 192.168.1.10:5000/rhosp12/openstack-nova-compute:12.0-20180319.1
+- imagename: 192.168.1.10:5000/rhosp12/openstack-nova-conductor:12.0-20180319.1
+- imagename: 192.168.1.10:5000/rhosp12/openstack-nova-consoleauth:12.0-20180319.1
+- imagename: 192.168.1.10:5000/rhosp12/openstack-nova-libvirt:12.0-20180319.1
+- imagename: 192.168.1.10:5000/rhosp12/openstack-nova-novncproxy:12.0-20180319.1
+- imagename: 192.168.1.10:5000/rhosp12/openstack-nova-placement-api:12.0-20180319.1
+- imagename: 192.168.1.10:5000/rhosp12/openstack-nova-scheduler:12.0-20180319.1
+- imagename: 192.168.1.10:5000/rhosp12/openstack-panko-api:12.0-20180319.1
+- imagename: 192.168.1.10:5000/rhosp12/openstack-rabbitmq:12.0-20180319.1
+- imagename: 192.168.1.10:5000/rhosp12/openstack-redis:12.0-20180319.1
+- imagename: 192.168.1.10:5000/rhosp12/openstack-swift-account:12.0-20180319.1
+- imagename: 192.168.1.10:5000/rhosp12/openstack-swift-container:12.0-20180319.1
+- imagename: 192.168.1.10:5000/rhosp12/openstack-swift-object:12.0-20180319.1
+- imagename: 192.168.1.10:5000/rhosp12/openstack-swift-proxy-server:12.0-20180319.1
+- imagename: 192.168.1.10:5000/ceph/rhceph-2-rhel7:latest
+```
+
+Now let's create an updated ``docker-registry.yaml`` for our templates.
+
+```
+[stack@undercloud ~]$ cp templates/docker-registry.yaml{,.bak}
+
+[stack@undercloud ~]$ openstack overcloud container image prepare \
+>     --environment-file /usr/share/openstack-tripleo-heat-templates/environments/ceph-ansible/ceph-ansible.yaml \
+>     --namespace 172.16.0.1:8787/rhosp12 \
+>     --tag 12.0-20180319.1 \
+>     --set ceph_namespace=172.16.0.1:8787/ceph \
+>     --output-env-file templates/docker-registry.yaml
+container_images:
+- imagename: 172.16.0.1:8787/rhosp12/openstack-aodh-api:12.0-20180319.1
+- imagename: 172.16.0.1:8787/rhosp12/openstack-aodh-evaluator:12.0-20180319.1
+- imagename: 172.16.0.1:8787/rhosp12/openstack-aodh-listener:12.0-20180319.1
+- imagename: 172.16.0.1:8787/rhosp12/openstack-aodh-notifier:12.0-20180319.1
+- imagename: 172.16.0.1:8787/rhosp12/openstack-ceilometer-central:12.0-20180319.1
+- imagename: 172.16.0.1:8787/rhosp12/openstack-ceilometer-compute:12.0-20180319.1
+- imagename: 172.16.0.1:8787/rhosp12/openstack-ceilometer-notification:12.0-20180319.1
+- imagename: 172.16.0.1:8787/rhosp12/openstack-cron:12.0-20180319.1
+- imagename: 172.16.0.1:8787/rhosp12/openstack-glance-api:12.0-20180319.1
+- imagename: 172.16.0.1:8787/rhosp12/openstack-gnocchi-api:12.0-20180319.1
+- imagename: 172.16.0.1:8787/rhosp12/openstack-gnocchi-metricd:12.0-20180319.1
+- imagename: 172.16.0.1:8787/rhosp12/openstack-gnocchi-statsd:12.0-20180319.1
+- imagename: 172.16.0.1:8787/rhosp12/openstack-haproxy:12.0-20180319.1
+- imagename: 172.16.0.1:8787/rhosp12/openstack-heat-api-cfn:12.0-20180319.1
+- imagename: 172.16.0.1:8787/rhosp12/openstack-heat-api:12.0-20180319.1
+- imagename: 172.16.0.1:8787/rhosp12/openstack-heat-engine:12.0-20180319.1
+- imagename: 172.16.0.1:8787/rhosp12/openstack-horizon:12.0-20180319.1
+- imagename: 172.16.0.1:8787/rhosp12/openstack-keystone:12.0-20180319.1
+- imagename: 172.16.0.1:8787/rhosp12/openstack-mariadb:12.0-20180319.1
+- imagename: 172.16.0.1:8787/rhosp12/openstack-memcached:12.0-20180319.1
+- imagename: 172.16.0.1:8787/rhosp12/openstack-nova-api:12.0-20180319.1
+- imagename: 172.16.0.1:8787/rhosp12/openstack-nova-compute:12.0-20180319.1
+- imagename: 172.16.0.1:8787/rhosp12/openstack-nova-conductor:12.0-20180319.1
+- imagename: 172.16.0.1:8787/rhosp12/openstack-nova-consoleauth:12.0-20180319.1
+- imagename: 172.16.0.1:8787/rhosp12/openstack-nova-libvirt:12.0-20180319.1
+- imagename: 172.16.0.1:8787/rhosp12/openstack-nova-novncproxy:12.0-20180319.1
+- imagename: 172.16.0.1:8787/rhosp12/openstack-nova-placement-api:12.0-20180319.1
+- imagename: 172.16.0.1:8787/rhosp12/openstack-nova-scheduler:12.0-20180319.1
+- imagename: 172.16.0.1:8787/rhosp12/openstack-panko-api:12.0-20180319.1
+- imagename: 172.16.0.1:8787/rhosp12/openstack-rabbitmq:12.0-20180319.1
+- imagename: 172.16.0.1:8787/rhosp12/openstack-redis:12.0-20180319.1
+- imagename: 172.16.0.1:8787/rhosp12/openstack-swift-account:12.0-20180319.1
+- imagename: 172.16.0.1:8787/rhosp12/openstack-swift-container:12.0-20180319.1
+- imagename: 172.16.0.1:8787/rhosp12/openstack-swift-object:12.0-20180319.1
+- imagename: 172.16.0.1:8787/rhosp12/openstack-swift-proxy-server:12.0-20180319.1
+- imagename: 172.16.0.1:8787/ceph/rhceph-2-rhel7:latest
+```
+
+In this case, the image list written to standard output is not useful, as it
+specifies an incorrect **source** for the images.  The important output in this
+case is ``docker-registry.yaml``.
+
+```
+[stack@undercloud ~]$ fold -w 120 -s templates/docker-registry.yaml
+# Generated with the following on 2018-04-27T19:35:01.035909
+#
+#   openstack overcloud container image prepare --environment-file 
+/usr/share/openstack-tripleo-heat-templates/environments/ceph-ansible/ceph-ansible.yaml --namespace 
+172.16.0.1:8787/rhosp12 --tag 12.0-20180319.1 --set ceph_namespace=172.16.0.1:8787/ceph --output-env-file 
+templates/docker-registry.yaml
+#
+
+parameter_defaults:
+  DockerAodhApiImage: 172.16.0.1:8787/rhosp12/openstack-aodh-api:12.0-20180319.1
+  DockerAodhConfigImage: 172.16.0.1:8787/rhosp12/openstack-aodh-api:12.0-20180319.1
+  DockerAodhEvaluatorImage: 172.16.0.1:8787/rhosp12/openstack-aodh-evaluator:12.0-20180319.1
+  DockerAodhListenerImage: 172.16.0.1:8787/rhosp12/openstack-aodh-listener:12.0-20180319.1
+  DockerAodhNotifierImage: 172.16.0.1:8787/rhosp12/openstack-aodh-notifier:12.0-20180319.1
+  DockerCeilometerCentralImage: 172.16.0.1:8787/rhosp12/openstack-ceilometer-central:12.0-20180319.1
+  DockerCeilometerComputeImage: 172.16.0.1:8787/rhosp12/openstack-ceilometer-compute:12.0-20180319.1
+  DockerCeilometerConfigImage: 172.16.0.1:8787/rhosp12/openstack-ceilometer-central:12.0-20180319.1
+  DockerCeilometerNotificationImage: 172.16.0.1:8787/rhosp12/openstack-ceilometer-notification:12.0-20180319.1
+  DockerCephDaemonImage: 172.16.0.1:8787/ceph/rhceph-2-rhel7:latest
+  DockerClustercheckConfigImage: 172.16.0.1:8787/rhosp12/openstack-mariadb:12.0-20180319.1
+  DockerClustercheckImage: 172.16.0.1:8787/rhosp12/openstack-mariadb:12.0-20180319.1
+  DockerCrondConfigImage: 172.16.0.1:8787/rhosp12/openstack-cron:12.0-20180319.1
+  DockerCrondImage: 172.16.0.1:8787/rhosp12/openstack-cron:12.0-20180319.1
+  DockerGlanceApiConfigImage: 172.16.0.1:8787/rhosp12/openstack-glance-api:12.0-20180319.1
+  DockerGlanceApiImage: 172.16.0.1:8787/rhosp12/openstack-glance-api:12.0-20180319.1
+  DockerGnocchiApiImage: 172.16.0.1:8787/rhosp12/openstack-gnocchi-api:12.0-20180319.1
+  DockerGnocchiConfigImage: 172.16.0.1:8787/rhosp12/openstack-gnocchi-api:12.0-20180319.1
+  DockerGnocchiMetricdImage: 172.16.0.1:8787/rhosp12/openstack-gnocchi-metricd:12.0-20180319.1
+  DockerGnocchiStatsdImage: 172.16.0.1:8787/rhosp12/openstack-gnocchi-statsd:12.0-20180319.1
+  DockerHAProxyConfigImage: 172.16.0.1:8787/rhosp12/openstack-haproxy:12.0-20180319.1
+  DockerHAProxyImage: 172.16.0.1:8787/rhosp12/openstack-haproxy:12.0-20180319.1
+  DockerHeatApiCfnConfigImage: 172.16.0.1:8787/rhosp12/openstack-heat-api-cfn:12.0-20180319.1
+  DockerHeatApiCfnImage: 172.16.0.1:8787/rhosp12/openstack-heat-api-cfn:12.0-20180319.1
+  DockerHeatApiConfigImage: 172.16.0.1:8787/rhosp12/openstack-heat-api:12.0-20180319.1
+  DockerHeatApiImage: 172.16.0.1:8787/rhosp12/openstack-heat-api:12.0-20180319.1
+  DockerHeatConfigImage: 172.16.0.1:8787/rhosp12/openstack-heat-api:12.0-20180319.1
+  DockerHeatEngineImage: 172.16.0.1:8787/rhosp12/openstack-heat-engine:12.0-20180319.1
+  DockerHorizonConfigImage: 172.16.0.1:8787/rhosp12/openstack-horizon:12.0-20180319.1
+  DockerHorizonImage: 172.16.0.1:8787/rhosp12/openstack-horizon:12.0-20180319.1
+  DockerInsecureRegistryAddress:
+  - 172.16.0.1:8787
+  DockerKeystoneConfigImage: 172.16.0.1:8787/rhosp12/openstack-keystone:12.0-20180319.1
+  DockerKeystoneImage: 172.16.0.1:8787/rhosp12/openstack-keystone:12.0-20180319.1
+  DockerMemcachedConfigImage: 172.16.0.1:8787/rhosp12/openstack-memcached:12.0-20180319.1
+  DockerMemcachedImage: 172.16.0.1:8787/rhosp12/openstack-memcached:12.0-20180319.1
+  DockerMysqlClientConfigImage: 172.16.0.1:8787/rhosp12/openstack-mariadb:12.0-20180319.1
+  DockerMysqlConfigImage: 172.16.0.1:8787/rhosp12/openstack-mariadb:12.0-20180319.1
+  DockerMysqlImage: 172.16.0.1:8787/rhosp12/openstack-mariadb:12.0-20180319.1
+  DockerNovaApiImage: 172.16.0.1:8787/rhosp12/openstack-nova-api:12.0-20180319.1
+  DockerNovaComputeImage: 172.16.0.1:8787/rhosp12/openstack-nova-compute:12.0-20180319.1
+  DockerNovaConductorImage: 172.16.0.1:8787/rhosp12/openstack-nova-conductor:12.0-20180319.1
+  DockerNovaConfigImage: 172.16.0.1:8787/rhosp12/openstack-nova-api:12.0-20180319.1
+  DockerNovaConsoleauthImage: 172.16.0.1:8787/rhosp12/openstack-nova-consoleauth:12.0-20180319.1
+  DockerNovaLibvirtConfigImage: 172.16.0.1:8787/rhosp12/openstack-nova-compute:12.0-20180319.1
+  DockerNovaLibvirtImage: 172.16.0.1:8787/rhosp12/openstack-nova-libvirt:12.0-20180319.1
+  DockerNovaMetadataImage: 172.16.0.1:8787/rhosp12/openstack-nova-api:12.0-20180319.1
+  DockerNovaPlacementConfigImage: 172.16.0.1:8787/rhosp12/openstack-nova-placement-api:12.0-20180319.1
+  DockerNovaPlacementImage: 172.16.0.1:8787/rhosp12/openstack-nova-placement-api:12.0-20180319.1
+  DockerNovaSchedulerImage: 172.16.0.1:8787/rhosp12/openstack-nova-scheduler:12.0-20180319.1
+  DockerNovaVncProxyImage: 172.16.0.1:8787/rhosp12/openstack-nova-novncproxy:12.0-20180319.1
+  DockerPankoApiImage: 172.16.0.1:8787/rhosp12/openstack-panko-api:12.0-20180319.1
+  DockerPankoConfigImage: 172.16.0.1:8787/rhosp12/openstack-panko-api:12.0-20180319.1
+  DockerRabbitmqConfigImage: 172.16.0.1:8787/rhosp12/openstack-rabbitmq:12.0-20180319.1
+  DockerRabbitmqImage: 172.16.0.1:8787/rhosp12/openstack-rabbitmq:12.0-20180319.1
+  DockerRedisConfigImage: 172.16.0.1:8787/rhosp12/openstack-redis:12.0-20180319.1
+  DockerRedisImage: 172.16.0.1:8787/rhosp12/openstack-redis:12.0-20180319.1
+  DockerSwiftAccountImage: 172.16.0.1:8787/rhosp12/openstack-swift-account:12.0-20180319.1
+  DockerSwiftConfigImage: 172.16.0.1:8787/rhosp12/openstack-swift-proxy-server:12.0-20180319.1
+  DockerSwiftContainerImage: 172.16.0.1:8787/rhosp12/openstack-swift-container:12.0-20180319.1
+  DockerSwiftObjectImage: 172.16.0.1:8787/rhosp12/openstack-swift-object:12.0-20180319.1
+  DockerSwiftProxyImage: 172.16.0.1:8787/rhosp12/openstack-swift-proxy-server:12.0-20180319.1
+```
+
+The final step in updating the container images on the undercloud is to pull
+the new images from the source registry and push them into the local
+registry.
+
+```
+[stack@undercloud ~]$ openstack overcloud container image upload --verbose --config-file container-images.yaml
+START with options: [u'overcloud', u'container', u'image', u'upload', u'--verbose', u'--config-file', u'container-images.yaml']
+command: overcloud container image upload -> tripleoclient.v1.container_image.UploadImage (auth=False)
+Using config files: [u'container-images.yaml']
+imagename: 192.168.1.10:5000/rhosp12/openstack-aodh-api:12.0-20180319.1
+Completed upload for docker image 192.168.1.10:5000/rhosp12/openstack-aodh-api:12.0-20180319.1
+(...)
+imagename: 192.168.1.10:5000/rhosp12/openstack-swift-proxy-server:12.0-20180319.1
+Completed upload for docker image 192.168.1.10:5000/rhosp12/openstack-swift-proxy-server:12.0-20180319.1
+imagename: 192.168.1.10:5000/ceph/rhceph-2-rhel7:latest
+Completed upload for docker image 192.168.1.10:5000/ceph/rhceph-2-rhel7:latest
+END return value: 0
+```
+
+When this command has completed, which will take a few minutes, we can see both
+the old and new versions of each container image, each in both the source and
+local registry.  For example:
+
+```
+[stack@undercloud ~]$ docker images | grep keystone
+172.16.0.1:8787/rhosp12/openstack-keystone                    12.0-20180319.1       d929ef3fa786        5 weeks ago         687.4 MB
+192.168.1.10:5000/rhosp12/openstack-keystone                  12.0-20180319.1       d929ef3fa786        5 weeks ago         687.4 MB
+172.16.0.1:8787/rhosp12/openstack-keystone                    12.0-20180309.1       5f944b66282d        7 weeks ago         687.3 MB
+192.168.1.10:5000/rhosp12/openstack-keystone                  12.0-20180309.1       5f944b66282d        7 weeks ago         687.3 MB
+```
 
 ## Lab 3: Containers on the Overcloud
 
-In this lab, we'll examine our containerized OSP 12 deployment.
+In this lab, we'll examine our containerized Red Hat OpenStack Plaftorm 12
+deployment.
 
 ### Is This Thing On?
 

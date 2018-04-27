@@ -440,45 +440,13 @@ some explanation.
   namespace for the OpenStack Platform 12 containers (``/rhosp12``) and the image registry
   from which the overcloud nodes should pull the images (``172.16.0.1:8787``).
 * ``--tag 12.0-20180309.1`` &mdash; The tag specifies the specific version of
-  the OpenStack Platform images.
-* ``--set ceph_namespace=172.16.0.1:8787/ceph`` &mdash;
+  the OpenStack Platform images to be used.
+* ``--set ceph_namespace=172.16.0.1:8787/ceph`` &mdash; Specifies the namespace
+  and image registry for the Ceph image.
 
-command that
-was used to generate it when this environment was first deployed, which will
-enable us to easily regenerate the file when updated container images are
-released.  The parameters that were
-
-
-The contents of this file (aside from the opening comment) are TripleO
-parameters, and the names of the parameters are generally self-explanatory;
-the image specified by ``DockerKeystoneImage`` will be used to run Keystone
-containers and so forth.  The meaning of the ``...ConfigImage`` parameters may
-be less obvious.  These images are used during deployments and updates to run
-special "one-shot" containers that execute setup and configuration tasks such
-as generating configuration files, creating and migrating database schema, or
-populating the Keystone catalog.
-
-The comment at the beginning of this file conveniently shows the command that
-was used to generate it when this environment was first deployed, which will
-enable us to easily regenerate the file when updated container images are
-released.  There are several interesting things about this file and the command
-with which it was generated.
-
-
-
-First, notice the large number of environment files (``--environment-file``)
-that were specified on the command line.  These are the same environment files
-that were later used to deploy the overcloud.  Passing all of these environment
-files to the ``openstack overcloud container image prepare`` ensures that the
-output will include all of the container images required by the deployment.  (In
-particular, the Ceph image, ``DockerCephDaemonImage``, is not included by
-default.)
-
-Second, 
-
-How does one know what tag to use when generating this file? Red Hat OpenStack
-Platform 12 includes a command that can discover the latest version of an
-OpenStack container image in the Red Hat Container Catalog.
+How can one know what value should be used for the ``--tag`` parameter? Red Hat
+OpenStack Platform 12 includes a command that can discover the latest version of
+an OpenStack container image in the Red Hat Container Catalog.
 
 ```
 [stack@undercloud ~]$ openstack overcloud container image tag discover \

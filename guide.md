@@ -35,7 +35,14 @@
     * [Normal Services](#normal-services)
     * [Pacemaker-Managed Services](#pacemaker-managed-services)
   - [Testing Configuration Changes](#testing-configuration-changes)
-    * [Non-Persistent Configuration Changes](#non-persistent-configuration-changes)
+    * [Non-Persistent Configuration Changes (v1)](#non-persistent-configuration-changes-v1)
+    * [Non-Persistent Configuration Changes (v2)](#non-persistent-configuration-changes-v2)
+    * [Persistent Configuration Changes](#persistent-configuration-changes)
+  - [Testing Container Image Changes](#testing-container-image-changes)
+    * [Modifying a Container Image](#modifying-a-container-image)
+    * [Testing the Modified Image](#testing-the-modified-image)
+      - [Paunch](#paunch)
+      - [Pacemaker](#pacemaker)
 * [**Lab 4:** Deploying a New Overcloud](#lab-4-deploying-a-new-overcloud)
 
 ## Lab 0: Introduction

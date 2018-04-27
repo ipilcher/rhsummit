@@ -18,6 +18,7 @@
   - [TripleO Terminology](#tripleo-terminology)
 * [**Lab 1:** Lab Environment](#lab-1-lab-environment)
 * [**Lab 2:** Containers on the Undercloud](#lab-2-containers-on-the-undercloud)
+  - [Image is Everything](#image-is-everything)
 * [**Lab 3:** Containers on the Overcloud](#lab-3-containers-on-the-overcloud)
   - [Is This Thing On?](#is-this-thing-on)
   - [Containers (Three Different Ones)](#containers-three-different-ones)
@@ -321,6 +322,116 @@ Warning: Journal has been rotated since unit was started. Log output is incomple
 Instead, the impact of containerization on the undercloud is all about telling
 OSP director what container image to use for each service and making those
 images available to the overcloud nodes.
+
+### Image is Everything
+
+During deployment and updates, TripleO parameters are used to specify the image
+used for each overcloud container.  In our deployment, these parameters are set
+in ``templates/docker-registry.yaml``.
+
+```
+[stack@undercloud ~]$ fold -w 120 -s templates/docker-registry.yaml  
+# Generated with the following on 2018-03-16T12:51:39.460333
+#
+#   openstack overcloud container image prepare --env-file /home/stack/templates/docker-registry.yaml --namespace 
+172.16.0.1:8787/rhosp12 --tag 12.0-20180309.1 --set ceph_namespace=172.16.0.1:8787/ceph --environment-file 
+/home/stack/templates/global-config.yaml --environment-file 
+/usr/share/openstack-tripleo-heat-templates/environments/network-isolation.yaml --environment-file 
+/home/stack/templates/network-environment.yaml --environment-file /home/stack/templates/HostnameMap.yaml 
+--environment-file /home/stack/templates/ips-from-pool-all.yaml --environment-file 
+/usr/share/openstack-tripleo-heat-templates/environments/ceph-ansible/ceph-ansible.yaml --environment-file 
+/home/stack/templates/ceph-config.yaml --environment-file /home/stack/templates/docker-registry.yaml --environment-file 
+/home/stack/templates/enable-tls.yaml --environment-file /home/stack/templates/inject-trust-anchor.yaml 
+--environment-file /usr/share/openstack-tripleo-heat-templates/environments/tls-endpoints-public-ip.yaml 
+--environment-file /home/stack/templates/public_vip.yaml --environment-file /home/stack/templates/rsvd_host_memory.yaml
+#
+
+parameter_defaults:
+  DockerAodhApiImage: 172.16.0.1:8787/rhosp12/openstack-aodh-api:12.0-20180309.1
+  DockerAodhConfigImage: 172.16.0.1:8787/rhosp12/openstack-aodh-api:12.0-20180309.1
+  DockerAodhEvaluatorImage: 172.16.0.1:8787/rhosp12/openstack-aodh-evaluator:12.0-20180309.1
+  DockerAodhListenerImage: 172.16.0.1:8787/rhosp12/openstack-aodh-listener:12.0-20180309.1
+  DockerAodhNotifierImage: 172.16.0.1:8787/rhosp12/openstack-aodh-notifier:12.0-20180309.1
+  DockerCeilometerCentralImage: 172.16.0.1:8787/rhosp12/openstack-ceilometer-central:12.0-20180309.1
+  DockerCeilometerComputeImage: 172.16.0.1:8787/rhosp12/openstack-ceilometer-compute:12.0-20180309.1
+  DockerCeilometerConfigImage: 172.16.0.1:8787/rhosp12/openstack-ceilometer-central:12.0-20180309.1
+  DockerCeilometerNotificationImage: 172.16.0.1:8787/rhosp12/openstack-ceilometer-notification:12.0-20180309.1
+  DockerCephDaemonImage: 172.16.0.1:8787/ceph/rhceph-2-rhel7:latest
+  DockerClustercheckConfigImage: 172.16.0.1:8787/rhosp12/openstack-mariadb:12.0-20180309.1
+  DockerClustercheckImage: 172.16.0.1:8787/rhosp12/openstack-mariadb:12.0-20180309.1
+  DockerCrondConfigImage: 172.16.0.1:8787/rhosp12/openstack-cron:12.0-20180309.1
+  DockerCrondImage: 172.16.0.1:8787/rhosp12/openstack-cron:12.0-20180309.1
+  DockerGlanceApiConfigImage: 172.16.0.1:8787/rhosp12/openstack-glance-api:12.0-20180309.1
+  DockerGlanceApiImage: 172.16.0.1:8787/rhosp12/openstack-glance-api:12.0-20180309.1
+  DockerGnocchiApiImage: 172.16.0.1:8787/rhosp12/openstack-gnocchi-api:12.0-20180309.1
+  DockerGnocchiConfigImage: 172.16.0.1:8787/rhosp12/openstack-gnocchi-api:12.0-20180309.1
+  DockerGnocchiMetricdImage: 172.16.0.1:8787/rhosp12/openstack-gnocchi-metricd:12.0-20180309.1
+  DockerGnocchiStatsdImage: 172.16.0.1:8787/rhosp12/openstack-gnocchi-statsd:12.0-20180309.1
+  DockerHAProxyConfigImage: 172.16.0.1:8787/rhosp12/openstack-haproxy:12.0-20180309.1
+  DockerHAProxyImage: 172.16.0.1:8787/rhosp12/openstack-haproxy:12.0-20180309.1
+  DockerHeatApiCfnConfigImage: 172.16.0.1:8787/rhosp12/openstack-heat-api-cfn:12.0-20180309.1
+  DockerHeatApiCfnImage: 172.16.0.1:8787/rhosp12/openstack-heat-api-cfn:12.0-20180309.1
+  DockerHeatApiConfigImage: 172.16.0.1:8787/rhosp12/openstack-heat-api:12.0-20180309.1
+  DockerHeatApiImage: 172.16.0.1:8787/rhosp12/openstack-heat-api:12.0-20180309.1
+  DockerHeatConfigImage: 172.16.0.1:8787/rhosp12/openstack-heat-api:12.0-20180309.1
+  DockerHeatEngineImage: 172.16.0.1:8787/rhosp12/openstack-heat-engine:12.0-20180309.1
+  DockerHorizonConfigImage: 172.16.0.1:8787/rhosp12/openstack-horizon:12.0-20180309.1
+  DockerHorizonImage: 172.16.0.1:8787/rhosp12/openstack-horizon:12.0-20180309.1
+  DockerInsecureRegistryAddress:
+  - 172.16.0.1:8787
+  DockerKeystoneConfigImage: 172.16.0.1:8787/rhosp12/openstack-keystone:12.0-20180309.1
+  DockerKeystoneImage: 172.16.0.1:8787/rhosp12/openstack-keystone:12.0-20180309.1
+  DockerMemcachedConfigImage: 172.16.0.1:8787/rhosp12/openstack-memcached:12.0-20180309.1
+  DockerMemcachedImage: 172.16.0.1:8787/rhosp12/openstack-memcached:12.0-20180309.1
+  DockerMysqlClientConfigImage: 172.16.0.1:8787/rhosp12/openstack-mariadb:12.0-20180309.1
+  DockerMysqlConfigImage: 172.16.0.1:8787/rhosp12/openstack-mariadb:12.0-20180309.1
+  DockerMysqlImage: 172.16.0.1:8787/rhosp12/openstack-mariadb:12.0-20180309.1
+  DockerNovaApiImage: 172.16.0.1:8787/rhosp12/openstack-nova-api:12.0-20180309.1
+  DockerNovaComputeImage: 172.16.0.1:8787/rhosp12/openstack-nova-compute:12.0-20180309.1
+  DockerNovaConductorImage: 172.16.0.1:8787/rhosp12/openstack-nova-conductor:12.0-20180309.1
+  DockerNovaConfigImage: 172.16.0.1:8787/rhosp12/openstack-nova-api:12.0-20180309.1
+  DockerNovaConsoleauthImage: 172.16.0.1:8787/rhosp12/openstack-nova-consoleauth:12.0-20180309.1
+  DockerNovaLibvirtConfigImage: 172.16.0.1:8787/rhosp12/openstack-nova-compute:12.0-20180309.1
+  DockerNovaLibvirtImage: 172.16.0.1:8787/rhosp12/openstack-nova-libvirt:12.0-20180309.1
+  DockerNovaMetadataImage: 172.16.0.1:8787/rhosp12/openstack-nova-api:12.0-20180309.1
+  DockerNovaPlacementConfigImage: 172.16.0.1:8787/rhosp12/openstack-nova-placement-api:12.0-20180309.1
+  DockerNovaPlacementImage: 172.16.0.1:8787/rhosp12/openstack-nova-placement-api:12.0-20180309.1
+  DockerNovaSchedulerImage: 172.16.0.1:8787/rhosp12/openstack-nova-scheduler:12.0-20180309.1
+  DockerNovaVncProxyImage: 172.16.0.1:8787/rhosp12/openstack-nova-novncproxy:12.0-20180309.1
+  DockerPankoApiImage: 172.16.0.1:8787/rhosp12/openstack-panko-api:12.0-20180309.1
+  DockerPankoConfigImage: 172.16.0.1:8787/rhosp12/openstack-panko-api:12.0-20180309.1
+  DockerRabbitmqConfigImage: 172.16.0.1:8787/rhosp12/openstack-rabbitmq:12.0-20180309.1
+  DockerRabbitmqImage: 172.16.0.1:8787/rhosp12/openstack-rabbitmq:12.0-20180309.1
+  DockerRedisConfigImage: 172.16.0.1:8787/rhosp12/openstack-redis:12.0-20180309.1
+  DockerRedisImage: 172.16.0.1:8787/rhosp12/openstack-redis:12.0-20180309.1
+  DockerSwiftAccountImage: 172.16.0.1:8787/rhosp12/openstack-swift-account:12.0-20180309.1
+  DockerSwiftConfigImage: 172.16.0.1:8787/rhosp12/openstack-swift-proxy-server:12.0-20180309.1
+  DockerSwiftContainerImage: 172.16.0.1:8787/rhosp12/openstack-swift-container:12.0-20180309.1
+  DockerSwiftObjectImage: 172.16.0.1:8787/rhosp12/openstack-swift-object:12.0-20180309.1
+  DockerSwiftProxyImage: 172.16.0.1:8787/rhosp12/openstack-swift-proxy-server:12.0-20180309.1
+```
+
+The comment at the beginning of this file conveniently shows the command that
+was used to generate it when this environment was first deployed.  This will
+enable us to easily regenerate the file when updated container images are
+released.
+
+> **NOTE:** During a minor update of the overcloud, a containers is only
+> recreated with an updated image if the image tag (``12.0-20180309.1`` above)
+> has changed.  Thus, we cannot simply use ``latest`` as the tag.
+
+How does one know what tag to use when generating this file? Red Hat OpenStack
+platform 12 includes a command that can discover the latest version of an
+OpenStack container image in the Red Hat Container Catalog.
+
+```
+[stack@undercloud ~]$ openstack overcloud container image tag discover \
+   --image registry.access.redhat.com/rhosp12/openstack-base:latest \
+   --tag-from-label version-release
+12.0-20180405.1
+```
+
+
 
 ## Lab 3: Containers on the Overcloud
 

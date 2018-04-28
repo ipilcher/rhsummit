@@ -1493,7 +1493,7 @@ is visible from the host operating system.
 We might assume that configuration files would use an approach similar to that
 of the log directories and simply bind mount configuration directories into our
 container.  Looking back at the ``Binds`` stanza again, we can see that only a
-few files and directories under ``/etc`` are bind mountes &mdash; a small subset
+few files and directories under ``/etc`` are bind mounts &mdash; a small subset
 of the files in our container's ``/etc`` directory tree.  So how do the correct
 versions of all those files get there?
 
@@ -1742,7 +1742,10 @@ Also as expected, the compute services make extensive use of privileged
 containers to manage virtual machines.
 
 ```
-[heat-admin@lab-compute01 ~]$ for TAINER in `sudo docker ps --format '{{ .Names }}'` ; do echo -n "${TAINER}:  " ; sudo docker inspect $TAINER | jq .[0].HostConfig.Privileged ; done
+[heat-admin@lab-compute01 ~]$ for TAINER in `sudo docker ps --format '{{ .Names }}'` ; do
+        echo -n "${TAINER}:  "
+        sudo docker inspect $TAINER | jq .[0].HostConfig.Privileged
+    done
 logrotate_crond:  true
 nova_migration_target:  true
 ceilometer_agent_compute:  false

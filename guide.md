@@ -2789,7 +2789,7 @@ docker run --name nova_scheduler-jrvh61wy --detach=true --env=KOLLA_CONFIG_STRAT
 ```
 
 ``paunch`` can give us the JSON for a specific container (which can be edited
-and fed back ``paunch`` to run a modified version), and it can also provide the
+and fed back to ``paunch`` to run a modified version), and it can also provide the
 actual command used to run the container.  (Note that ``paunch`` has modified
 the name of the container on the command line.  This allows us to run a
 temporary container without deleting the existing one.)  Let's use the command
@@ -2853,7 +2853,7 @@ cat: /fun: No such file or directory
 **Pacemaker-Managed Containers**
 
 We saw in lab 3 that Pacemaker-managed containers are defined as ``bundle``
-resources.
+resources, which specify all ofthe information required to run the container.
 
 ```
 [heat-admin@lab-controller01 ~]$ sudo pcs resource show haproxy-bundle
@@ -2870,8 +2870,13 @@ resources.
    options=ro source-dir=/etc/pki/tls/cert.pem target-dir=/etc/pki/tls/cert.pem (haproxy-pki-cert)
    options=rw source-dir=/dev/log target-dir=/dev/log (haproxy-dev-log)
    options=ro source-dir=/etc/pki/tls/private/overcloud_endpoint.pem target-dir=/var/lib/kolla/config_files/src-tls/etc/pki/tls/private/overcloud_endpoint.pem (haproxy-cert)
+```
 
-[heat-admin@lab-controller01 ~]$ sudo pcs resource bundle update haproxy-bundle container image=172.16.0.1:8787/rhosp12/openstack-haproxy:12.0-20180309.1.fun
+Let's modify this definition.
+
+```
+[heat-admin@lab-controller01 ~]$ sudo pcs resource bundle update haproxy-bundle \
+    container image=172.16.0.1:8787/rhosp12/openstack-haproxy:12.0-20180309.1.fun
 
 [heat-admin@lab-controller01 ~]$ sudo pcs resource show haproxy-bundle
  Bundle: haproxy-bundle
@@ -2887,13 +2892,23 @@ resources.
    options=ro source-dir=/etc/pki/tls/cert.pem target-dir=/etc/pki/tls/cert.pem (haproxy-pki-cert)
    options=rw source-dir=/dev/log target-dir=/dev/log (haproxy-dev-log)
    options=ro source-dir=/etc/pki/tls/private/overcloud_endpoint.pem target-dir=/var/lib/kolla/config_files/src-tls/etc/pki/tls/private/overcloud_endpoint.pem (haproxy-cert)
+```
 
-[heat-admin@lab-controller01 ~]$ sudo docker ps | grep haproxy
-d444e5e5b231        172.16.0.1:8787/rhosp12/openstack-haproxy:12.0-20180309.1.fun               "/bin/bash /usr/lo..."   2 minutes ago       Up 2 minutes                                  haproxy-bundle-docker-0
+Check the container running on this controller.
+
+```
+[heat-admin@lab-controller01 ~]$ sudo docker ps | grep haproxy | fold -w 120 -s
+62554f3988d2        172.16.0.1:8787/rhosp12/openstack-haproxy:12.0-20180309.1.fun               "/bin/bash /usr/lo..."  
+ 15 seconds ago      Up 14 seconds                                 haproxy-bundle-docker-0
 
 [heat-admin@lab-controller01 ~]$ sudo docker exec haproxy-bundle-docker-0 cat /fun
 Are you not entertained?!
+```
 
+What about the other two controllers?  Pacemaker should have restarted the
+container, with the new image, on all 3.
+
+```
 [heat-admin@lab-controller01 ~]$ exit
 logout
 Connection to 172.16.0.32 closed.
@@ -2909,8 +2924,13 @@ Are you not entertained?!
 Are you not entertained?!
 ```
 
+To revert, simply change the image back to the ``pcmklatest`` tag, which TripleO
+uses for all Pacemaker-manager container images.
+
 ```
-(undercloud) [stack@undercloud ~]$ ssh heat-admin@172.16.0.32 sudo pcs resource bundle update haproxy-bundle container image=172.16.0.1:8787/rhosp12/openstack-haproxy:pcmklatest
+(undercloud) [stack@undercloud ~]$ ssh heat-admin@172.16.0.32 \
+    sudo pcs resource bundle update haproxy-bundle container \
+        image=172.16.0.1:8787/rhosp12/openstack-haproxy:pcmklatest
 
 (undercloud) [stack@undercloud ~]$ I=0 ; for C in 172.16.0.{32,22,36} ; do
         ssh heat-admin@$C sudo docker exec haproxy-bundle-docker-$I cat /fun

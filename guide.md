@@ -2850,4 +2850,75 @@ nova_scheduler
 cat: /fun: No such file or directory
 ```
 
+**Pacemaker-Managed Containers**
+
+We saw in lab 3 that Pacemaker-managed containers are defined as ``bundle``
+resources.
+
+```
+[heat-admin@lab-controller01 ~]$ sudo pcs resource show haproxy-bundle
+ Bundle: haproxy-bundle
+  Docker: image=172.16.0.1:8787/rhosp12/openstack-haproxy:pcmklatest network=host options="--user=root --log-driver=journald -e KOLLA_CONFIG_STRATEGY=COPY_ALWAYS" replicas=3 run-command="/bin/bash /usr/local/bin/kolla_start"
+  Storage Mapping:
+   options=ro source-dir=/var/lib/kolla/config_files/haproxy.json target-dir=/var/lib/kolla/config_files/config.json (haproxy-cfg-files)
+   options=ro source-dir=/var/lib/config-data/puppet-generated/haproxy/ target-dir=/var/lib/kolla/config_files/src (haproxy-cfg-data)
+   options=ro source-dir=/etc/hosts target-dir=/etc/hosts (haproxy-hosts)
+   options=ro source-dir=/etc/localtime target-dir=/etc/localtime (haproxy-localtime)
+   options=ro source-dir=/etc/pki/ca-trust/extracted target-dir=/etc/pki/ca-trust/extracted (haproxy-pki-extracted)
+   options=ro source-dir=/etc/pki/tls/certs/ca-bundle.crt target-dir=/etc/pki/tls/certs/ca-bundle.crt (haproxy-pki-ca-bundle-crt)
+   options=ro source-dir=/etc/pki/tls/certs/ca-bundle.trust.crt target-dir=/etc/pki/tls/certs/ca-bundle.trust.crt (haproxy-pki-ca-bundle-trust-crt)
+   options=ro source-dir=/etc/pki/tls/cert.pem target-dir=/etc/pki/tls/cert.pem (haproxy-pki-cert)
+   options=rw source-dir=/dev/log target-dir=/dev/log (haproxy-dev-log)
+   options=ro source-dir=/etc/pki/tls/private/overcloud_endpoint.pem target-dir=/var/lib/kolla/config_files/src-tls/etc/pki/tls/private/overcloud_endpoint.pem (haproxy-cert)
+
+[heat-admin@lab-controller01 ~]$ sudo pcs resource bundle update haproxy-bundle container image=172.16.0.1:8787/rhosp12/openstack-haproxy:12.0-20180309.1.fun
+
+[heat-admin@lab-controller01 ~]$ sudo pcs resource show haproxy-bundle
+ Bundle: haproxy-bundle
+  Docker: image=172.16.0.1:8787/rhosp12/openstack-haproxy:12.0-20180309.1.fun network=host options="--user=root --log-driver=journald -e KOLLA_CONFIG_STRATEGY=COPY_ALWAYS" replicas=3 run-command="/bin/bash /usr/local/bin/kolla_start"
+  Storage Mapping:
+   options=ro source-dir=/var/lib/kolla/config_files/haproxy.json target-dir=/var/lib/kolla/config_files/config.json (haproxy-cfg-files)
+   options=ro source-dir=/var/lib/config-data/puppet-generated/haproxy/ target-dir=/var/lib/kolla/config_files/src (haproxy-cfg-data)
+   options=ro source-dir=/etc/hosts target-dir=/etc/hosts (haproxy-hosts)
+   options=ro source-dir=/etc/localtime target-dir=/etc/localtime (haproxy-localtime)
+   options=ro source-dir=/etc/pki/ca-trust/extracted target-dir=/etc/pki/ca-trust/extracted (haproxy-pki-extracted)
+   options=ro source-dir=/etc/pki/tls/certs/ca-bundle.crt target-dir=/etc/pki/tls/certs/ca-bundle.crt (haproxy-pki-ca-bundle-crt)
+   options=ro source-dir=/etc/pki/tls/certs/ca-bundle.trust.crt target-dir=/etc/pki/tls/certs/ca-bundle.trust.crt (haproxy-pki-ca-bundle-trust-crt)
+   options=ro source-dir=/etc/pki/tls/cert.pem target-dir=/etc/pki/tls/cert.pem (haproxy-pki-cert)
+   options=rw source-dir=/dev/log target-dir=/dev/log (haproxy-dev-log)
+   options=ro source-dir=/etc/pki/tls/private/overcloud_endpoint.pem target-dir=/var/lib/kolla/config_files/src-tls/etc/pki/tls/private/overcloud_endpoint.pem (haproxy-cert)
+
+[heat-admin@lab-controller01 ~]$ sudo docker ps | grep haproxy
+d444e5e5b231        172.16.0.1:8787/rhosp12/openstack-haproxy:12.0-20180309.1.fun               "/bin/bash /usr/lo..."   2 minutes ago       Up 2 minutes                                  haproxy-bundle-docker-0
+
+[heat-admin@lab-controller01 ~]$ sudo docker exec haproxy-bundle-docker-0 cat /fun
+Are you not entertained?!
+
+[heat-admin@lab-controller01 ~]$ exit
+logout
+Connection to 172.16.0.32 closed.
+
+(undercloud) [stack@undercloud nova_scheduler]$ cd
+
+(undercloud) [stack@undercloud ~]$ I=0 ; for C in 172.16.0.{32,22,36} ; do
+        ssh heat-admin@$C sudo docker exec haproxy-bundle-docker-$I cat /fun
+        I=$((I+1))
+    done
+Are you not entertained?!
+Are you not entertained?!
+Are you not entertained?!
+```
+
+```
+(undercloud) [stack@undercloud ~]$ ssh heat-admin@172.16.0.32 sudo pcs resource bundle update haproxy-bundle container image=172.16.0.1:8787/rhosp12/openstack-haproxy:pcmklatest
+
+(undercloud) [stack@undercloud ~]$ I=0 ; for C in 172.16.0.{32,22,36} ; do
+        ssh heat-admin@$C sudo docker exec haproxy-bundle-docker-$I cat /fun
+        I=$((I+1))
+    done
+cat: /fun: No such file or directory
+cat: /fun: No such file or directory
+cat: /fun: No such file or directory
+```
+
 ## Lab 5: Deploying a New Overcloud

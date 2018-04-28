@@ -1947,7 +1947,9 @@ nova_scheduler
 nova_placement
 
 
-(undercloud) [stack@undercloud ~]$ for C in 172.16.0.{22,36} ; do ssh heat-admin@$C sudo docker stop nova_{metadata,api,conductor,vnc_proxy,consoleauth,api_cron,scheduler,placement} ; done
+(undercloud) [stack@undercloud ~]$ for C in 172.16.0.{22,36} ; do
+        ssh heat-admin@$C sudo docker stop nova_{metadata,api,conductor,vnc_proxy,consoleauth,api_cron,scheduler,placement}
+    done
 nova_metadata
 nova_api
 nova_conductor
@@ -1965,7 +1967,11 @@ nova_api_cron
 nova_scheduler
 nova_placement
 
-(undercloud) [stack@undercloud ~]$ for C in 172.16.0.{32,22,36} ; do echo $C ; ssh heat-admin@$C sudo docker ps --format "'{{ .Names }}'" | grep nova ; echo ; done
+(undercloud) [stack@undercloud ~]$ for C in 172.16.0.{32,22,36} ; do
+        echo $C
+        ssh heat-admin@$C sudo docker ps --format "'{{ .Names }}'" | grep nova
+        echo
+    done
 172.16.0.32
 nova_metadata
 nova_api

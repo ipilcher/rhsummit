@@ -216,8 +216,7 @@ of static and dynamic addresses on the same network.)
 Deploying this OSP 12 architecture into the Ravello environment takes at least
 60 minutes, and we don't want to spend half of our time just watching a
 deployment.  So we'll start with a fully deployed environment in which we can
-do som exploration and testing.  As a final step, we'll delete the overcloud and
-look at the deployment process.
+do some exploration and testing.
 
 ## Lab 2: Containers on the Undercloud
 
@@ -556,16 +555,18 @@ You may recall that ``openstack overcloud container image tag discover``
 returned ``12.0-20180405.1`` as the most recent version of the OSP 12 container
 images.  (There may be a later image available when you are running this lab.)
 This version is not available from the image registry on the ``bastion`` host;
-the latest version available within the lab environment is ``12.0-20180309.1``.
+the latest version available within the lab environment is ``12.0-20180319.1``,
+so that's what we'll use.
 
-We'll need to run ``openstack overcloud container image prepare``, specifying
-different namespaces for the two different files.  First, let's generate the
+We'll need to run ``openstack overcloud container image prepare`` twice, specifying
+different namespaces for the two different runs.  First, let's generate the
 list of images for use by ``openstack overcloud container image upload``.
 
 > **NOTE:** For the sake of brevity, the commands below include only the
 > environment files required to generate the image list and registry for our
-> deployment.  Including **all** environment files that will be used for the
-> deployment/update is recommended.
+> deployment.  Including all environment files that will be used for the
+> deployment/update is the recommended way to ensure that all images are
+> included.
 
 ```
 [stack@undercloud ~]$ cp container-images.yaml{,.bak}

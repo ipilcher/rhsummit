@@ -794,7 +794,8 @@ the new images from the source registry and push them into the local
 registry.
 
 ```
-[stack@undercloud ~]$ openstack overcloud container image upload --verbose --config-file container-images.yaml
+[stack@undercloud ~]$ openstack overcloud container image upload \
+    --verbose --config-file container-images.yaml
 START with options: [u'overcloud', u'container', u'image', u'upload', u'--verbose', u'--config-file', u'container-images.yaml']
 command: overcloud container image upload -> tripleoclient.v1.container_image.UploadImage (auth=False)
 Using config files: [u'container-images.yaml']

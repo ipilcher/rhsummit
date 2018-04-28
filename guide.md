@@ -572,11 +572,11 @@ list of images for use by ``openstack overcloud container image upload``.
 [stack@undercloud ~]$ cp container-images.yaml{,.bak}
 
 [stack@undercloud ~]$ openstack overcloud container image prepare \
->     --environment-file /usr/share/openstack-tripleo-heat-templates/environments/ceph-ansible/ceph-ansible.yaml \
->     --namespace 192.168.1.10:5000/rhosp12 \
->     --tag 12.0-20180319.1 \
->     --set ceph_namespace=192.168.1.10:5000/ceph \
->     --output-images-file container-images.yaml
+     --environment-file /usr/share/openstack-tripleo-heat-templates/environments/ceph-ansible/ceph-ansible.yaml \
+     --namespace 192.168.1.10:5000/rhosp12 \
+     --tag 12.0-20180319.1 \
+     --set ceph_namespace=192.168.1.10:5000/ceph \
+     --output-images-file container-images.yaml
 container_images:
 - imagename: 192.168.1.10:5000/rhosp12/openstack-aodh-api:12.0-20180319.1
 - imagename: 192.168.1.10:5000/rhosp12/openstack-aodh-evaluator:12.0-20180319.1
@@ -666,11 +666,11 @@ Now let's create an updated ``docker-registry.yaml`` for our templates.
 [stack@undercloud ~]$ cp templates/docker-registry.yaml{,.bak}
 
 [stack@undercloud ~]$ openstack overcloud container image prepare \
->     --environment-file /usr/share/openstack-tripleo-heat-templates/environments/ceph-ansible/ceph-ansible.yaml \
->     --namespace 172.16.0.1:8787/rhosp12 \
->     --tag 12.0-20180319.1 \
->     --set ceph_namespace=172.16.0.1:8787/ceph \
->     --output-env-file templates/docker-registry.yaml
+     --environment-file /usr/share/openstack-tripleo-heat-templates/environments/ceph-ansible/ceph-ansible.yaml \
+     --namespace 172.16.0.1:8787/rhosp12 \
+     --tag 12.0-20180319.1 \
+     --set ceph_namespace=172.16.0.1:8787/ceph \
+     --output-env-file templates/docker-registry.yaml
 container_images:
 - imagename: 172.16.0.1:8787/rhosp12/openstack-aodh-api:12.0-20180319.1
 - imagename: 172.16.0.1:8787/rhosp12/openstack-aodh-evaluator:12.0-20180319.1
@@ -828,7 +828,7 @@ deployment.
 ### Is This Thing On?
 
 Before doing anything else, let's check that our deployment is working properly.
-(It was just powered on for the first time in several weeks.)
+(It was just powered on for the first time in several days.)
 
 Source the ``stackrc`` file to access OpenStack services on the undercloud.
 
@@ -878,9 +878,10 @@ be used to map the instances to their bare-metal nodes.)
 +--------------------------------------+------------------+--------+----------------------+----------------+--------------+
 ```
 
-Check the status of the Ceph storage cluster.  (The clock skew and "too many PGs
-per OSD" warnings are expected.  Let an instructor know if you see any other
-warnings or errors.)
+Check the status of the Ceph storage cluster.
+
+> **NOTE:** The clock skew and "too many PGs per OSD" warnings are expected.
+> Let an instructor know if you see any other warnings or errors.)
 
 ```
 (undercloud) [stack@undercloud ~]$ ssh heat-admin@172.16.0.32 sudo ceph -s
@@ -1910,7 +1911,11 @@ multiple Nova logs on multiple hosts, let's stop all Nova containers on
 | 87920ee2-dd27-432d-b8b1-52a2ab49a9ff | lab-compute01    | ACTIVE | ctlplane=172.16.0.25 | overcloud-full | compute      |
 +--------------------------------------+------------------+--------+----------------------+----------------+--------------+
 
-(undercloud) [stack@undercloud ~]$ for C in 172.16.0.{32,22,36} ; do echo $C ; ssh heat-admin@$C sudo docker ps --format "'{{ .Names }}'" | grep nova ; echo ; done
+(undercloud) [stack@undercloud ~]$ for C in 172.16.0.{32,22,36} ; do
+        echo $C
+        ssh heat-admin@$C sudo docker ps --format "'{{ .Names }}'" | grep nova
+        echo
+    done
 172.16.0.32
 nova_metadata
 nova_api

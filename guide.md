@@ -1177,16 +1177,19 @@ interested, but it can be instructive to look through the complete output.)
 [heat-admin@lab-controller01 ~]$ sudo docker inspect haproxy-bundle-docker-0 | jq .[0].Config.Image
 "172.16.0.1:8787/rhosp12/openstack-haproxy:pcmklatest"
 
-[heat-admin@lab-controller01 ~]$ sudo docker inspect haproxy-bundle-docker-0 | jq .[0].HostConfig.NetworkMode
+[heat-admin@lab-controller01 ~]$ sudo docker inspect haproxy-bundle-docker-0 \
+    | jq .[0].HostConfig.NetworkMode
 "host"
 
-[heat-admin@lab-controller01 ~]$ sudo docker inspect haproxy-bundle-docker-0 | jq .[0].Config.Cmd
+[heat-admin@lab-controller01 ~]$ sudo docker inspect haproxy-bundle-docker-0 \
+    | jq .[0].Config.Cmd
 [
   "/bin/bash",
   "/usr/local/bin/kolla_start"
 ]
 
-[heat-admin@lab-controller01 ~]$ sudo docker inspect haproxy-bundle-docker-0 | jq .[0].HostConfig.Binds
+[heat-admin@lab-controller01 ~]$ sudo docker inspect haproxy-bundle-docker-0 \
+    | jq .[0].HostConfig.Binds
 [
   "/etc/pki/tls/certs/ca-bundle.crt:/etc/pki/tls/certs/ca-bundle.crt:ro",
   "/etc/pki/tls/certs/ca-bundle.trust.crt:/etc/pki/tls/certs/ca-bundle.trust.crt:ro",
@@ -1204,7 +1207,8 @@ interested, but it can be instructive to look through the complete output.)
 One final item, which is true of all Pacemaker-managed containers.
 
 ```
-[heat-admin@lab-controller01 ~]$ sudo docker inspect haproxy-bundle-docker-0 | jq .[0].HostConfig.RestartPolicy.Name
+[heat-admin@lab-controller01 ~]$ sudo docker inspect haproxy-bundle-docker-0 \
+    | jq .[0].HostConfig.RestartPolicy.Name
 "no"
 ```
 
@@ -1228,7 +1232,8 @@ One thing which is significant is the startup mechanism for the Ceph containers,
 so let's take a look.
 
 ```
-[heat-admin@lab-controller01 ~]$ sudo docker inspect ceph-mon-lab-controller01 |  jq .[0].HostConfig.RestartPolicy
+[heat-admin@lab-controller01 ~]$ sudo docker inspect ceph-mon-lab-controller01 \
+    |  jq .[0].HostConfig.RestartPolicy
 {
   "MaximumRetryCount": 0,                                                                                                                                                                                          
   "Name": "no"
@@ -1246,21 +1251,21 @@ each container that it wishes to run.
 [heat-admin@lab-controller01 ~]$ systemctl status ceph-mon@lab-controller01.service
 ● ceph-mon@lab-controller01.service - Ceph Monitor
    Loaded: loaded (/etc/systemd/system/ceph-mon@.service; enabled; vendor preset: disabled)
-   Active: active (running) since Mon 2018-04-16 19:35:23 UTC; 4h 5min ago
- Main PID: 4805 (docker-current)
+   Active: active (running) since Sat 2018-04-28 16:53:15 UTC; 6h ago
+ Main PID: 4753 (docker-current)
    CGroup: /system.slice/system-ceph\x2dmon.slice/ceph-mon@lab-controller01.service
-           └─4805 /usr/bin/docker-current run --rm --name ceph-mon-lab-controller01 --net=host --memory=1g --cpu-quota=100000 -v /var/lib/ceph:/var/lib/ceph -v /etc/ceph:/etc/ceph -v /etc/localtime:/etc/local...
+           └─4753 /usr/bin/docker-current run --rm --name ceph-mon-lab-controller01 --net=host --...
 
-Apr 16 23:40:13 lab-controller01 docker[4805]: 2018-04-16 23:40:13.665708 7f55e0108700  0 log_channel(cluster) log [INF] : pgmap v18043: 704 pgs: 704 active+clean; 62135 kB data, 415 MB used, 26.../ 269 GB avail
-Apr 16 23:40:18 lab-controller01 docker[4805]: 2018-04-16 23:40:18.640536 7f55e0108700  0 log_channel(cluster) log [INF] : pgmap v18044: 704 pgs: 704 active+clean; 62135 kB data, 415 MB used, 26.../ 269 GB avail
-Apr 16 23:40:23 lab-controller01 docker[4805]: 2018-04-16 23:40:23.650519 7f55e0108700  0 log_channel(cluster) log [INF] : pgmap v18045: 704 pgs: 704 active+clean; 62135 kB data, 415 MB used, 26.../ 269 GB avail
-Apr 16 23:40:28 lab-controller01 docker[4805]: 2018-04-16 23:40:28.648097 7f55e0108700  0 log_channel(cluster) log [INF] : pgmap v18046: 704 pgs: 704 active+clean; 62135 kB data, 415 MB used, 26.../ 269 GB avail
-Apr 16 23:40:33 lab-controller01 docker[4805]: 2018-04-16 23:40:33.643755 7f55e0108700  0 log_channel(cluster) log [INF] : pgmap v18047: 704 pgs: 704 active+clean; 62135 kB data, 415 MB used, 26.../ 269 GB avail
-Apr 16 23:40:38 lab-controller01 docker[4805]: 2018-04-16 23:40:38.643607 7f55e0108700  0 log_channel(cluster) log [INF] : pgmap v18048: 704 pgs: 704 active+clean; 62135 kB data, 415 MB used, 26.../ 269 GB avail
-Apr 16 23:40:41 lab-controller01 docker[4805]: 2018-04-16 23:40:41.339339 7f55decf3700  0 mon.lab-controller01@0(leader).data_health(10) update_stats avail 81% total 61427 MB, used 11181 MB, avail 50246 MB
-Apr 16 23:40:43 lab-controller01 docker[4805]: 2018-04-16 23:40:43.644051 7f55e0108700  0 log_channel(cluster) log [INF] : pgmap v18049: 704 pgs: 704 active+clean; 62135 kB data, 415 MB used, 26.../ 269 GB avail
-Apr 16 23:40:48 lab-controller01 docker[4805]: 2018-04-16 23:40:48.652448 7f55e0108700  0 log_channel(cluster) log [INF] : pgmap v18050: 704 pgs: 704 active+clean; 62135 kB data, 415 MB used, 26.../ 269 GB avail
-Apr 16 23:40:53 lab-controller01 docker[4805]: 2018-04-16 23:40:53.646715 7f55e0108700  0 log_channel(cluster) log [INF] : pgmap v18051: 704 pgs: 704 active+clean; 62135 kB data, 415 MB used, 26.../ 269 GB avail
+Apr 28 23:26:50 lab-controller01 docker[4753]: 2018-04-28 23:26:50.688292 7f40ffe93700  0 log_...ail
+Apr 28 23:26:55 lab-controller01 docker[4753]: 2018-04-28 23:26:55.651957 7f40ffe93700  0 log_...ail
+Apr 28 23:27:00 lab-controller01 docker[4753]: 2018-04-28 23:27:00.660800 7f40ffe93700  0 log_...ail
+Apr 28 23:27:05 lab-controller01 docker[4753]: 2018-04-28 23:27:05.707990 7f40ffe93700  0 log_...ail
+Apr 28 23:27:10 lab-controller01 docker[4753]: 2018-04-28 23:27:10.656891 7f40ffe93700  0 log_...ail
+Apr 28 23:27:15 lab-controller01 docker[4753]: 2018-04-28 23:27:15.654820 7f40ffe93700  0 log_...ail
+Apr 28 23:27:20 lab-controller01 docker[4753]: 2018-04-28 23:27:20.661587 7f40ffe93700  0 log_...ail
+Apr 28 23:27:25 lab-controller01 docker[4753]: 2018-04-28 23:27:25.664964 7f40ffe93700  0 log_...ail
+Apr 28 23:27:30 lab-controller01 docker[4753]: 2018-04-28 23:27:30.658762 7f40ffe93700  0 log_...ail
+Apr 28 23:27:32 lab-controller01 docker[4753]: 2018-04-28 23:27:32.759232 7f40fe9ae700  0 mon.... MB
 Hint: Some lines were ellipsized, use -l to show in full.
 
 [heat-admin@lab-controller01 ~]$ systemctl is-enabled ceph-mon@lab-controller01.service

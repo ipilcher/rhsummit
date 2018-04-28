@@ -1143,9 +1143,10 @@ Bundles are a new Pacemaker resource type that define how Pacemaker should run
 a container.  For example:
 
 ```
-[heat-admin@lab-controller01 ~]$ sudo pcs resource show haproxy-bundle
+[heat-admin@lab-controller01 ~]$ sudo pcs resource show haproxy-bundle | fold -w 180 -s
  Bundle: haproxy-bundle
-  Docker: image=172.16.0.1:8787/rhosp12/openstack-haproxy:pcmklatest network=host options="--user=root --log-driver=journald -e KOLLA_CONFIG_STRATEGY=COPY_ALWAYS" replicas=3 run-command="/bin/bash /usr/local/bin/kolla_start"
+  Docker: image=172.16.0.1:8787/rhosp12/openstack-haproxy:12.0-20180309.1.fun network=host options="--user=root --log-driver=journald -e KOLLA_CONFIG_STRATEGY=COPY_ALWAYS" 
+replicas=3 run-command="/bin/bash /usr/local/bin/kolla_start"
   Storage Mapping:
    options=ro source-dir=/var/lib/kolla/config_files/haproxy.json target-dir=/var/lib/kolla/config_files/config.json (haproxy-cfg-files)
    options=ro source-dir=/var/lib/config-data/puppet-generated/haproxy/ target-dir=/var/lib/kolla/config_files/src (haproxy-cfg-data)

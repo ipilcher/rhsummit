@@ -2546,10 +2546,7 @@ Removing intermediate container 05288d8e08c0
 Successfully built 95e7c11793a4
 ```
 
-Push the new image into the registry that is running on the undercloud.
-
-> **NOTE:** This registry will be discussed in the final lab, which covers
-> deployment and updates.
+Push the new image into the registry on the undercloud.
 
 ```
 (undercloud) [stack@undercloud haproxy]$ docker push 172.16.0.1:8787/rhosp12/openstack-haproxy:12.0-20180309.1.fun
@@ -2676,6 +2673,88 @@ and "normal" containers.
 
 **Normal Containers**
 
+In an earlier lab, we saw that most of the containers in Red Hat OpenStack
+Platform 12 are started directly by the ``docker`` daemon, but we didn't
+investigate how those containers were created in the first place.  The complete
+process by which TripleO creates a container has a number of steps, but the
+final step used a utility called ``paunch``, which reads a container definition
+in JSON format and calls ``docker run`` to create the container.
 
+The JSON files used by ``paunch`` can be found in the
+``/var/lib/tripleo-config`` directory on the overcloud nodes.
+
+```
+(undercloud) [stack@undercloud nova_scheduler]$ ssh heat-admin@172.16.0.32
+Last login: Fri Apr 20 18:21:49 2018 from 172.16.0.1
+
+
+[heat-admin@lab-controller01 ~]$ ls -l /var/lib/tripleo-config
+total 164
+-rw-------. 1 root root  6092 Apr 12 20:10 docker-container-startup-config-step_1.json
+-rw-------. 1 root root  8531 Apr 12 20:10 docker-container-startup-config-step_2.json
+-rw-------. 1 root root 14556 Apr 12 20:10 docker-container-startup-config-step_3.json
+-rw-------. 1 root root 33274 Apr 12 20:10 docker-container-startup-config-step_4.json
+-rw-------. 1 root root  5128 Apr 12 20:10 docker-container-startup-config-step_5.json
+-rw-------. 1 root root  6204 Apr 12 20:49 hashed-docker-container-startup-config-step_1.json
+-rw-------. 1 root root  8587 Apr 12 20:49 hashed-docker-container-startup-config-step_2.json
+-rw-------. 1 root root 14892 Apr 12 20:49 hashed-docker-container-startup-config-step_3.json
+-rw-------. 1 root root 35290 Apr 12 20:49 hashed-docker-container-startup-config-step_4.json
+-rw-------. 1 root root  5296 Apr 12 20:49 hashed-docker-container-startup-config-step_5.json
+-rw-------. 1 root root   949 Apr 12 20:10 puppet_step_config.pp
+```
+
+This directory contains JSON configurations for 5 different "steps."  TripleO uses
+this scheme to run different containers at different phases of a deployment.  If
+you remember the discussion of ``...ConfigImage`` parameters and "one-shot"
+setup containers from lab 2, you won't be surprised that tha vast majority of
+the containers defined in the early phases are setup containers, and the actual
+service containers are mainly created in the later steps.
+
+The ``hashed...`` variants of the JSON files are identical to the others, except
+that they also include a ``TRIPLEO_CONFIG_HASH`` environment variable in some
+container definitions.  This value is added by another setup tool &mdash;
+``docker-puppet.py``.  ``docker-puppet.py`` runs a separate set of setup
+containers (defined by configuration files in ``/var/lib/docker-puppet``),
+which run Puppet tasks and create the configuration directories under
+``/var/lib/config-data/puppet-generated``.  Those configuration directories
+are then used by the various service containers, via ``kolla_set_configs``.  If
+the hash changes (during an update, for example), ``paunch`` will restart the
+container with the new configuration.
+
+
+```
+[heat-admin@lab-controller01 ~]$ sudo paunch list | grep nova_scheduler
+| tripleo_step4 | nova_scheduler                | 172.16.0.1:8787/rhosp12/openstack-nova-scheduler:12.0-20180309.1          | kolla_start                                                                                              | running |
+
+[heat-admin@lab-controller01 ~]$ sudo paunch debug --action dump-json --container nova_scheduler \
+    --file /var/lib/tripleo-config/hashed-docker-container-startup-config-step_4.json
+{
+    "nova_scheduler": {
+        "environment": [
+            "KOLLA_CONFIG_STRATEGY=COPY_ALWAYS", 
+            "TRIPLEO_CONFIG_HASH=8abb1cabf209039cde5421b00dfc80ff"
+        ], 
+        "volumes": [
+            "/etc/hosts:/etc/hosts:ro", 
+            "/etc/localtime:/etc/localtime:ro", 
+            "/etc/pki/ca-trust/extracted:/etc/pki/ca-trust/extracted:ro", 
+            "/etc/pki/tls/certs/ca-bundle.crt:/etc/pki/tls/certs/ca-bundle.crt:ro", 
+            "/etc/pki/tls/certs/ca-bundle.trust.crt:/etc/pki/tls/certs/ca-bundle.trust.crt:ro", 
+            "/etc/pki/tls/cert.pem:/etc/pki/tls/cert.pem:ro", 
+            "/dev/log:/dev/log", 
+            "/etc/ssh/ssh_known_hosts:/etc/ssh/ssh_known_hosts:ro", 
+            "/etc/puppet:/etc/puppet:ro", 
+            "/var/lib/kolla/config_files/nova_scheduler.json:/var/lib/kolla/config_files/config.json:ro", 
+            "/var/lib/config-data/puppet-generated/nova/:/var/lib/kolla/config_files/src:ro", 
+            "/run:/run", 
+            "/var/log/containers/nova:/var/log/nova"
+        ], 
+        "image": "172.16.0.1:8787/rhosp12/openstack-nova-scheduler:12.0-20180309.1", 
+        "net": "host", 
+        "restart": "always", 
+        "privileged": false
+    }
+}
+```
 
 ## Lab 5: Deploying a New Overcloud

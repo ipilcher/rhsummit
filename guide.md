@@ -2710,16 +2710,16 @@ setup containers from lab 2, you won't be surprised that tha vast majority of
 the containers defined in the early phases are setup containers, and the actual
 service containers are mainly created in the later steps.
 
-The ``hashed...`` variants of the JSON files are identical to the others, except
-that they also include a ``TRIPLEO_CONFIG_HASH`` environment variable in some
-container definitions.  This value is added by another setup tool &mdash;
-``docker-puppet.py``.  ``docker-puppet.py`` runs a separate set of setup
-containers (defined by configuration files in ``/var/lib/docker-puppet``),
-which run Puppet tasks and create the configuration directories under
-``/var/lib/config-data/puppet-generated``.  Those configuration directories
-are then used by the various service containers, via ``kolla_set_configs``.  If
-the hash changes (during an update, for example), ``paunch`` will restart the
-container with the new configuration.
+> **NOTE:** The ``hashed...`` variants of the JSON files are identical to the others, except
+> that they also include a ``TRIPLEO_CONFIG_HASH`` environment variable in some
+> container definitions.  This value is added by another setup tool &mdash;
+> ``docker-puppet.py``.  ``docker-puppet.py`` runs a separate set of setup
+> containers (defined by configuration files in ``/var/lib/docker-puppet``),
+> which run Puppet tasks and create the configuration directories under
+> ``/var/lib/config-data/puppet-generated``.  Those configuration directories
+> are then used by the various service containers, via ``kolla_set_configs``.  If
+> the hash changes (during an update, for example), ``paunch`` will restart the
+> container with the new configuration.
 
 
 ```

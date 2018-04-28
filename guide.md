@@ -1248,6 +1248,17 @@ each container that it wishes to run.
 
 
 ```
+[heat-admin@lab-controller01 ~]$ systemctl list-units --type service ceph*
+UNIT                              LOAD   ACTIVE SUB     DESCRIPTION
+ceph-mon@lab-controller01.service loaded active running Ceph Monitor
+
+LOAD   = Reflects whether the unit definition was properly loaded.
+ACTIVE = The high-level unit activation state, i.e. generalization of SUB.
+SUB    = The low-level unit activation state, values depend on unit type.
+
+1 loaded units listed. Pass --all to see loaded but inactive units, too.
+To show all installed unit files use 'systemctl list-unit-files'.
+
 [heat-admin@lab-controller01 ~]$ systemctl status ceph-mon@lab-controller01.service
 ● ceph-mon@lab-controller01.service - Ceph Monitor
    Loaded: loaded (/etc/systemd/system/ceph-mon@.service; enabled; vendor preset: disabled)
@@ -1800,31 +1811,41 @@ started by the Docker daemon.
   "Name": "no"
 }
 
-[heat-admin@lab-ceph01 ~]$ systemctl list-units | grep ceph-osd
-  ceph-osd@vdb.service                                                                                  loaded active running   Ceph OSD
-  ceph-osd@vdc.service                                                                                  loaded active running   Ceph OSD
-  
+[heat-admin@lab-ceph01 ~]$ systemctl list-units --type service ceph*
+UNIT                 LOAD   ACTIVE SUB     DESCRIPTION
+ceph-osd@vdb.service loaded active running Ceph OSD
+ceph-osd@vdc.service loaded active running Ceph OSD
+
+LOAD   = Reflects whether the unit definition was properly loaded.
+ACTIVE = The high-level unit activation state, i.e. generalization of SUB.
+SUB    = The low-level unit activation state, values depend on unit type.
+
+2 loaded units listed. Pass --all to see loaded but inactive units, too.
+To show all installed unit files use 'systemctl list-unit-files'.
+
 [heat-admin@lab-ceph01 ~]$ systemctl status ceph-osd@vdb.service
 ● ceph-osd@vdb.service - Ceph OSD
    Loaded: loaded (/etc/systemd/system/ceph-osd@.service; enabled; vendor preset: disabled)
-   Active: active (running) since Wed 2018-04-18 19:58:27 UTC; 23h ago
-  Process: 2292 ExecStartPre=/usr/bin/docker rm -f ceph-osd-lab-ceph01-%i (code=exited, status=1/FAILURE)
-  Process: 2277 ExecStartPre=/usr/bin/docker stop ceph-osd-lab-ceph01-%i (code=exited, status=1/FAILURE)
- Main PID: 2308 (ceph-osd-run.sh)
+   Active: active (running) since Sat 2018-04-28 16:53:00 UTC; 6h ago
+  Process: 2288 ExecStartPre=/usr/bin/docker rm -f ceph-osd-lab-ceph01-%i (code=exited, status=1/FAILURE)
+  Process: 2271 ExecStartPre=/usr/bin/docker stop ceph-osd-lab-ceph01-%i (code=exited, status=1/FAILURE)
+ Main PID: 2306 (ceph-osd-run.sh)
    CGroup: /system.slice/system-ceph\x2dosd.slice/ceph-osd@vdb.service
-           ├─2308 /bin/bash /usr/share/ceph-osd-run.sh vdb
-           └─2356 /usr/bin/docker-current run --rm --net=host --privileged=true --pid=host --memory=3g --cpu-quota=100000 -v /dev:/dev -v /etc/localtime:/etc/localtime:ro -v /var/lib/ceph:/var/lib/ceph -v /etc/ceph:/et...
+           ├─2306 /bin/bash /usr/share/ceph-osd-run.sh vdb
+           └─2350 /usr/bin/docker-current run --rm --net=host --privileged=true --pid=host --memory=3g --cp...
 
-Apr 18 19:59:37 lab-ceph01 ceph-osd-run.sh[2308]: 2018-04-18 19:59:37.839496 7faac8504700  0 -- :/1290131804 >> 172.17.3.201:6789/0 pipe(0x7faab80052b0 sd=5 :0 s=1 pgs=0 cs=0 l=1 c=0x7faab800be10).fault
-Apr 18 19:59:40 lab-ceph01 ceph-osd-run.sh[2308]: 2018-04-18 19:59:40.839784 7faac8403700  0 -- :/1290131804 >> 172.17.3.202:6789/0 pipe(0x7faab8009f60 sd=5 :0 s=1 pgs=0 cs=0 l=1 c=0x7faab800df20).fault
-Apr 18 19:59:43 lab-ceph01 ceph-osd-run.sh[2308]: 2018-04-18 19:59:43.839931 7faac8504700  0 -- :/1290131804 >> 172.17.3.203:6789/0 pipe(0x7faab800e970 sd=5 :0 s=1 pgs=0 cs=0 l=1 c=0x7faab800fc30).fault
-Apr 18 19:59:46 lab-ceph01 ceph-osd-run.sh[2308]: 2018-04-18 19:59:46.840187 7faac8403700  0 -- :/1290131804 >> 172.17.3.201:6789/0 pipe(0x7faab8010260 sd=4 :0 s=1 pgs=0 cs=0 l=1 c=0x7faab8011520).fault
-Apr 18 19:59:49 lab-ceph01 ceph-osd-run.sh[2308]: 2018-04-18 19:59:49.840657 7faac8504700  0 -- :/1290131804 >> 172.17.3.202:6789/0 pipe(0x7faab800e970 sd=5 :0 s=1 pgs=0 cs=0 l=1 c=0x7faab800fc30).fault
-Apr 18 19:59:55 lab-ceph01 ceph-osd-run.sh[2308]: 2018-04-18 19:59:55.841242 7faac8302700  0 -- 172.17.3.221:0/1290131804 >> 172.17.3.202:6789/0 pipe(0x7faab800e950 sd=4 :0 s=1 pgs=0 cs=0 l=1 c=0x7faab800fc10).fault
-Apr 18 20:00:01 lab-ceph01 ceph-osd-run.sh[2308]: create-or-move updated item name 'osd.1' weight 0.04 at location {host=lab-ceph01,root=default} to crush map
-Apr 18 20:00:01 lab-ceph01 ceph-osd-run.sh[2308]: 2018-04-18 20:00:01  /entrypoint.sh: SUCCESS
-Apr 18 20:00:01 lab-ceph01 ceph-osd-run.sh[2308]: starting osd.1 at :/0 osd_data /var/lib/ceph/osd/ceph-1 /var/lib/ceph/osd/ceph-1/journal
-Apr 18 20:00:03 lab-ceph01 ceph-osd-run.sh[2308]: 2018-04-18 20:00:03.813532 7f82948dba40 -1 osd.1 22 log_to_monitors {default=true}
+Apr 28 16:53:20 lab-ceph01 ceph-osd-run.sh[2306]: 2018-04-28 16:53:20.445844 7f87c3abf700  0 -- :/265723...ult
+Apr 28 16:53:26 lab-ceph01 ceph-osd-run.sh[2306]: 2018-04-28 16:53:26.446346 7f87c38bd700  0 -- 172.17.3...ult
+Apr 28 16:53:29 lab-ceph01 ceph-osd-run.sh[2306]: 2018-04-28 16:53:29.446994 7f87c3abf700  0 -- 172.17.3...ult
+Apr 28 16:53:35 lab-ceph01 ceph-osd-run.sh[2306]: 2018-04-28 16:53:35.447647 7f87c3abf700  0 -- 172.17.3...ult
+Apr 28 16:53:38 lab-ceph01 ceph-osd-run.sh[2306]: create-or-move updated item name 'osd.1' weight 0.04 a...map
+Apr 28 16:53:38 lab-ceph01 ceph-osd-run.sh[2306]: 2018-04-28 16:53:38  /entrypoint.sh: SUCCESS
+Apr 28 16:53:38 lab-ceph01 ceph-osd-run.sh[2306]: starting osd.1 at :/0 osd_data /var/lib/ceph/osd/ceph-...nal
+Apr 28 16:53:39 lab-ceph01 ceph-osd-run.sh[2306]: 2018-04-28 16:53:39.955863 7f359890fa40 -1 osd.1 36 lo...ue}
+Apr 28 16:53:39 lab-ceph01 ceph-osd-run.sh[2306]: 2018-04-28 16:53:39.973959 7f3585274700 -1 monclient: ...46)
+Apr 28 16:53:42 lab-ceph01 ceph-osd-run.sh[2306]: 2018-04-28 16:53:42.956013 7f357d264700 -1 monclient: ...00)
+Hint: Some lines were ellipsized, use -l to show in full.
+
 
 [heat-admin@lab-ceph01 ~]$ cat /etc/systemd/system/ceph-osd@.service
 # Please do not change this file directly since it is managed by Ansible and will be overwritten
@@ -1885,6 +1906,14 @@ Connection to 172.16.0.31 closed.
 ```
 
 ## Lab 4: Troubleshooting and Testing
+
+In this lab, we'll look at a number of techniques that can be used for
+troubleshooting and testing of the containerized services in Red Hat OpenStack
+Platform 12, including:
+
+* Controlling Pacemaker-managed and "normal" containerized services,
+* Testing configuration changes, and
+* Creating and testing modified container images.
 
 ### Honey, I Shrunk the Cluster
 

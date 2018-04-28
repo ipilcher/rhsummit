@@ -881,9 +881,6 @@ be used to map the instances to their bare-metal nodes.)
 
 Check the status of the Ceph storage cluster.
 
-> **NOTE:** The clock skew and "too many PGs per OSD" warnings are expected.
-> Let an instructor know if you see any other warnings or errors.)
-
 ```
 (undercloud) [stack@undercloud ~]$ ssh heat-admin@172.16.0.32 sudo ceph -s
     cluster 62e500d2-3e8a-11e8-8abf-2cc26041e5e3
@@ -899,6 +896,9 @@ Check the status of the Ceph storage cluster.
             404 MB used, 269 GB / 269 GB avail
                  704 active+clean
 ```
+
+> **NOTE:** The clock skew and "too many PGs per OSD" warnings are expected.
+> Let an instructor know if you see any other warnings or errors.)
 
 A number of items have been pre-created in the **overcloud**.
 
@@ -1071,7 +1071,7 @@ containers, rather than traditional services.)
 Let's look at our Pacemaker cluster.
 
 ```
-[heat-admin@lab-controller01 ~]$ sudo pcs status
+[heat-admin@lab-controller01 ~]$ sudo pcs status | fold -w 120 -s
 Cluster name: tripleo_cluster
 Stack: corosync
 Current DC: lab-controller02 (version 1.1.16-12.el7_4.8-94ff4df) - partition with quorum
@@ -1082,7 +1082,9 @@ Last change: Thu Apr 12 20:57:04 2018 by root via cibadmin on lab-controller01
 37 resources configured
 
 Online: [ lab-controller01 lab-controller02 lab-controller03 ]
-GuestOnline: [ galera-bundle-0@lab-controller01 galera-bundle-1@lab-controller02 galera-bundle-2@lab-controller03 rabbitmq-bundle-0@lab-controller01 rabbitmq-bundle-1@lab-controller02 rabbitmq-bundle-2@lab-controller03 redis-bundle-0@lab-controller01 redis-bundle-1@lab-controller02 redis-bundle-2@lab-controller03 ]
+GuestOnline: [ galera-bundle-0@lab-controller01 galera-bundle-1@lab-controller02 galera-bundle-2@lab-controller03
+rabbitmq-bundle-0@lab-controller01 rabbitmq-bundle-1@lab-controller02 rabbitmq-bundle-2@lab-controller03
+redis-bundle-0@lab-controller01 redis-bundle-1@lab-controller02 redis-bundle-2@lab-controller03 ]
 
 Full list of resources:
 

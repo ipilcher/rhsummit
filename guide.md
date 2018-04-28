@@ -2721,11 +2721,26 @@ service containers are mainly created in the later steps.
 > the hash changes (during an update, for example), ``paunch`` will restart the
 > container with the new configuration.
 
+Fortunately, ``paunch`` includes a number of debugging options.  First, let's
+use it to determine which step (and thus which JSON file) defines the ``nova_scheduler``
+container.
 
 ```
-[heat-admin@lab-controller01 ~]$ sudo paunch list | grep nova_scheduler
-| tripleo_step4 | nova_scheduler                | 172.16.0.1:8787/rhosp12/openstack-nova-scheduler:12.0-20180309.1          | kolla_start                                                                                              | running |
+[heat-admin@lab-controller01 ~]$ sudo paunch list | grep nova_scheduler | fold -w 80 -s
+| tripleo_step4 | nova_scheduler                | 
+172.16.0.1:8787/rhosp12/openstack-nova-scheduler:12.0-20180309.1          | 
+kolla_start                                                                     
+                                                                                
+                                                                                
+                                                                                
+                             | running |
+```
 
+It was defined in step 4, so its configuration will be in
+``hashed-docker-container-startup-config-step_4.json``.  What can ``paunch``
+tell us about this container?
+
+```
 [heat-admin@lab-controller01 ~]$ sudo paunch debug --action dump-json --container nova_scheduler \
     --file /var/lib/tripleo-config/hashed-docker-container-startup-config-step_4.json
 {
@@ -2755,6 +2770,84 @@ service containers are mainly created in the later steps.
         "privileged": false
     }
 }
+
+[heat-admin@lab-controller01 ~]$ sudo paunch debug --action print-cmd --container nova_scheduler \
+     --file /var/lib/tripleo-config/hashed-docker-container-startup-config-step_4.json \
+     | fold -w 100 -s
+docker run --name nova_scheduler-jrvh61wy --detach=true --env=KOLLA_CONFIG_STRATEGY=COPY_ALWAYS 
+--env=TRIPLEO_CONFIG_HASH=8abb1cabf209039cde5421b00dfc80ff --net=host --privileged=false 
+--restart=always --volume=/etc/hosts:/etc/hosts:ro --volume=/etc/localtime:/etc/localtime:ro 
+--volume=/etc/pki/ca-trust/extracted:/etc/pki/ca-trust/extracted:ro 
+--volume=/etc/pki/tls/certs/ca-bundle.crt:/etc/pki/tls/certs/ca-bundle.crt:ro 
+--volume=/etc/pki/tls/certs/ca-bundle.trust.crt:/etc/pki/tls/certs/ca-bundle.trust.crt:ro 
+--volume=/etc/pki/tls/cert.pem:/etc/pki/tls/cert.pem:ro --volume=/dev/log:/dev/log 
+--volume=/etc/ssh/ssh_known_hosts:/etc/ssh/ssh_known_hosts:ro --volume=/etc/puppet:/etc/puppet:ro 
+--volume=/var/lib/kolla/config_files/nova_scheduler.json:/var/lib/kolla/config_files/config.json:ro 
+--volume=/var/lib/config-data/puppet-generated/nova/:/var/lib/kolla/config_files/src:ro 
+--volume=/run:/run --volume=/var/log/containers/nova:/var/log/nova 
+172.16.0.1:8787/rhosp12/openstack-nova-scheduler:12.0-20180309.1
+```
+
+``paunch`` can give us the JSON for a specific container (which can be edited
+and fed back ``paunch`` to run a modified version), and it can also provide the
+actual command used to run the container.  (Note that ``paunch`` has modified
+the name of the container on the command line.  This allows us to run a
+temporary container without deleting the existing one.)  Let's use the command
+line information to stop the running Nova scheduler container and start a new
+one with our modified image.
+
+```
+[heat-admin@lab-controller01 ~]$ sudo docker stop nova_scheduler && \
+    sudo docker run --name nova_scheduler.fun \
+    --detach=true --env=KOLLA_CONFIG_STRATEGY=COPY_ALWAYS \
+    --env=TRIPLEO_CONFIG_HASH=8abb1cabf209039cde5421b00dfc80ff \
+    --net=host --privileged=false --restart=always \
+    --volume=/etc/hosts:/etc/hosts:ro \
+    --volume=/etc/localtime:/etc/localtime:ro \
+    --volume=/etc/pki/ca-trust/extracted:/etc/pki/ca-trust/extracted:ro \
+    --volume=/etc/pki/tls/certs/ca-bundle.crt:/etc/pki/tls/certs/ca-bundle.crt:ro \
+    --volume=/etc/pki/tls/certs/ca-bundle.trust.crt:/etc/pki/tls/certs/ca-bundle.trust.crt:ro \
+    --volume=/etc/pki/tls/cert.pem:/etc/pki/tls/cert.pem:ro \
+    --volume=/dev/log:/dev/log \
+    --volume=/etc/ssh/ssh_known_hosts:/etc/ssh/ssh_known_hosts:ro \
+    --volume=/etc/puppet:/etc/puppet:ro \
+    --volume=/var/lib/kolla/config_files/nova_scheduler.json:/var/lib/kolla/config_files/config.json:ro \
+    --volume=/var/lib/config-data/puppet-generated/nova/:/var/lib/kolla/config_files/src:ro \
+    --volume=/run:/run \
+    --volume=/var/log/containers/nova:/var/log/nova \
+    172.16.0.1:8787/rhosp12/openstack-nova-scheduler:12.0-20180309.1.fun
+nova_scheduler
+Unable to find image '172.16.0.1:8787/rhosp12/openstack-nova-scheduler:12.0-20180309.1.fun' locally
+Trying to pull repository 172.16.0.1:8787/rhosp12/openstack-nova-scheduler ... 
+12.0-20180309.1.fun: Pulling from 172.16.0.1:8787/rhosp12/openstack-nova-scheduler
+9a32f102e677: Already exists 
+b8aa42cec17a: Already exists 
+d3c98788fcbb: Already exists 
+f4dfd41e94af: Already exists 
+9d935da33fe1: Already exists 
+1bbbbae59a14: Already exists 
+f5bc123caaa9: Pull complete 
+Digest: sha256:75a03af827ac3272d3153dfb933f227a957cdc14aee8e070d17fe0afed04752e
+Status: Downloaded newer image for 172.16.0.1:8787/rhosp12/openstack-nova-scheduler:12.0-20180309.1.fun
+c25914f2dc85b22157f6f907c4e70609b5bfdb2489526109047c91b04e30db41
+
+[heat-admin@lab-controller01 ~]$ sudo docker ps | grep fun | fold -w 120 -s
+c25914f2dc85        172.16.0.1:8787/rhosp12/openstack-nova-scheduler:12.0-20180309.1.fun        "kolla_start"           
+ About a minute ago   Up About a minute (healthy)                       nova_scheduler.fun
+ 
+[heat-admin@lab-controller01 ~]$ sudo docker exec nova_scheduler.fun cat /fun
+Are you not entertained?!
+```
+
+When finished testing, revert to the unmodified container.
+
+```
+[heat-admin@lab-controller01 ~]$ sudo docker stop nova_scheduler.fun && sudo docker start nova_scheduler
+nova_scheduler.fun
+nova_scheduler
+
+[heat-admin@lab-controller01 ~]$ sudo docker exec nova_scheduler cat /fun
+cat: /fun: No such file or directory
 ```
 
 ## Lab 5: Deploying a New Overcloud

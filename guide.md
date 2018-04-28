@@ -44,7 +44,7 @@
   - [Testing Container Image Changes](#testing-container-image-changes)
     * [Modifying a Container Image](#modifying-a-container-image)
     * [Testing the Modified Image](#testing-the-modified-image)
-* [**Lab 5:** Deploying a New Overcloud](#lab-5-deploying-a-new-overcloud)
+* [**Lab 5:** Extra Credit](#lab-5-extra-credit)
 
 ## Lab 0: Introduction
 
@@ -2982,4 +2982,4 @@ cat: /fun: No such file or directory
 cat: /fun: No such file or directory
 ```
 
-## Lab 5: Deploying a New Overcloud
+## Lab 5: Extra Credit

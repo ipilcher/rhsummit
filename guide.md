@@ -167,6 +167,8 @@ OpenStack on OpenStack!
 
 ## Lab 1: Lab Environment
 
+### Environment Overview
+
 This lab features a realistic OSP 12 deployment (except for the number of
 compute nodes), including:
 
@@ -219,6 +221,12 @@ Deploying this OSP 12 architecture into the Ravello environment takes at least
 60 minutes, and we don't want to spend half of our time just watching a
 deployment.  So we'll start with a fully deployed environment in which we can
 do some exploration and testing.
+
+### Connecting to the Environment
+
+![GUID request](/images/screenshot1.png)
+
+![GUID assignment](/images/screenshot2.png)
 
 ## Lab 2: Containers on the Undercloud
 

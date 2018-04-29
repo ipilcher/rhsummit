@@ -2295,7 +2295,7 @@ Daemon Status:
 
 HAProxy is once again running on all of the controllers.  Note, however, that
 the virtual IPs are still all running on ``lab-controller01``, because that
-satifies the colocation constraints.  We can re-distribute them by restarting
+satisfies the colocation constraints.  We can re-distribute them by restarting
 the Pacemaker resources.
 
 ```
@@ -2390,9 +2390,9 @@ mechanism that does not required modifying any persistent configuration files.
 
 Starting with the Newton release (Red Hat OpenStack Platform 10), OpenStack
 supports "mutable" configuration options &dash; configuration options that can
-be changed without restarting a service.  Most options are not mutable, but the
-``debug`` setting was one of the primary reasons for adding this capability.
-Let's test this capability with our ``nova_scheduler`` container.
+be changed without restarting a service.  The ``debug`` setting in ``nova.conf``
+is one of the small number of configurations options that has been made
+mutable.  Let's test this capability with our ``nova_scheduler`` container.
 
 First, verify that ``DEBUG`` messages are not being logged.
 

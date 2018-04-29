@@ -1272,7 +1272,7 @@ so let's take a look.
 [heat-admin@lab-controller01 ~]$ sudo docker inspect ceph-mon-lab-controller01 \
     |  jq .[0].HostConfig.RestartPolicy
 {
-  "MaximumRetryCount": 0,                                                                                                                                                                                          
+  "MaximumRetryCount": 0,
   "Name": "no"
 }
 ```

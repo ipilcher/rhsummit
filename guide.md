@@ -244,6 +244,14 @@ Open a terminal (if necessary) and copy the ``ssh`` command from the browser.
 pre-provisioned, so you should not need a password to connect to your bastion
 host.
 
+```
+[lab-user@HostXXXXXXXXXXXX ~]$ ssh bastion-XXXX.rhpds.opentlc.com
+Warning: Permantntly added 'bastion-XXXX.rhpds.opentlc.com,176.126.90.96' (ECDSA
+) to the list of known hosts.
+Last login: Sun Apr 29 13:03:52 2018 from 70.119.136.2
+[lab-user@bastion-XXXX ~]$
+```
+
 Please inform one of the lab proctors if you have any trouble requesting a GUID
 or connecting to your environment.
 

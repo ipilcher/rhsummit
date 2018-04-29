@@ -226,7 +226,7 @@ do some exploration and testing.
 
 ![GUID request](/images/screenshot1.png)
 
-![GUID assignment](/images/screenshot2.png)
+![GUID assignment](/images/screenshot3.png)
 
 ## Lab 2: Containers on the Undercloud
 

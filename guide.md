@@ -225,7 +225,7 @@ do some exploration and testing.
 ### Connecting to the Environment
 
 To begin, use the
-[Lab GUID Assignment form](https://www.opentlc.com/guidgrabber/guidgrabber.cgi)
+[Lab GUID Assignment form](http://www.opentlc.com/guidgrabber/guidgrabber.cgi)
 to request a lab environment for your individual use.  (The **Firefox**
 browser on your workstation should already be open, and it is configured to
 automatically display the form.)
@@ -3292,4 +3292,125 @@ bm-deploy-kernel_20180316T123554Z bm-deploy-ramdisk_20180316T123556Z overcloud-f
     --container-registry-file templates/docker-registry.yaml
 Started Mistral Workflow tripleo.package_update.v1.package_update_plan. Execution ID: 44054b51-9de9-41a3-ae01-412e1430dd95
 Waiting for messages on queue 'aa2349a6-983d-4bf5-801a-aad42dfaa05c' with no timeout.
+(...)
+
+ Stack overcloud UPDATE_COMPLETE 
+
+Heat stack update init on overcloud complete.
+Started Mistral Workflow tripleo.package_update.v1.get_config. Execution ID: 8c222506-fb38-4a61-b306-3e895ebca0c9
+Waiting for messages on queue 'tripleo' with no timeout.
+Success
+Init minor update on stack overcloud complete.
+
+
+[heat-admin@lab-controller01 ~]$ sudo yum check-update
+Loaded plugins: product-id, search-disabled-repos, subscription-manager
+This system is not registered with an entitlement server. You can use subscription-manager to register.
+
+dhclient.x86_64                           12:4.2.5-58.el7_4.3                rhelosp-rhel-7.4-server
+dhcp-common.x86_64                        12:4.2.5-58.el7_4.3                rhelosp-rhel-7.4-server
+dhcp-libs.x86_64                          12:4.2.5-58.el7_4.3                rhelosp-rhel-7.4-server
+puppet-tripleo.noarch                     7.4.8-5.el7ost                     rhelosp-12.0-puddle    
+python-paramiko.noarch                    2.1.1-4.el7                        rhelosp-rhel-7.4-extras
+qemu-img-rhev.x86_64                      10:2.10.0-21.el7                   rhelosp-12.0-puddle    
+qemu-kvm-common-rhev.x86_64               10:2.10.0-21.el7                   rhelosp-12.0-puddle    
+qemu-kvm-rhev.x86_64                      10:2.10.0-21.el7                   rhelosp-12.0-puddle    
+tzdata.noarch                             2018d-1.el7                        rhelosp-rhel-7.4-server
+
+[heat-admin@lab-controller01 ~]$ sudo docker ps --format '{{ .Image }}'
+172.16.0.1:8787/rhosp12/openstack-haproxy:12.0-20180309.1.fun
+172.16.0.1:8787/rhosp12/openstack-redis:pcmklatest
+172.16.0.1:8787/rhosp12/openstack-mariadb:pcmklatest
+172.16.0.1:8787/rhosp12/openstack-rabbitmq:pcmklatest
+172.16.0.1:8787/ceph/rhceph-2-rhel7:latest
+172.16.0.1:8787/rhosp12/openstack-gnocchi-api:12.0-20180309.1
+172.16.0.1:8787/rhosp12/openstack-gnocchi-statsd:12.0-20180309.1
+172.16.0.1:8787/rhosp12/openstack-gnocchi-metricd:12.0-20180309.1
+172.16.0.1:8787/rhosp12/openstack-panko-api:12.0-20180309.1
+172.16.0.1:8787/rhosp12/openstack-nova-api:12.0-20180309.1
+172.16.0.1:8787/rhosp12/openstack-nova-api:12.0-20180309.1
+172.16.0.1:8787/rhosp12/openstack-glance-api:12.0-20180309.1
+172.16.0.1:8787/rhosp12/openstack-swift-account:12.0-20180309.1
+172.16.0.1:8787/rhosp12/openstack-aodh-listener:12.0-20180309.1
+172.16.0.1:8787/rhosp12/openstack-swift-container:12.0-20180309.1
+172.16.0.1:8787/rhosp12/openstack-heat-api:12.0-20180309.1
+172.16.0.1:8787/rhosp12/openstack-swift-proxy-server:12.0-20180309.1
+172.16.0.1:8787/rhosp12/openstack-swift-object:12.0-20180309.1
+172.16.0.1:8787/rhosp12/openstack-swift-container:12.0-20180309.1
+172.16.0.1:8787/rhosp12/openstack-swift-account:12.0-20180309.1
+172.16.0.1:8787/rhosp12/openstack-cron:12.0-20180309.1
+172.16.0.1:8787/rhosp12/openstack-heat-api-cfn:12.0-20180309.1
+172.16.0.1:8787/rhosp12/openstack-nova-conductor:12.0-20180309.1
+172.16.0.1:8787/rhosp12/openstack-swift-object:12.0-20180309.1
+172.16.0.1:8787/rhosp12/openstack-swift-container:12.0-20180309.1
+172.16.0.1:8787/rhosp12/openstack-heat-engine:12.0-20180309.1
+172.16.0.1:8787/rhosp12/openstack-aodh-api:12.0-20180309.1
+172.16.0.1:8787/rhosp12/openstack-swift-object:12.0-20180309.1
+172.16.0.1:8787/rhosp12/openstack-nova-novncproxy:12.0-20180309.1
+172.16.0.1:8787/rhosp12/openstack-ceilometer-notification:12.0-20180309.1
+172.16.0.1:8787/rhosp12/openstack-swift-account:12.0-20180309.1
+172.16.0.1:8787/rhosp12/openstack-nova-consoleauth:12.0-20180309.1
+172.16.0.1:8787/rhosp12/openstack-nova-api:12.0-20180309.1
+172.16.0.1:8787/rhosp12/openstack-aodh-notifier:12.0-20180309.1
+172.16.0.1:8787/rhosp12/openstack-ceilometer-central:12.0-20180309.1
+172.16.0.1:8787/rhosp12/openstack-swift-account:12.0-20180309.1
+172.16.0.1:8787/rhosp12/openstack-swift-object:12.0-20180309.1
+172.16.0.1:8787/rhosp12/openstack-heat-api:12.0-20180309.1
+172.16.0.1:8787/rhosp12/openstack-swift-proxy-server:12.0-20180309.1
+172.16.0.1:8787/rhosp12/openstack-swift-object:12.0-20180309.1
+172.16.0.1:8787/rhosp12/openstack-nova-scheduler:12.0-20180309.1
+172.16.0.1:8787/rhosp12/openstack-swift-container:12.0-20180309.1
+172.16.0.1:8787/rhosp12/openstack-aodh-evaluator:12.0-20180309.1
+172.16.0.1:8787/rhosp12/openstack-keystone:12.0-20180309.1
+172.16.0.1:8787/rhosp12/openstack-keystone:12.0-20180309.1
+172.16.0.1:8787/rhosp12/openstack-nova-placement-api:12.0-20180309.1
+172.16.0.1:8787/rhosp12/openstack-horizon:12.0-20180309.1
+172.16.0.1:8787/rhosp12/openstack-mariadb:12.0-20180309.1
+172.16.0.1:8787/rhosp12/openstack-memcached:12.0-20180309.1
+
+(undercloud) [stack@undercloud ~]$ openstack server list
++--------------------------------------+------------------+--------+----------------------+-------+--------------+
+| ID                                   | Name             | Status | Networks             | Image | Flavor       |
++--------------------------------------+------------------+--------+----------------------+-------+--------------+
+| 47e02f2f-b3fe-4f0a-83b6-d0305004aec9 | lab-ceph02       | ACTIVE | ctlplane=172.16.0.23 |       | ceph-storage |
+| 5c2f6fd7-3351-4ca6-bd41-3fafb1de5162 | lab-controller03 | ACTIVE | ctlplane=172.16.0.36 |       | control      |
+| b837722d-0d91-4e50-a359-223487fbdb2e | lab-controller01 | ACTIVE | ctlplane=172.16.0.32 |       | control      |
+| f8c7a2b3-73c8-476f-87a9-4c0af28e7595 | lab-controller02 | ACTIVE | ctlplane=172.16.0.22 |       | control      |
+| 9e7924fd-4611-41de-a29a-c600502e12a0 | lab-ceph03       | ACTIVE | ctlplane=172.16.0.33 |       | ceph-storage |
+| 66515ba8-15eb-480a-ad37-c3e91da47df8 | lab-ceph01       | ACTIVE | ctlplane=172.16.0.31 |       | ceph-storage |
+| 87920ee2-dd27-432d-b8b1-52a2ab49a9ff | lab-compute01    | ACTIVE | ctlplane=172.16.0.25 |       | compute      |
++--------------------------------------+------------------+--------+----------------------+-------+--------------+
+
+[heat-admin@lab-compute01 ~]$ sudo yum check-update
+Loaded plugins: product-id, search-disabled-repos, subscription-manager
+This system is not registered with an entitlement server. You can use subscription-manager to register.
+rhelosp-12.0-puddle                                                          | 2.9 kB  00:00:00     
+rhelosp-ceph-2.0-mon                                                         | 2.9 kB  00:00:00     
+rhelosp-ceph-2.0-osd                                                         | 2.9 kB  00:00:00     
+rhelosp-ceph-2.0-tools                                                       | 2.9 kB  00:00:00     
+rhelosp-rhel-7.4-extras                                                      | 2.9 kB  00:00:00     
+rhelosp-rhel-7.4-ha                                                          | 2.9 kB  00:00:00     
+rhelosp-rhel-7.4-server                                                      | 2.9 kB  00:00:00     
+
+dhclient.x86_64                           12:4.2.5-58.el7_4.3                rhelosp-rhel-7.4-server
+dhcp-common.x86_64                        12:4.2.5-58.el7_4.3                rhelosp-rhel-7.4-server
+dhcp-libs.x86_64                          12:4.2.5-58.el7_4.3                rhelosp-rhel-7.4-server
+puppet-tripleo.noarch                     7.4.8-5.el7ost                     rhelosp-12.0-puddle    
+python-paramiko.noarch                    2.1.1-4.el7                        rhelosp-rhel-7.4-extras
+qemu-img-rhev.x86_64                      10:2.10.0-21.el7                   rhelosp-12.0-puddle    
+qemu-kvm-common-rhev.x86_64               10:2.10.0-21.el7                   rhelosp-12.0-puddle    
+qemu-kvm-rhev.x86_64                      10:2.10.0-21.el7                   rhelosp-12.0-puddle    
+tzdata.noarch                             2018d-1.el7                        rhelosp-rhel-7.4-server
+
+[heat-admin@lab-compute01 ~]$ sudo docker ps --format '{{ .Image }}'
+172.16.0.1:8787/rhosp12/openstack-cron:12.0-20180309.1
+172.16.0.1:8787/rhosp12/openstack-nova-compute:12.0-20180309.1
+172.16.0.1:8787/rhosp12/openstack-ceilometer-compute:12.0-20180309.1
+172.16.0.1:8787/rhosp12/openstack-nova-compute:12.0-20180309.1
+172.16.0.1:8787/rhosp12/openstack-nova-libvirt:12.0-20180309.1
+172.16.0.1:8787/rhosp12/openstack-nova-libvirt:12.0-20180309.1
+
+(undercloud) [stack@undercloud ~]$ openstack overcloud update stack --nodes Controller
+Started Mistral Workflow tripleo.package_update.v1.update_nodes. Execution ID: ea090125-6064-4a92-b026-e446d80bad6d
+
 ```

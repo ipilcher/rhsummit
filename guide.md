@@ -2074,7 +2074,7 @@ Full list of resources:
  ip-172.17.1.150        (ocf::heartbeat:IPaddr2):       Started lab-controller01
  ip-172.17.3.150        (ocf::heartbeat:IPaddr2):       Started lab-controller02
  ip-172.17.4.150        (ocf::heartbeat:IPaddr2):       Started lab-controller03
- Docker container set: haproxy-bundle [172.16.0.1:8787/rhosp12/openstack-haproxy:12.0-20180309.1.fun]
+ Docker container set: haproxy-bundle [172.16.0.1:8787/rhosp12/openstack-haproxy:pcmklatest]
    haproxy-bundle-docker-0      (ocf::heartbeat:docker):        Started lab-controller01
    haproxy-bundle-docker-1      (ocf::heartbeat:docker):        Started lab-controller02
    haproxy-bundle-docker-2      (ocf::heartbeat:docker):        Started lab-controller03
@@ -2113,11 +2113,14 @@ before capturing network traffic with ``tcpdump``, for example.  We'll use the
 ``lab-controller02`` or ``lab-controller03``.
 
 ```
-[heat-admin@lab-controller01 ~]$ sudo pcs resource ban haproxy-bundle lab-controller02
-Warning: Creating location constraint cli-ban-haproxy-bundle-on-lab-controller02 with a score of -INFINITY for resource haproxy-bundle on node lab-controller02.
-This will prevent haproxy-bundle from running on lab-controller02 until the constraint is removed. This will be the case even if lab-controller02 is the last node in the cluster.
+[heat-admin@lab-controller01 ~]$ sudo pcs resource ban haproxy-bundle lab-controller02 \
+    | fold -w 100 -s
+Warning: Creating location constraint cli-ban-haproxy-bundle-on-lab-controller02 with a score of
+-INFINITY for resource haproxy-bundle on node lab-controller02.
+This will prevent haproxy-bundle from running on lab-controller02 until the constraint is removed.
+This will be the case even if lab-controller02 is the last node in the cluster.
 
-[heat-admin@lab-controller01 ~]$ sudo pcs status
+[heat-admin@lab-controller01 ~]$ sudo pcs status | fold -w 120 -s
 Cluster name: tripleo_cluster
 Stack: corosync
 Current DC: lab-controller01 (version 1.1.16-12.el7_4.8-94ff4df) - partition with quorum
@@ -2128,7 +2131,9 @@ Last change: Wed Apr 25 16:42:18 2018 by root via crm_resource on lab-controller
 37 resources configured
 
 Online: [ lab-controller01 lab-controller02 lab-controller03 ]
-GuestOnline: [ galera-bundle-0@lab-controller01 galera-bundle-1@lab-controller02 galera-bundle-2@lab-controller03 rabbitmq-bundle-0@lab-controller01 rabbitmq-bundle-1@lab-controller02 rabbitmq-bundle-2@lab-controller03 redis-bundle-0@lab-controller01 redis-bundle-1@lab-controller02 redis-bundle-2@lab-controller03 ]
+GuestOnline: [ galera-bundle-0@lab-controller01 galera-bundle-1@lab-controller02 galera-bundle-2@lab-controller03
+rabbitmq-bundle-0@lab-controller01 rabbitmq-bundle-1@lab-controller02 rabbitmq-bundle-2@lab-controller03
+redis-bundle-0@lab-controller01 redis-bundle-1@lab-controller02 redis-bundle-2@lab-controller03 ]
 
 Full list of resources:
 
@@ -2161,11 +2166,14 @@ Daemon Status:
   pacemaker: active/enabled
   pcsd: active/enabled
 
-[heat-admin@lab-controller01 ~]$ sudo pcs resource ban haproxy-bundle lab-controller03
-Warning: Creating location constraint cli-ban-haproxy-bundle-on-lab-controller03 with a score of -INFINITY for resource haproxy-bundle on node lab-controller03.
-This will prevent haproxy-bundle from running on lab-controller03 until the constraint is removed. This will be the case even if lab-controller03 is the last node in the cluster.
+[heat-admin@lab-controller01 ~]$ sudo pcs resource ban haproxy-bundle lab-controller03 \
+    | fold -w 100 -s
+Warning: Creating location constraint cli-ban-haproxy-bundle-on-lab-controller03 with a score of
+-INFINITY for resource haproxy-bundle on node lab-controller03.
+This will prevent haproxy-bundle from running on lab-controller03 until the constraint is removed.
+This will be the case even if lab-controller03 is the last node in the cluster.
 
-[heat-admin@lab-controller01 ~]$ sudo pcs status
+[heat-admin@lab-controller01 ~]$ sudo pcs status | fold -w 120 -s
 Cluster name: tripleo_cluster
 Stack: corosync
 Current DC: lab-controller01 (version 1.1.16-12.el7_4.8-94ff4df) - partition with quorum
@@ -2176,7 +2184,9 @@ Last change: Wed Apr 25 18:30:33 2018 by root via crm_resource on lab-controller
 37 resources configured
 
 Online: [ lab-controller01 lab-controller02 lab-controller03 ]
-GuestOnline: [ galera-bundle-0@lab-controller01 galera-bundle-1@lab-controller02 galera-bundle-2@lab-controller03 rabbitmq-bundle-0@lab-controller01 rabbitmq-bundle-1@lab-controller02 rabbitmq-bundle-2@lab-controller03 redis-bundle-0@lab-controller01 redis-bundle-1@lab-controller02 redis-bundle-2@lab-controller03 ]
+GuestOnline: [ galera-bundle-0@lab-controller01 galera-bundle-1@lab-controller02 galera-bundle-2@lab-controller03
+rabbitmq-bundle-0@lab-controller01 rabbitmq-bundle-1@lab-controller02 rabbitmq-bundle-2@lab-controller03
+redis-bundle-0@lab-controller01 redis-bundle-1@lab-controller02 redis-bundle-2@lab-controller03 ]
 
 Full list of resources:
 

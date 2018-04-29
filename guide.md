@@ -2033,23 +2033,26 @@ nova_placement
 
 Services managed by Pacemaker require a different approach.  In fact, of the
 four such services in our deployment &mdash; RabbitMQ, Galera, Redis, and
-HAProxy &mdash; the technique in this lab can only be safely applied to HAProxy.
+HAProxy &mdash; the technique in this lab can only be safely applied to HAProxy
+(to the knowledge of your humble author; Galera is definitely out).
 
 Let's look at the current status of our Pacemaker cluster.
 
 ```
-[heat-admin@lab-controller01 ~]$  sudo pcs status
+[heat-admin@lab-controller01 ~]$ sudo pcs status | fold -w 120 -s
 Cluster name: tripleo_cluster
 Stack: corosync
 Current DC: lab-controller01 (version 1.1.16-12.el7_4.8-94ff4df) - partition with quorum
-Last updated: Wed Apr 25 16:40:58 2018
-Last change: Wed Apr 25 16:40:30 2018 by root via cibadmin on lab-controller01
+Last updated: Sun Apr 29 00:19:53 2018
+Last change: Sat Apr 28 22:40:06 2018 by root via cibadmin on lab-controller01
 
 12 nodes configured
 37 resources configured
 
 Online: [ lab-controller01 lab-controller02 lab-controller03 ]
-GuestOnline: [ galera-bundle-0@lab-controller01 galera-bundle-1@lab-controller02 galera-bundle-2@lab-controller03 rabbitmq-bundle-0@lab-controller01 rabbitmq-bundle-1@lab-controller02 rabbitmq-bundle-2@lab-controller03 redis-bundle-0@lab-controller01 redis-bundle-1@lab-controller02 redis-bundle-2@lab-controller03 ]
+GuestOnline: [ galera-bundle-0@lab-controller02 galera-bundle-1@lab-controller01 galera-bundle-2@lab-controller03 
+rabbitmq-bundle-0@lab-controller01 rabbitmq-bundle-1@lab-controller02 rabbitmq-bundle-2@lab-controller03 
+redis-bundle-0@lab-controller01 redis-bundle-1@lab-controller02 redis-bundle-2@lab-controller03 ]
 
 Full list of resources:
 
@@ -2058,20 +2061,20 @@ Full list of resources:
    rabbitmq-bundle-1    (ocf::heartbeat:rabbitmq-cluster):      Started lab-controller02
    rabbitmq-bundle-2    (ocf::heartbeat:rabbitmq-cluster):      Started lab-controller03
  Docker container set: galera-bundle [172.16.0.1:8787/rhosp12/openstack-mariadb:pcmklatest]
-   galera-bundle-0      (ocf::heartbeat:galera):        Master lab-controller01
-   galera-bundle-1      (ocf::heartbeat:galera):        Master lab-controller02
+   galera-bundle-0      (ocf::heartbeat:galera):        Master lab-controller02
+   galera-bundle-1      (ocf::heartbeat:galera):        Master lab-controller01
    galera-bundle-2      (ocf::heartbeat:galera):        Master lab-controller03
  Docker container set: redis-bundle [172.16.0.1:8787/rhosp12/openstack-redis:pcmklatest]
    redis-bundle-0       (ocf::heartbeat:redis): Master lab-controller01
    redis-bundle-1       (ocf::heartbeat:redis): Slave lab-controller02
    redis-bundle-2       (ocf::heartbeat:redis): Slave lab-controller03
- ip-172.16.0.250        (ocf::heartbeat:IPaddr2):       Started lab-controller02
+ ip-172.16.0.250        (ocf::heartbeat:IPaddr2):       Started lab-controller01
  ip-192.168.122.150     (ocf::heartbeat:IPaddr2):       Started lab-controller02
  ip-172.17.1.10 (ocf::heartbeat:IPaddr2):       Started lab-controller03
  ip-172.17.1.150        (ocf::heartbeat:IPaddr2):       Started lab-controller01
  ip-172.17.3.150        (ocf::heartbeat:IPaddr2):       Started lab-controller02
- ip-172.17.4.150        (ocf::heartbeat:IPaddr2):       Started lab-controller01
- Docker container set: haproxy-bundle [172.16.0.1:8787/rhosp12/openstack-haproxy:pcmklatest]
+ ip-172.17.4.150        (ocf::heartbeat:IPaddr2):       Started lab-controller03
+ Docker container set: haproxy-bundle [172.16.0.1:8787/rhosp12/openstack-haproxy:12.0-20180309.1.fun]
    haproxy-bundle-docker-0      (ocf::heartbeat:docker):        Started lab-controller01
    haproxy-bundle-docker-1      (ocf::heartbeat:docker):        Started lab-controller02
    haproxy-bundle-docker-2      (ocf::heartbeat:docker):        Started lab-controller03

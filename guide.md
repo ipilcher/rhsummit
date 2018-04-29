@@ -17,6 +17,8 @@
   - [OpenStack and Containers](#openstack-and-containers)
   - [TripleO Terminology](#tripleo-terminology)
 * [**Lab 1:** Lab Environment](#lab-1-lab-environment)
+  - [Environment Overview](#environment-overview)
+  - [Connecting to the Environment](#connecting-to-the-environment)
 * [**Lab 2:** Containers on the Undercloud](#lab-2-containers-on-the-undercloud)
   - [Image Is Everything](#image-is-everything)
   - [Push It Real Good](#push-it-real-good)

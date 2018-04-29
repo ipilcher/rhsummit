@@ -2131,7 +2131,7 @@ addresses are distributed across the cluster.
 
 Placement of the virtual IPs is important, because they must be assigned to hosts on
 which HAProxy is running.  Red Hat OpenStack Platform's cluster configuration
-includes constraints to ensure this.
+includes constraints that ensure this is the case.
 
 ```
 [heat-admin@lab-controller01 ~]$ sudo pcs constraint colocation
@@ -2672,7 +2672,8 @@ EOF
 FROM 172.16.0.1:8787/rhosp12/openstack-nova-scheduler:12.0-20180309.1
 RUN echo "Are you not entertained?!" > /fun
 
-(undercloud) [stack@undercloud nova_scheduler]$ docker build -t 172.16.0.1:8787/rhosp12/openstack-nova-scheduler:12.0-20180309.1.fun .
+(undercloud) [stack@undercloud nova_scheduler]$ docker build \
+    -t 172.16.0.1:8787/rhosp12/openstack-nova-scheduler:12.0-20180309.1.fun .
 Sending build context to Docker daemon 2.048 kB
 Step 1 : FROM 172.16.0.1:8787/rhosp12/openstack-nova-scheduler:12.0-20180309.1
  ---> 27903e04824f
@@ -2695,10 +2696,14 @@ scheduler container is the second type.  This can be seen by inspecting the
 images.
 
 ```
-(undercloud) [stack@undercloud nova_scheduler]$ docker inspect 172.16.0.1:8787/rhosp12/openstack-nova-scheduler:12.0-20180309.1 | jq .[0].ContainerConfig.User
+(undercloud) [stack@undercloud nova_scheduler]$ docker inspect \
+    172.16.0.1:8787/rhosp12/openstack-nova-scheduler:12.0-20180309.1 \
+    | jq .[0].ContainerConfig.User
 "nova"
 
-(undercloud) [stack@undercloud nova_scheduler]$ docker inspect 172.16.0.1:8787/rhosp12/openstack-haproxy:12.0-20180309.1 | jq .[0].ContainerConfig.User
+(undercloud) [stack@undercloud nova_scheduler]$ docker inspect \
+    172.16.0.1:8787/rhosp12/openstack-haproxy:12.0-20180309.1 \
+    | jq .[0].ContainerConfig.User
 ""
 ```
 

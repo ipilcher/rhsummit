@@ -3047,3 +3047,65 @@ cat: /fun: No such file or directory
 ```
 
 ## Lab 5: Extra Credit
+
+```
+(undercloud) [stack@undercloud haproxy]$ sudo yum -y update python-tripleoclient
+Loaded plugins: search-disabled-repos
+rhelosp-12.0-puddle                                                          | 2.9 kB  00:00:00     
+rhelosp-ceph-2.0-mon                                                         | 2.9 kB  00:00:00     
+rhelosp-ceph-2.0-osd                                                         | 2.9 kB  00:00:00     
+rhelosp-ceph-2.0-tools                                                       | 2.9 kB  00:00:00     
+rhelosp-rhel-7.4-extras                                                      | 2.9 kB  00:00:00     
+rhelosp-rhel-7.4-ha                                                          | 2.9 kB  00:00:00     
+rhelosp-rhel-7.4-server                                                      | 2.9 kB  00:00:00     
+(1/7): rhelosp-12.0-puddle/primary_db                                        | 371 kB  00:00:00     
+(2/7): rhelosp-ceph-2.0-osd/primary_db                                       | 153 kB  00:00:00     
+(3/7): rhelosp-rhel-7.4-ha/primary_db                                        | 220 kB  00:00:00     
+(4/7): rhelosp-ceph-2.0-tools/primary_db                                     | 171 kB  00:00:00     
+(5/7): rhelosp-ceph-2.0-mon/primary_db                                       | 170 kB  00:00:00     
+(6/7): rhelosp-rhel-7.4-extras/primary_db                                    | 310 kB  00:00:00     
+(7/7): rhelosp-rhel-7.4-server/primary_db                                    |  37 MB  00:00:00     
+Resolving Dependencies
+--> Running transaction check
+---> Package python-tripleoclient.noarch 0:7.3.3-7.el7ost will be updated
+---> Package python-tripleoclient.noarch 0:7.3.8-1.el7ost will be an update
+--> Finished Dependency Resolution
+
+Dependencies Resolved
+
+====================================================================================================
+ Package                     Arch          Version                 Repository                  Size
+====================================================================================================
+Updating:
+ python-tripleoclient        noarch        7.3.8-1.el7ost          rhelosp-12.0-puddle        259 k
+
+Transaction Summary
+====================================================================================================
+Upgrade  1 Package
+
+Total download size: 259 k
+Downloading packages:
+Delta RPMs disabled because /usr/bin/applydeltarpm not installed.
+python-tripleoclient-7.3.8-1.el7ost.noarch.rpm                               | 259 kB  00:00:00     
+Running transaction check
+Running transaction test
+Transaction test succeeded
+Running transaction
+  Updating   : python-tripleoclient-7.3.8-1.el7ost.noarch                                       1/2 
+  Cleanup    : python-tripleoclient-7.3.3-7.el7ost.noarch                                       2/2 
+  Verifying  : python-tripleoclient-7.3.8-1.el7ost.noarch                                       1/2 
+  Verifying  : python-tripleoclient-7.3.3-7.el7ost.noarch                                       2/2 
+
+Updated:
+  python-tripleoclient.noarch 0:7.3.8-1.el7ost                                                      
+
+Complete!
+```
+
+```
+(undercloud) [stack@undercloud haproxy]$ sudo systemctl stop 'openstack-*' 'neutron-*' httpd
+
+(undercloud) [stack@undercloud haproxy]$ openstack undercloud upgrade
+(...)
+
+```

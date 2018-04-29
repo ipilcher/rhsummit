@@ -2246,7 +2246,7 @@ remove the constraints.
 
 [heat-admin@lab-controller01 ~]$ sudo pcs constraint remove cli-ban-haproxy-bundle-on-lab-controller03
 
-[heat-admin@lab-controller01 ~]$ sudo pcs status
+[heat-admin@lab-controller01 ~]$ sudo pcs status | fold -w 120 -s
 Cluster name: tripleo_cluster
 Stack: corosync
 Current DC: lab-controller01 (version 1.1.16-12.el7_4.8-94ff4df) - partition with quorum
@@ -2257,7 +2257,9 @@ Last change: Wed Apr 25 19:00:50 2018 by root via cibadmin on lab-controller01
 37 resources configured
 
 Online: [ lab-controller01 lab-controller02 lab-controller03 ]
-GuestOnline: [ galera-bundle-0@lab-controller01 galera-bundle-1@lab-controller02 galera-bundle-2@lab-controller03 rabbitmq-bundle-0@lab-controller01 rabbitmq-bundle-1@lab-controller02 rabbitmq-bundle-2@lab-controller03 redis-bundle-0@lab-controller01 redis-bundle-1@lab-controller02 redis-bundle-2@lab-controller03 ]
+GuestOnline: [ galera-bundle-0@lab-controller01 galera-bundle-1@lab-controller02 galera-bundle-2@lab-controller03
+rabbitmq-bundle-0@lab-controller01 rabbitmq-bundle-1@lab-controller02 rabbitmq-bundle-2@lab-controller03
+redis-bundle-0@lab-controller01 redis-bundle-1@lab-controller02 redis-bundle-2@lab-controller03 ]
 
 Full list of resources:
 

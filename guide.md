@@ -1180,9 +1180,9 @@ Bundles are a new Pacemaker resource type that define how Pacemaker should run
 a container.  For example:
 
 ```
-[heat-admin@lab-controller01 ~]$ sudo pcs resource show haproxy-bundle | fold -w 180 -s
+[heat-admin@lab-controller01 ~]$ sudo pcs resource show haproxy-bundle | fold -w 173 -s
  Bundle: haproxy-bundle
-  Docker: image=172.16.0.1:8787/rhosp12/openstack-haproxy:12.0-20180309.1.fun network=host options="--user=root --log-driver=journald -e KOLLA_CONFIG_STRATEGY=COPY_ALWAYS" 
+  Docker: image=172.16.0.1:8787/rhosp12/openstack-haproxy:pcmklatest network=host options="--user=root --log-driver=journald -e KOLLA_CONFIG_STRATEGY=COPY_ALWAYS" 
 replicas=3 run-command="/bin/bash /usr/local/bin/kolla_start"
   Storage Mapping:
    options=ro source-dir=/var/lib/kolla/config_files/haproxy.json target-dir=/var/lib/kolla/config_files/config.json (haproxy-cfg-files)
@@ -2733,7 +2733,8 @@ non-root user.
 We should be able to build and push our image now.
 
 ```
-(undercloud) [stack@undercloud nova_scheduler]$ docker build -t 172.16.0.1:8787/rhosp12/openstack-nova-scheduler:12.0-20180309.1.fun .
+(undercloud) [stack@undercloud nova_scheduler]$ docker build \
+    -t 172.16.0.1:8787/rhosp12/openstack-nova-scheduler:12.0-20180309.1.fun .
 Sending build context to Docker daemon 2.048 kB
 Step 1 : FROM 172.16.0.1:8787/rhosp12/openstack-nova-scheduler:12.0-20180309.1
  ---> 27903e04824f
@@ -2958,9 +2959,10 @@ We saw in lab 3 that Pacemaker-managed containers are defined as ``bundle``
 resources, which specify all ofthe information required to run the container.
 
 ```
-[heat-admin@lab-controller01 ~]$ sudo pcs resource show haproxy-bundle
+[heat-admin@lab-controller01 ~]$ sudo pcs resource show haproxy-bundle | fold -w 173 -s
  Bundle: haproxy-bundle
-  Docker: image=172.16.0.1:8787/rhosp12/openstack-haproxy:pcmklatest network=host options="--user=root --log-driver=journald -e KOLLA_CONFIG_STRATEGY=COPY_ALWAYS" replicas=3 run-command="/bin/bash /usr/local/bin/kolla_start"
+  Docker: image=172.16.0.1:8787/rhosp12/openstack-haproxy:pcmklatest network=host options="--user=root --log-driver=journald -e KOLLA_CONFIG_STRATEGY=COPY_ALWAYS" 
+replicas=3 run-command="/bin/bash /usr/local/bin/kolla_start"
   Storage Mapping:
    options=ro source-dir=/var/lib/kolla/config_files/haproxy.json target-dir=/var/lib/kolla/config_files/config.json (haproxy-cfg-files)
    options=ro source-dir=/var/lib/config-data/puppet-generated/haproxy/ target-dir=/var/lib/kolla/config_files/src (haproxy-cfg-data)
@@ -2980,9 +2982,10 @@ Let's modify this definition.
 [heat-admin@lab-controller01 ~]$ sudo pcs resource bundle update haproxy-bundle \
     container image=172.16.0.1:8787/rhosp12/openstack-haproxy:12.0-20180309.1.fun
 
-[heat-admin@lab-controller01 ~]$ sudo pcs resource show haproxy-bundle
+[heat-admin@lab-controller01 ~]$ sudo pcs resource show haproxy-bundle | fold -w 173 -s
  Bundle: haproxy-bundle
-  Docker: image=172.16.0.1:8787/rhosp12/openstack-haproxy:12.0-20180309.1.fun network=host options="--user=root --log-driver=journald -e KOLLA_CONFIG_STRATEGY=COPY_ALWAYS" replicas=3 run-command="/bin/bash /usr/local/bin/kolla_start"
+  Docker: image=172.16.0.1:8787/rhosp12/openstack-haproxy:12.0-20180309.1.fun network=host options="--user=root --log-driver=journald -e KOLLA_CONFIG_STRATEGY=COPY_ALWAYS" 
+replicas=3 run-command="/bin/bash /usr/local/bin/kolla_start"
   Storage Mapping:
    options=ro source-dir=/var/lib/kolla/config_files/haproxy.json target-dir=/var/lib/kolla/config_files/config.json (haproxy-cfg-files)
    options=ro source-dir=/var/lib/config-data/puppet-generated/haproxy/ target-dir=/var/lib/kolla/config_files/src (haproxy-cfg-data)
@@ -2993,7 +2996,7 @@ Let's modify this definition.
    options=ro source-dir=/etc/pki/tls/certs/ca-bundle.trust.crt target-dir=/etc/pki/tls/certs/ca-bundle.trust.crt (haproxy-pki-ca-bundle-trust-crt)
    options=ro source-dir=/etc/pki/tls/cert.pem target-dir=/etc/pki/tls/cert.pem (haproxy-pki-cert)
    options=rw source-dir=/dev/log target-dir=/dev/log (haproxy-dev-log)
-   options=ro source-dir=/etc/pki/tls/private/overcloud_endpoint.pem target-dir=/var/lib/kolla/config_files/src-tls/etc/pki/tls/private/overcloud_endpoint.pem (haproxy-cert)
+   options=ro source-dir=/etc/pki/tls/private/overcloud_endpoint.pem target-dir=/var/lib/kolla/config_files/src-tls/etc/pki/tls/private/overcloud_endpoint.pem (haproxy-cert)  
 ```
 
 Check the container running on this controller.

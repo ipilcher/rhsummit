@@ -224,9 +224,28 @@ do some exploration and testing.
 
 ### Connecting to the Environment
 
+To begin, use the
+[Lab GUID Assignment form](https://www.opentlc.com/guidgrabber/guidgrabber.cgi)
+to request a lab environment for your individual use.  (The **Firefox**
+browser on your workstation should already be open, and it is configured to
+automatically display the form.)
+
 ![GUID request](/images/screenshot1.png)
 
+Select **L1018 - Understanding Containerized Red Hat OpenStack Platform** as the
+lab code, enter ``tainers`` in the activation key field, and click the Next
+button.  After a short wait, you will be presented with an assignment page,
+which shows your unique GUID.
+
 ![GUID assignment](/images/screenshot3.png)
+
+Open a terminal (if necessary) and copy the ``ssh`` command from the browser.
+(The command is circled in the screenshot above.)  An SSH key has been
+pre-provisioned, so you should not need a password to connect to your bastion
+host.
+
+Please inform one of the lab proctors if you have any trouble requesting a GUID
+or connecting to your environment.
 
 ## Lab 2: Containers on the Undercloud
 

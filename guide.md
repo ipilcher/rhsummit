@@ -2531,7 +2531,8 @@ Parameter not found: debug
 [heat-admin@lab-controller01 ~]$ sudo docker restart nova_api
 nova_api
 
-[heat-admin@lab-controller01 ~]$ sudo docker exec -it nova_api crudini --get /etc/nova/nova.conf DEFAULT debug
+[heat-admin@lab-controller01 ~]$ sudo docker exec -it nova_api \
+    crudini --get /etc/nova/nova.conf DEFAULT debug
 False
 ```
 
@@ -2593,7 +2594,8 @@ EOF
 FROM 172.16.0.1:8787/rhosp12/openstack-haproxy:12.0-20180309.1
 RUN echo "Are you not entertained?!" > /fun
 
-(undercloud) [stack@undercloud haproxy]$ docker build -t 172.16.0.1:8787/rhosp12/openstack-haproxy:12.0-20180309.1.fun .
+(undercloud) [stack@undercloud haproxy]$ docker build \
+    -t 172.16.0.1:8787/rhosp12/openstack-haproxy:12.0-20180309.1.fun .
 Sending build context to Docker daemon 2.048 kB
 Step 1 : FROM 172.16.0.1:8787/rhosp12/openstack-haproxy:12.0-20180309.1
  ---> 613946718d1e

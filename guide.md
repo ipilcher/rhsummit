@@ -2521,10 +2521,12 @@ Parameter not found: debug
 ()[root@lab-controller01 /]$ exit
 exit
 
-[heat-admin@lab-controller01 ~]$ sudo crudini --get /var/lib/config-data/puppet-generated/nova/etc/nova/nova.conf DEFAULT debug
+[heat-admin@lab-controller01 ~]$ sudo crudini --get \
+    /var/lib/config-data/puppet-generated/nova/etc/nova/nova.conf DEFAULT debug
 Parameter not found: debug
 
-[heat-admin@lab-controller01 ~]$ sudo crudini --set /var/lib/config-data/puppet-generated/nova/etc/nova/nova.conf DEFAULT debug False
+[heat-admin@lab-controller01 ~]$ sudo crudini --set \
+    /var/lib/config-data/puppet-generated/nova/etc/nova/nova.conf DEFAULT debug False
 
 [heat-admin@lab-controller01 ~]$ sudo docker restart nova_api
 nova_api

@@ -51,7 +51,7 @@
 ## Lab 0: Introduction
 
 Thank you for joining us at Red Hat Summit 2018, and welcome to this afternoon's
-hands-on lab - **Understanding Containerized Red Hat OpenStack Platform**.
+hands-on lab &mdash; **Understanding Containerized Red Hat OpenStack Platform**.
 
 In this lab, we will be taking an in-depth look at the latest release of Red
 Hat OpenStack Platform, OSP 12 (which is based on the upstream OpenStack Pike
@@ -3412,5 +3412,18 @@ tzdata.noarch                             2018d-1.el7                        rhe
 
 (undercloud) [stack@undercloud ~]$ openstack overcloud update stack --nodes Controller
 Started Mistral Workflow tripleo.package_update.v1.update_nodes. Execution ID: ea090125-6064-4a92-b026-e446d80bad6d
+(...)
+ u'PLAY RECAP *********************************************************************',
+ u'172.16.0.22                : ok=122  changed=63   unreachable=0    failed=0   ',
+ u'172.16.0.32                : ok=124  changed=63   unreachable=0    failed=0   ',
+ u'172.16.0.36                : ok=122  changed=63   unreachable=0    failed=0   ',
+ u'']
+Waiting for messages on queue 'da276e4e-2ad2-4a1b-8d3b-50e61574901d' with no timeout.
+Success
+
+
+(undercloud) [stack@undercloud ~]$ time openstack overcloud update stack --nodes Compute
+Started Mistral Workflow tripleo.package_update.v1.update_nodes. Execution ID: 336c24da-d3f8-4c25-b61a-20ec6cf2de32
+
 
 ```

@@ -3046,7 +3046,18 @@ cat: /fun: No such file or directory
 cat: /fun: No such file or directory
 ```
 
-## Lab 5: Extra Credit
+Congratulations!!  You've completed the main portion of this hands-on lab.
+
+You may remember that, during lab 2, we updated the container-related files on
+our undercloud and pushed updated container images into the registry on the
+undercloud, but we didn't proceed any farther down the update path, because of
+time constraints.  If you've finished early, feel free to proceed to the next
+section, where we'll look at the remainder of the update process &mdash; which
+now makes extensive use of Red Hat Ansible.
+
+## Lab 5: Extra Credit &mdash; Minor Updates with Ansible
+
+
 
 ```
 (undercloud) [stack@undercloud haproxy]$ sudo yum -y update python-tripleoclient

@@ -245,7 +245,7 @@ pre-provisioned, so you should not need a password to connect to your bastion
 host.
 
 ```
-[lab-user@HostXXXXXXXXXXXX ~]$ ssh bastion-XXXX.rhpds.opentlc.com
+[lab-user@HostXXXXXXXXXXXX ~]$ @@ssh bastion-XXXX.rhpds.opentlc.com@/
 Warning: Permantntly added 'bastion-XXXX.rhpds.opentlc.com,176.126.90.96' (ECDSA
 ) to the list of known hosts.
 Last login: Sun Apr 29 13:03:52 2018 from 70.119.136.2
@@ -262,13 +262,13 @@ Let's take a look at how the containerized service in Red Hat OpenStack Platform
 the ``stack`` user's password.
 
 ```
-[lab-user@bastion-XXXX ~]$ ssh stack@undercloud.example.com
+[lab-user@bastion-XXXX ~]$ @@ssh stack@undercloud.example.com@/
 The authenticity of host 'undercloud.example.com (192.168.122.253)' can't be established.
 ECDSA key fingerprint is SHA256:wRBB50VRT5XX6IqOy668ZGM28clpKbJ/K5FdHevw7Wg.
 ECDSA key fingerprint is MD5:0b:33:69:86:26:4a:07:5e:04:a1:63:2e:ef:da:01:1a.
-Are you sure you want to continue connecting (yes/no)? yes
+Are you sure you want to continue connecting (yes/no)? @@yes@/
 Warning: Permanently added 'undercloud.example.com,192.168.122.253' (ECDSA) to the list of known hosts.
-stack@undercloud.example.com's password:
+stack@undercloud.example.com's password: @@redhat@/
 Last login: Thu Apr 12 19:37:45 2018 from bastion.example.com
 ```
 
@@ -278,10 +278,10 @@ non-containerized services, managed directly by ``systemd``, or as WSGI services
 under Apache ``httpd``.
 
 ```
-[stack@undercloud ~]$ docker ps
+[stack@undercloud ~]$ @@docker ps@/
 CONTAINER ID        IMAGE               COMMAND             CREATED             STATUS              PORTS               NAMES
 
-[stack@undercloud ~]$ systemctl list-units 'openstack-*' 'neutron-*'
+[stack@undercloud ~]$ @@systemctl list-units 'openstack-*' 'neutron-*'@/
 UNIT                                         LOAD   ACTIVE SUB     DESCRIPTION
 neutron-destroy-patch-ports.service          loaded active exited  OpenStack Neutron Destroy Patch Ports
 neutron-dhcp-agent.service                   loaded active running OpenStack Neutron DHCP Agent
@@ -319,7 +319,7 @@ SUB    = The low-level unit activation state, values depend on unit type.
 28 loaded units listed. Pass --all to see loaded but inactive units, too.
 To show all installed unit files use 'systemctl list-unit-files'.
 
-[stack@undercloud ~]$ systemctl status httpd
+[stack@undercloud ~]$ @@systemctl status httpd@/
 ● httpd.service - The Apache HTTP Server
    Loaded: loaded (/usr/lib/systemd/system/httpd.service; enabled; vendor preset: disabled)
    Active: active (running) since Thu 2018-04-26 15:05:18 EDT; 24h ago
@@ -367,7 +367,7 @@ used for each overcloud container.  In our deployment, these parameters are set
 in ``templates/docker-registry.yaml``.
 
 ```
-[stack@undercloud ~]$ fold -w 120 -s templates/docker-registry.yaml  
+[stack@undercloud ~]$ @@fold -w 120 -s templates/docker-registry.yaml@/
 # Generated with the following on 2018-03-16T12:51:39.460333
 #
 #   openstack overcloud container image prepare --env-file /home/stack/templates/docker-registry.yaml --namespace 
@@ -472,14 +472,14 @@ some explanation.
   ``docker-registry.yaml`` includes all of the image parameters that are
   required by our overcloud.  (The Ceph image, for example, will not be included
   by default.)
-  
+
 * ``--namespace 172.16.0.1:8787/rhosp12`` &mdash; This specifies both the
   namespace for the OpenStack Platform 12 containers (``/rhosp12``) and the image
   registry from which the overcloud nodes should pull the images
   (``172.16.0.1:8787``).  The ``DockerInsecureRegistryAddress`` parameter is set
   to this registry, so that the overcloud nodes will use HTTP to pull images
   from the undercloud.
-  
+
 * ``--tag 12.0-20180309.1`` &mdash; The tag specifies the specific version of
   the OpenStack Platform images to be used.
 
@@ -491,9 +491,9 @@ OpenStack Platform 12 includes a command that can discover the latest version of
 an OpenStack container image in the Red Hat Container Catalog.
 
 ```
-[stack@undercloud ~]$ openstack overcloud container image tag discover \
+[stack@undercloud ~]$ @@openstack overcloud container image tag discover \
    --image registry.access.redhat.com/rhosp12/openstack-base:latest \
-   --tag-from-label version-release
+   --tag-from-label version-release@/
 12.0-20180405.1
 ```
 
@@ -510,7 +510,7 @@ is actually the IP address of the undercloud itself.  In OpenStack Plaftorm 12,
 the undercloud automatically runs a container image registry.
 
 ```
-[stack@undercloud ~]$ systemctl status docker-distribution
+[stack@undercloud ~]$ @@systemctl status docker-distribution@/
 ● docker-distribution.service - v2 Registry server for Docker
    Loaded: loaded (/usr/lib/systemd/system/docker-distribution.service; enabled; vendor preset: disabled)
    Active: active (running) since Fri 2018-04-20 14:40:49 EDT; 1h 6min ago
@@ -532,7 +532,7 @@ pushed to the local registry.  Let's look at the file that was used during the
 initial deployment of our environment.
 
 ```
-[stack@undercloud ~]$ cat container-images.yaml
+[stack@undercloud ~]$ @@cat container-images.yaml@/
 container_images:
 - imagename: 192.168.1.10:5000/rhosp12/openstack-aodh-api:12.0-20180309.1
 - imagename: 192.168.1.10:5000/rhosp12/openstack-aodh-evaluator:12.0-20180309.1
@@ -606,14 +606,14 @@ list of images for use by ``openstack overcloud container image upload``.
 > included.
 
 ```
-[stack@undercloud ~]$ cp container-images.yaml{,.bak}
+[stack@undercloud ~]$ @@cp container-images.yaml{,.bak}@/
 
-[stack@undercloud ~]$ openstack overcloud container image prepare \
+[stack@undercloud ~]$ @@openstack overcloud container image prepare \
      --environment-file /usr/share/openstack-tripleo-heat-templates/environments/ceph-ansible/ceph-ansible.yaml \
      --namespace 192.168.1.10:5000/rhosp12 \
      --tag 12.0-20180319.1 \
      --set ceph_namespace=192.168.1.10:5000/ceph \
-     --output-images-file container-images.yaml
+     --output-images-file container-images.yaml@/
 container_images:
 - imagename: 192.168.1.10:5000/rhosp12/openstack-aodh-api:12.0-20180319.1
 - imagename: 192.168.1.10:5000/rhosp12/openstack-aodh-evaluator:12.0-20180319.1
@@ -657,7 +657,7 @@ This command always writes the image list to standard output.  The
 ``--output-images-file`` parameter causes it to **also** write the list to a file.
 
 ```
-[stack@undercloud ~]$ cat container-images.yaml
+[stack@undercloud ~]$ @@cat container-images.yaml@/
 container_images:
 - imagename: 192.168.1.10:5000/rhosp12/openstack-aodh-api:12.0-20180319.1
 - imagename: 192.168.1.10:5000/rhosp12/openstack-aodh-evaluator:12.0-20180319.1
@@ -700,14 +700,14 @@ container_images:
 Now let's create an updated ``docker-registry.yaml`` for our templates.
 
 ```
-[stack@undercloud ~]$ cp templates/docker-registry.yaml{,.bak}
+[stack@undercloud ~]$ @@cp templates/docker-registry.yaml{,.bak}@/
 
-[stack@undercloud ~]$ openstack overcloud container image prepare \
+[stack@undercloud ~]$ @@openstack overcloud container image prepare \
      --environment-file /usr/share/openstack-tripleo-heat-templates/environments/ceph-ansible/ceph-ansible.yaml \
      --namespace 172.16.0.1:8787/rhosp12 \
      --tag 12.0-20180319.1 \
      --set ceph_namespace=172.16.0.1:8787/ceph \
-     --output-env-file templates/docker-registry.yaml
+     --output-env-file templates/docker-registry.yaml@/
 container_images:
 - imagename: 172.16.0.1:8787/rhosp12/openstack-aodh-api:12.0-20180319.1
 - imagename: 172.16.0.1:8787/rhosp12/openstack-aodh-evaluator:12.0-20180319.1
@@ -752,7 +752,7 @@ specifies an incorrect **source** for the images.  The important output in this
 case is ``docker-registry.yaml``.
 
 ```
-[stack@undercloud ~]$ fold -w 120 -s templates/docker-registry.yaml
+[stack@undercloud ~]$ @@fold -w 120 -s templates/docker-registry.yaml@/
 # Generated with the following on 2018-04-27T19:35:01.035909
 #
 #   openstack overcloud container image prepare --environment-file 
@@ -831,8 +831,8 @@ the new images from the source registry and push them into the local
 registry.
 
 ```
-[stack@undercloud ~]$ openstack overcloud container image upload \
-    --verbose --config-file container-images.yaml
+[stack@undercloud ~]$ @@openstack overcloud container image upload \
+    --verbose --config-file container-images.yaml@/
 START with options: [u'overcloud', u'container', u'image', u'upload', u'--verbose', u'--config-file', u'container-images.yaml']
 command: overcloud container image upload -> tripleoclient.v1.container_image.UploadImage (auth=False)
 Using config files: [u'container-images.yaml']
@@ -851,7 +851,7 @@ the old and new versions of each container image, each in both the source and
 local registry.  For example:
 
 ```
-[stack@undercloud ~]$ docker images | grep keystone
+[stack@undercloud ~]$ @@docker images | grep keystone@/
 172.16.0.1:8787/rhosp12/openstack-keystone                    12.0-20180319.1       d929ef3fa786        5 weeks ago         687.4 MB
 192.168.1.10:5000/rhosp12/openstack-keystone                  12.0-20180319.1       d929ef3fa786        5 weeks ago         687.4 MB
 172.16.0.1:8787/rhosp12/openstack-keystone                    12.0-20180309.1       5f944b66282d        7 weeks ago         687.3 MB
@@ -871,7 +871,7 @@ Before doing anything else, let's check that our deployment is working properly.
 Source the ``stackrc`` file to access OpenStack services on the undercloud.
 
 ```
-[stack@undercloud ~]$ . stackrc
+[stack@undercloud ~]$ @@. stackrc@/
 (undercloud) [stack@undercloud ~]$
 ```
 
@@ -882,7 +882,7 @@ Please let one of the instructors know if any of your nodes show ``None`` in the
 power state column or ``True`` in the maintenance column.
 
 ```
-(undercloud) [stack@undercloud ~]$ openstack baremetal node list
+(undercloud) [stack@undercloud ~]$ @@openstack baremetal node list@/
 +--------------------------------------+---------------------+--------------------------------------+-------------+--------------------+-------------+
 | UUID                                 | Name                | Instance UUID                        | Power State | Provisioning State | Maintenance |
 +--------------------------------------+---------------------+--------------------------------------+-------------+--------------------+-------------+
@@ -902,7 +902,7 @@ these are **instances** that run on the bare-metal nodes.  (The instance IDs can
 be used to map the instances to their bare-metal nodes.)
 
 ```
-(undercloud) [stack@undercloud ~]$ openstack server list
+(undercloud) [stack@undercloud ~]$ @@openstack server list@/
 +--------------------------------------+------------------+--------+----------------------+----------------+--------------+
 | ID                                   | Name             | Status | Networks             | Image          | Flavor       |
 +--------------------------------------+------------------+--------+----------------------+----------------+--------------+
@@ -919,7 +919,7 @@ be used to map the instances to their bare-metal nodes.)
 Check the status of the Ceph storage cluster.
 
 ```
-(undercloud) [stack@undercloud ~]$ ssh heat-admin@172.16.0.32 sudo ceph -s
+(undercloud) [stack@undercloud ~]$ @@ssh heat-admin@172.16.0.32 sudo ceph -s@/
     cluster 62e500d2-3e8a-11e8-8abf-2cc26041e5e3
      health HEALTH_WARN
             clock skew detected on mon.lab-controller02, mon.lab-controller03
@@ -950,14 +950,14 @@ A number of items have been pre-created in the **overcloud**.
 Source the ``testrc`` file to access the overcloud as the ``test`` user.
 
 ```                 
-(undercloud) [stack@undercloud ~]$ . testrc
+(undercloud) [stack@undercloud ~]$ @@. testrc@/
 (test@overcloud) [stack@undercloud ~]$
 ```
 
 Check the status of the instance.  It should be ``SHUTOFF``.
 
 ```
-(test@overcloud) [stack@undercloud ~]$ openstack server list
+(test@overcloud) [stack@undercloud ~]$ @@openstack server list@/
 +--------------------------------------+-------+---------+--------------------------------+---------------------+---------+
 | ID                                   | Name  | Status  | Networks                       | Image               | Flavor  |
 +--------------------------------------+-------+---------+--------------------------------+---------------------+---------+
@@ -968,8 +968,9 @@ Check the status of the instance.  It should be ``SHUTOFF``.
 Start the instance and wait for it to become ``ACTIVE``.
 
 ```
-(test@overcloud) [stack@undercloud ~]$ openstack server start test1
-(test@overcloud) [stack@undercloud ~]$ openstack server list
+(test@overcloud) [stack@undercloud ~]$ @@openstack server start test1@/
+
+(test@overcloud) [stack@undercloud ~]$ @@openstack server list@/
 +--------------------------------------+-------+---------+--------------------------------+---------------------+---------+
 | ID                                   | Name  | Status  | Networks                       | Image               | Flavor  |
 +--------------------------------------+-------+---------+--------------------------------+---------------------+---------+
@@ -978,7 +979,7 @@ Start the instance and wait for it to become ``ACTIVE``.
 
 (...)
 
-(test@overcloud) [stack@undercloud ~]$ openstack server list
+(test@overcloud) [stack@undercloud ~]$ @@openstack server list@/
 +--------------------------------------+-------+--------+--------------------------------+---------------------+---------+
 | ID                                   | Name  | Status | Networks                       | Image               | Flavor  |
 +--------------------------------------+-------+--------+--------------------------------+---------------------+---------+
@@ -990,15 +991,15 @@ You should be able to log in to the the instance using the ``stack`` user's
 default SSH key.
 
 ```
-(test@overcloud) [stack@undercloud ~]$ ssh cirros@192.168.122.154
+(test@overcloud) [stack@undercloud ~]$ @@ssh cirros@192.168.122.154@/
 The authenticity of host '192.168.122.154 (192.168.122.154)' can't be established.
 RSA key fingerprint is SHA256:8/gIYkbqVlCt0N5Kte8fZPETgbp6TAbdXTrh4tJUABg.
 RSA key fingerprint is MD5:f9:17:09:dc:ab:b6:6f:5a:86:35:a5:5e:50:69:43:5d.
-Are you sure you want to continue connecting (yes/no)? yes
+Are you sure you want to continue connecting (yes/no)? @@yes@/
 Warning: Permanently added '192.168.122.154' (RSA) to the list of known hosts.
 $
 
-$ exit
+$ @@exit@/
 Connection to 192.168.122.154 closed.
 ```
 
@@ -1010,8 +1011,9 @@ Now that we've verified that we have a working OSP deployment, let's take a look
 at the running containers that make it work, starting on one of the controllers.
 
 ```
-(test@overcloud) [stack@undercloud ~]$ . stackrc
-(undercloud) [stack@undercloud ~]$ openstack server list
+(test@overcloud) [stack@undercloud ~]$ @@. stackrc@/
+
+(undercloud) [stack@undercloud ~]$ @@openstack server list@/
 +--------------------------------------+------------------+--------+----------------------+----------------+--------------+
 | ID                                   | Name             | Status | Networks             | Image          | Flavor       |
 +--------------------------------------+------------------+--------+----------------------+----------------+--------------+
@@ -1023,7 +1025,7 @@ at the running containers that make it work, starting on one of the controllers.
 | 66515ba8-15eb-480a-ad37-c3e91da47df8 | lab-ceph01       | ACTIVE | ctlplane=172.16.0.31 | overcloud-full | ceph-storage |
 | 87920ee2-dd27-432d-b8b1-52a2ab49a9ff | lab-compute01    | ACTIVE | ctlplane=172.16.0.25 | overcloud-full | compute      |
 +--------------------------------------+------------------+--------+----------------------+----------------+--------------+
-(undercloud) [stack@undercloud ~]$ ssh heat-admin@172.16.0.32
+(undercloud) [stack@undercloud ~]$ @@ssh heat-admin@172.16.0.32@/
 Last login: Thu Apr 12 22:53:57 2018 from 172.16.0.1
 ```
 
@@ -1031,7 +1033,7 @@ We can use the ``docker ps`` command to see all of the containers running on our
 controller.
 
 ```
-[heat-admin@lab-controller01 ~]$ sudo docker ps
+[heat-admin@lab-controller01 ~]$ @@sudo docker ps@/
 CONTAINER ID        IMAGE                                                                       COMMAND                  CREATED             STATUS                    PORTS               NAMES
 00c1febf51d2        172.16.0.1:8787/rhosp12/openstack-haproxy:pcmklatest                        "/bin/bash /usr/lo..."   33 minutes ago      Up 33 minutes                                 haproxy-bundle-docker-0
 43cfbcd74a4b        172.16.0.1:8787/rhosp12/openstack-redis:pcmklatest                          "/bin/bash /usr/lo..."   36 minutes ago      Up 35 minutes                                 redis-bundle-docker-0
@@ -1108,7 +1110,7 @@ containers, rather than traditional services.)
 Let's look at our Pacemaker cluster.
 
 ```
-[heat-admin@lab-controller01 ~]$ sudo pcs status | fold -w 120 -s
+[heat-admin@lab-controller01 ~]$ @@sudo pcs status | fold -w 120 -s@/
 Cluster name: tripleo_cluster
 Stack: corosync
 Current DC: lab-controller02 (version 1.1.16-12.el7_4.8-94ff4df) - partition with quorum
@@ -1164,7 +1166,7 @@ This shows us several different resource types.
 2. ``openstack-cinder-volume`` &mdash; Our old friend, the Cinder volume service, is
    still running in active/passive mode, so we need Pacemaker to ensure that
    **exactly** one instance is running at any particular time.
-   
+  
    Cinder volume defaults to running as a traditional, non-containerized service
    in OSP 12 (although a containerized version is included as a tech preview).
    This was done because this service often makes use of storage-specific
@@ -1180,7 +1182,7 @@ Bundles are a new Pacemaker resource type that define how Pacemaker should run
 a container.  For example:
 
 ```
-[heat-admin@lab-controller01 ~]$ sudo pcs resource show haproxy-bundle | fold -w 173 -s
+[heat-admin@lab-controller01 ~]$ @@sudo pcs resource show haproxy-bundle | fold -w 173 -s@/
  Bundle: haproxy-bundle
   Docker: image=172.16.0.1:8787/rhosp12/openstack-haproxy:pcmklatest network=host options="--user=root --log-driver=journald -e KOLLA_CONFIG_STRATEGY=COPY_ALWAYS" 
 replicas=3 run-command="/bin/bash /usr/local/bin/kolla_start"

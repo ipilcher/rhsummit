@@ -3582,7 +3582,7 @@ We won't delve into it, but you can see that it's reasonably straightforward.
 Not surprisingly, the update tasks file for controllers is a bit longer, but
 still quite reasonable.
 
-```bash
+```
  (undercloud) [stack@undercloud tripleo-Jku3uc-config]$ wc -l */update_tasks.yaml
    48 BlockStorage/update_tasks.yaml
    48 CephStorage/update_tasks.yaml
@@ -3597,8 +3597,11 @@ we're updating our nodes in the wrong order).  In order to run an Ansible
 playbook, we need an inventory file to tell it which hosts to operate on.  We
 can generate this file automatically.
 
+This should take 7 or 8 minutes.
+
 ```
-(undercloud) [stack@undercloud tripleo-Jku3uc-config]$ tripleo-ansible-inventory --static-inventory tripleo-inventory.yaml
+(undercloud) [stack@undercloud tripleo-Jku3uc-config]$ tripleo-ansible-inventory \
+    --static-inventory tripleo-inventory.yaml
 
 (undercloud) [stack@undercloud tripleo-Jku3uc-config]$ less tripleo-inventory.yaml
 (...)
@@ -3609,3 +3612,62 @@ lab-ceph03
 (...)
 ```
 
+```
+(undercloud) [stack@undercloud tripleo-Jku3uc-config]$ ansible-playbook \
+    update_steps_playbook.yaml \
+    --become \
+    --module-path /usr/share/ansible-modules \
+    --inventory tripleo-inventory.yaml \
+    --limit CephStorage
+   [DEPRECATION WARNING]: The use of 'include' for tasks has been deprecated. Use 'import_tasks' for static inclusions or 'include_tasks' for dynamic inclusions. This feature 
+will be removed in a future release. Deprecation warnings can be disabled by setting deprecation_warnings=False in ansible.cfg.
+[DEPRECATION WARNING]: include is kept for backwards compatibility but usage is discouraged. The module documentation details page may explain more about this rationale.. This
+ feature will be removed in a future release. Deprecation warnings can be disabled by setting deprecation_warnings=False in ansible.cfg.
+
+PLAY [overcloud] ***************************************************************************************************************************************************************
+
+TASK [Gathering Facts] *********************************************************************************************************************************************************
+ok: [172.16.0.31]
+
+TASK [include] *****************************************************************************************************************************************************************
+included: /home/stack/tripleo-Jku3uc-config/update_steps_tasks.yaml for 172.16.0.31
+included: /home/stack/tripleo-Jku3uc-config/update_steps_tasks.yaml for 172.16.0.31
+included: /home/stack/tripleo-Jku3uc-config/update_steps_tasks.yaml for 172.16.0.31
+included: /home/stack/tripleo-Jku3uc-config/update_steps_tasks.yaml for 172.16.0.31
+included: /home/stack/tripleo-Jku3uc-config/update_steps_tasks.yaml for 172.16.0.31
+included: /home/stack/tripleo-Jku3uc-config/update_steps_tasks.yaml for 172.16.0.31
+
+TASK [include] *****************************************************************************************************************************************************************
+skipping: [172.16.0.31]
+
+TASK [include] *****************************************************************************************************************************************************************
+skipping: [172.16.0.31]
+
+TASK [include] *****************************************************************************************************************************************************************
+skipping: [172.16.0.31]
+
+TASK [include] *****************************************************************************************************************************************************************
+skipping: [172.16.0.31]
+
+TASK [include] *****************************************************************************************************************************************************************
+included: /home/stack/tripleo-Jku3uc-config/CephStorage/update_tasks.yaml for 172.16.0.31
+(...)
+PLAY RECAP *********************************************************************************************************************************************************************
+172.16.0.23                : ok=57   changed=15   unreachable=0    failed=0   
+172.16.0.31                : ok=57   changed=15   unreachable=0    failed=0   
+172.16.0.33                : ok=57   changed=15   unreachable=0    failed=0
+```
+
+If you've made it this far without running out of time, feel free to start the
+controller update.
+
+
+```
+(undercloud) [stack@undercloud tripleo-Jku3uc-config]$ ansible-playbook \
+    update_steps_playbook.yaml \
+    --become \
+    --module-path /usr/share/ansible-modules \
+    --inventory tripleo-inventory.yaml \
+    --limit Controller
+(...)
+```

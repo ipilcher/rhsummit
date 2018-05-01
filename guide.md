@@ -3057,7 +3057,9 @@ now makes extensive use of Red Hat Ansible.
 
 ## Lab 5: Extra Credit &mdash; Minor Updates with Ansible
 
-
+The first thing that we need to do is update the ``python-tripleoclient``
+package on the undercloud.  (This package provides all of the ``openstack
+overcloud`` commands.)
 
 ```
 (undercloud) [stack@undercloud haproxy]$ sudo yum -y update python-tripleoclient
@@ -3113,9 +3115,24 @@ Updated:
 Complete!
 ```
 
+Now stop the OpenStack services on the undercloud.
+
 ```
 (undercloud) [stack@undercloud haproxy]$ sudo systemctl stop 'openstack-*' 'neutron-*' httpd
+```
 
+Next, run the ``openstack undercloud upgrade`` command (even though we're
+actually running a minor **update**).
+
+> **NOTE:** Red Hat makes a strong distinction between **minor** updates (updating
+> software to the latest packages, maintenance level, minor version, etc.) and
+> **major** upgrades &mdash; such as upgrades from Red Hat Enterprise Linux 6 to
+> Red Hat Enterprise Linux 7 or Red Hat OpenStack Platform 11 to Red Hat OpenStack
+> Platform 12.
+
+This command will take approximately 10 minutes to complete.
+
+```
 (undercloud) [stack@undercloud haproxy]$ openstack undercloud upgrade
 (...)
 #############################################################################
@@ -3132,20 +3149,26 @@ secured.
 #############################################################################
 ```
 
+Reboot and log back in to the undercloud.
+
 ```
 (undercloud) [stack@undercloud haproxy]$ sudo reboot
 Connection to undercloud.example.com closed by remote host.
 Connection to undercloud.example.com closed.
-```
 
-```
-[lab-user@bastion-8415 ~]$ ssh stack@undercloud.example.com
+[lab-user@bastion-XXXX ~]$ ssh stack@undercloud.example.com
 stack@undercloud.example.com's password: 
 Last login: Sun Apr 29 14:06:45 2018 from bastion.example.com
 
 [stack@undercloud ~]$ . stackrc
 (undercloud) [stack@undercloud ~]$
+```
 
+Optionally update the overcloud disk images (not container images).  This step
+is not required for this lab, as we will not be deploying additional overcloud
+nodes (scaling out).
+
+```
 (undercloud) [stack@undercloud ~]$ cd images
 
 (undercloud) [stack@undercloud images]$ rpm -qa | grep images
@@ -3298,7 +3321,16 @@ bm-deploy-kernel_20180316T123554Z bm-deploy-ramdisk_20180316T123556Z overcloud-f
 +--------------------------------------+------------------------+--------+
 
 (undercloud) [stack@undercloud images]$ cd
+```
 
+Now we're ready to run the first stage of the actual overcloud update.  This
+step will update the resources on the **undercloud** that define the overcloud
+&mdash; the TripleO plan, Mistral workflows, and Heat stack.  This step will
+**not** actually make any changes to the overcloud nodes.
+
+This command will take 15-20 minutes to complete.
+
+```
 (undercloud) [stack@undercloud ~]$ openstack overcloud update stack --init-minor-update \
     --container-registry-file templates/docker-registry.yaml
 Started Mistral Workflow tripleo.package_update.v1.package_update_plan. Execution ID: 44054b51-9de9-41a3-ae01-412e1430dd95
@@ -3312,6 +3344,7 @@ Started Mistral Workflow tripleo.package_update.v1.get_config. Execution ID: 8c2
 Waiting for messages on queue 'tripleo' with no timeout.
 Success
 Init minor update on stack overcloud complete.
+```
 
 
 [heat-admin@lab-controller01 ~]$ sudo yum check-update

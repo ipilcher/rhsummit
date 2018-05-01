@@ -3122,7 +3122,8 @@ Now stop the OpenStack services on the undercloud.
 ```
 
 Next, run the ``openstack undercloud upgrade`` command (even though we're
-actually running a minor **update**).
+actually running a minor **update**).  This will update the packages and
+service configurations on the undercloud.
 
 > **NOTE:** Red Hat makes a strong distinction between **minor** updates (updating
 > software to the latest packages, maintenance level, minor version, etc.) and
@@ -3130,7 +3131,8 @@ actually running a minor **update**).
 > Red Hat Enterprise Linux 7 or Red Hat OpenStack Platform 11 to Red Hat OpenStack
 > Platform 12.
 
-This command will take approximately 10 minutes to complete.
+This command will take approximately 10 minutes to complete.  (Yellow warning
+text can be ignored.)
 
 ```
 (undercloud) [stack@undercloud haproxy]$ openstack undercloud upgrade
@@ -3275,7 +3277,12 @@ Image "bm-deploy-ramdisk" was uploaded.
 +--------------------------------------+-------------------+-------------+-----------+--------+
 | b07d4be0-b3f9-4ccc-9650-4530997f2fdd | bm-deploy-ramdisk |     ari     | 426133936 | active |
 +--------------------------------------+-------------------+-------------+-----------+--------+
+```
 
+Update the Ironic node properties with the UUIDs of the new ``bm-deploy-kernel``
+and ``bm-deploy-ramdisk`` images.
+
+```
 (undercloud) [stack@undercloud images]$ NODES=`openstack baremetal node list -f csv -c Name --quote none | sed 1d | paste -s -d ' '`
 
 (undercloud) [stack@undercloud images]$ echo $NODES
@@ -3285,7 +3292,11 @@ overcloud-ctrl01 overcloud-ctrl02 overcloud-ctrl03 overcloud-ceph01 overcloud-ce
 Started Mistral Workflow tripleo.baremetal.v1.configure. Execution ID: fc7c6801-81d5-46b5-b553-af9c35da1c59
 Waiting for messages on queue '6c48070f-eb9c-401a-ab62-b0ceec60e077' with no timeout.
 Successfully configured the nodes.
+```
 
+Remove the old images from the Glance service (on the undercloud).
+
+```
 (undercloud) [stack@undercloud images]$ openstack image list
 +--------------------------------------+-----------------------------------------+--------+
 | ID                                   | Name                                    | Status |
@@ -3328,7 +3339,9 @@ step will update the resources on the **undercloud** that define the overcloud
 &mdash; the TripleO plan, Mistral workflows, and Heat stack.  This step will
 **not** actually make any changes to the overcloud nodes.
 
-This command will take 15-20 minutes to complete.
+This command will take 15-20 minutes to complete (and it will likely run for
+several minutes with no output at the ``[...WorkflowTasks_Step2_Execution]``
+step).
 
 ```
 (undercloud) [stack@undercloud ~]$ openstack overcloud update stack --init-minor-update \
@@ -3346,72 +3359,24 @@ Success
 Init minor update on stack overcloud complete.
 ```
 
+Finally!  We're ready to start actually updating the overcloud nodes.  The
+supported order for updating the nodes in our deployment is:
 
-[heat-admin@lab-controller01 ~]$ sudo yum check-update
-Loaded plugins: product-id, search-disabled-repos, subscription-manager
-This system is not registered with an entitlement server. You can use subscription-manager to register.
+1. Controllers,
+2. Ceph storage (OSD) nodes, and
+3. Compute node.
 
-dhclient.x86_64                           12:4.2.5-58.el7_4.3                rhelosp-rhel-7.4-server
-dhcp-common.x86_64                        12:4.2.5-58.el7_4.3                rhelosp-rhel-7.4-server
-dhcp-libs.x86_64                          12:4.2.5-58.el7_4.3                rhelosp-rhel-7.4-server
-puppet-tripleo.noarch                     7.4.8-5.el7ost                     rhelosp-12.0-puddle    
-python-paramiko.noarch                    2.1.1-4.el7                        rhelosp-rhel-7.4-extras
-qemu-img-rhev.x86_64                      10:2.10.0-21.el7                   rhelosp-12.0-puddle    
-qemu-kvm-common-rhev.x86_64               10:2.10.0-21.el7                   rhelosp-12.0-puddle    
-qemu-kvm-rhev.x86_64                      10:2.10.0-21.el7                   rhelosp-12.0-puddle    
-tzdata.noarch                             2018d-1.el7                        rhelosp-rhel-7.4-server
+Unfortunately, updating the controller nodes in this environment takes more than
+an hour &mdash; time that we simply don't have.  (The controller updates is I/O
+intensive, because it involves updating the images for all 49 containers on all
+3 controllers, and our 3 virtualized controllers are all sharing the same
+physical disk!)  Even though it may break our overcloud, let's update the
+compute node, which will only take a few minutes.
 
-[heat-admin@lab-controller01 ~]$ sudo docker ps --format '{{ .Image }}'
-172.16.0.1:8787/rhosp12/openstack-haproxy:12.0-20180309.1.fun
-172.16.0.1:8787/rhosp12/openstack-redis:pcmklatest
-172.16.0.1:8787/rhosp12/openstack-mariadb:pcmklatest
-172.16.0.1:8787/rhosp12/openstack-rabbitmq:pcmklatest
-172.16.0.1:8787/ceph/rhceph-2-rhel7:latest
-172.16.0.1:8787/rhosp12/openstack-gnocchi-api:12.0-20180309.1
-172.16.0.1:8787/rhosp12/openstack-gnocchi-statsd:12.0-20180309.1
-172.16.0.1:8787/rhosp12/openstack-gnocchi-metricd:12.0-20180309.1
-172.16.0.1:8787/rhosp12/openstack-panko-api:12.0-20180309.1
-172.16.0.1:8787/rhosp12/openstack-nova-api:12.0-20180309.1
-172.16.0.1:8787/rhosp12/openstack-nova-api:12.0-20180309.1
-172.16.0.1:8787/rhosp12/openstack-glance-api:12.0-20180309.1
-172.16.0.1:8787/rhosp12/openstack-swift-account:12.0-20180309.1
-172.16.0.1:8787/rhosp12/openstack-aodh-listener:12.0-20180309.1
-172.16.0.1:8787/rhosp12/openstack-swift-container:12.0-20180309.1
-172.16.0.1:8787/rhosp12/openstack-heat-api:12.0-20180309.1
-172.16.0.1:8787/rhosp12/openstack-swift-proxy-server:12.0-20180309.1
-172.16.0.1:8787/rhosp12/openstack-swift-object:12.0-20180309.1
-172.16.0.1:8787/rhosp12/openstack-swift-container:12.0-20180309.1
-172.16.0.1:8787/rhosp12/openstack-swift-account:12.0-20180309.1
-172.16.0.1:8787/rhosp12/openstack-cron:12.0-20180309.1
-172.16.0.1:8787/rhosp12/openstack-heat-api-cfn:12.0-20180309.1
-172.16.0.1:8787/rhosp12/openstack-nova-conductor:12.0-20180309.1
-172.16.0.1:8787/rhosp12/openstack-swift-object:12.0-20180309.1
-172.16.0.1:8787/rhosp12/openstack-swift-container:12.0-20180309.1
-172.16.0.1:8787/rhosp12/openstack-heat-engine:12.0-20180309.1
-172.16.0.1:8787/rhosp12/openstack-aodh-api:12.0-20180309.1
-172.16.0.1:8787/rhosp12/openstack-swift-object:12.0-20180309.1
-172.16.0.1:8787/rhosp12/openstack-nova-novncproxy:12.0-20180309.1
-172.16.0.1:8787/rhosp12/openstack-ceilometer-notification:12.0-20180309.1
-172.16.0.1:8787/rhosp12/openstack-swift-account:12.0-20180309.1
-172.16.0.1:8787/rhosp12/openstack-nova-consoleauth:12.0-20180309.1
-172.16.0.1:8787/rhosp12/openstack-nova-api:12.0-20180309.1
-172.16.0.1:8787/rhosp12/openstack-aodh-notifier:12.0-20180309.1
-172.16.0.1:8787/rhosp12/openstack-ceilometer-central:12.0-20180309.1
-172.16.0.1:8787/rhosp12/openstack-swift-account:12.0-20180309.1
-172.16.0.1:8787/rhosp12/openstack-swift-object:12.0-20180309.1
-172.16.0.1:8787/rhosp12/openstack-heat-api:12.0-20180309.1
-172.16.0.1:8787/rhosp12/openstack-swift-proxy-server:12.0-20180309.1
-172.16.0.1:8787/rhosp12/openstack-swift-object:12.0-20180309.1
-172.16.0.1:8787/rhosp12/openstack-nova-scheduler:12.0-20180309.1
-172.16.0.1:8787/rhosp12/openstack-swift-container:12.0-20180309.1
-172.16.0.1:8787/rhosp12/openstack-aodh-evaluator:12.0-20180309.1
-172.16.0.1:8787/rhosp12/openstack-keystone:12.0-20180309.1
-172.16.0.1:8787/rhosp12/openstack-keystone:12.0-20180309.1
-172.16.0.1:8787/rhosp12/openstack-nova-placement-api:12.0-20180309.1
-172.16.0.1:8787/rhosp12/openstack-horizon:12.0-20180309.1
-172.16.0.1:8787/rhosp12/openstack-mariadb:12.0-20180309.1
-172.16.0.1:8787/rhosp12/openstack-memcached:12.0-20180309.1
+First, let's check for available package updates and list the container images
+being used on the compute node.
 
+```
 (undercloud) [stack@undercloud ~]$ openstack server list
 +--------------------------------------+------------------+--------+----------------------+-------+--------------+
 | ID                                   | Name             | Status | Networks             | Image | Flavor       |
@@ -3425,49 +3390,222 @@ tzdata.noarch                             2018d-1.el7                        rhe
 | 87920ee2-dd27-432d-b8b1-52a2ab49a9ff | lab-compute01    | ACTIVE | ctlplane=172.16.0.25 |       | compute      |
 +--------------------------------------+------------------+--------+----------------------+-------+--------------+
 
-[heat-admin@lab-compute01 ~]$ sudo yum check-update
+(undercloud) [stack@undercloud ~]$ ssh heat-admin@172.16.0.25 "sudo yum check-update ; sudo docker ps --format '{{ .Image }}'"
 Loaded plugins: product-id, search-disabled-repos, subscription-manager
 This system is not registered with an entitlement server. You can use subscription-manager to register.
-rhelosp-12.0-puddle                                                          | 2.9 kB  00:00:00     
-rhelosp-ceph-2.0-mon                                                         | 2.9 kB  00:00:00     
-rhelosp-ceph-2.0-osd                                                         | 2.9 kB  00:00:00     
-rhelosp-ceph-2.0-tools                                                       | 2.9 kB  00:00:00     
-rhelosp-rhel-7.4-extras                                                      | 2.9 kB  00:00:00     
-rhelosp-rhel-7.4-ha                                                          | 2.9 kB  00:00:00     
-rhelosp-rhel-7.4-server                                                      | 2.9 kB  00:00:00     
 
-dhclient.x86_64                           12:4.2.5-58.el7_4.3                rhelosp-rhel-7.4-server
-dhcp-common.x86_64                        12:4.2.5-58.el7_4.3                rhelosp-rhel-7.4-server
-dhcp-libs.x86_64                          12:4.2.5-58.el7_4.3                rhelosp-rhel-7.4-server
-puppet-tripleo.noarch                     7.4.8-5.el7ost                     rhelosp-12.0-puddle    
-python-paramiko.noarch                    2.1.1-4.el7                        rhelosp-rhel-7.4-extras
-qemu-img-rhev.x86_64                      10:2.10.0-21.el7                   rhelosp-12.0-puddle    
-qemu-kvm-common-rhev.x86_64               10:2.10.0-21.el7                   rhelosp-12.0-puddle    
-qemu-kvm-rhev.x86_64                      10:2.10.0-21.el7                   rhelosp-12.0-puddle    
-tzdata.noarch                             2018d-1.el7                        rhelosp-rhel-7.4-server
-
-[heat-admin@lab-compute01 ~]$ sudo docker ps --format '{{ .Image }}'
+dhclient.x86_64                 12:4.2.5-58.el7_4.3      rhelosp-rhel-7.4-server
+dhcp-common.x86_64              12:4.2.5-58.el7_4.3      rhelosp-rhel-7.4-server
+dhcp-libs.x86_64                12:4.2.5-58.el7_4.3      rhelosp-rhel-7.4-server
+puppet-tripleo.noarch           7.4.8-5.el7ost           rhelosp-12.0-puddle    
+python-paramiko.noarch          2.1.1-4.el7              rhelosp-rhel-7.4-extras
+qemu-img-rhev.x86_64            10:2.10.0-21.el7         rhelosp-12.0-puddle    
+qemu-kvm-common-rhev.x86_64     10:2.10.0-21.el7         rhelosp-12.0-puddle    
+qemu-kvm-rhev.x86_64            10:2.10.0-21.el7         rhelosp-12.0-puddle    
+tzdata.noarch                   2018d-1.el7              rhelosp-rhel-7.4-server
 172.16.0.1:8787/rhosp12/openstack-cron:12.0-20180309.1
 172.16.0.1:8787/rhosp12/openstack-nova-compute:12.0-20180309.1
 172.16.0.1:8787/rhosp12/openstack-ceilometer-compute:12.0-20180309.1
 172.16.0.1:8787/rhosp12/openstack-nova-compute:12.0-20180309.1
 172.16.0.1:8787/rhosp12/openstack-nova-libvirt:12.0-20180309.1
 172.16.0.1:8787/rhosp12/openstack-nova-libvirt:12.0-20180309.1
+```
 
-(undercloud) [stack@undercloud ~]$ openstack overcloud update stack --nodes Controller
-Started Mistral Workflow tripleo.package_update.v1.update_nodes. Execution ID: ea090125-6064-4a92-b026-e446d80bad6d
-(...)
- u'PLAY RECAP *********************************************************************',
- u'172.16.0.22                : ok=122  changed=63   unreachable=0    failed=0   ',
- u'172.16.0.32                : ok=124  changed=63   unreachable=0    failed=0   ',
- u'172.16.0.36                : ok=122  changed=63   unreachable=0    failed=0   ',
- u'']
-Waiting for messages on queue 'da276e4e-2ad2-4a1b-8d3b-50e61574901d' with no timeout.
-Success
-
-
-(undercloud) [stack@undercloud ~]$ time openstack overcloud update stack --nodes Compute
-Started Mistral Workflow tripleo.package_update.v1.update_nodes. Execution ID: 336c24da-d3f8-4c25-b61a-20ec6cf2de32
-
+Update the compute node.
 
 ```
+(undercloud) [stack@undercloud ~]$ openstack overcloud update stack --nodes Compute
+Started Mistral Workflow tripleo.package_update.v1.update_nodes. Execution ID: 9f90b23a-60a8-4eb5-8baa-fe25b4f0cf8b
+[u"[DEPRECATION WARNING]: The use of 'include' for tasks has been deprecated. Use ",
+ u"'import_tasks' for static inclusions or 'include_tasks' for dynamic inclusions.",
+ u' This feature will be removed in a future release. Deprecation warnings can be ',
+ u'disabled by setting deprecation_warnings=False in ansible.cfg.',
+ u'[DEPRECATION WARNING]: include is kept for backwards compatibility but usage is',
+ u' discouraged. The module documentation details page may explain more about this',
+ u' rationale.. This feature will be removed in a future release. Deprecation ',
+ u'warnings can be disabled by setting deprecation_warnings=False in ansible.cfg.',
+ u'',
+ u'PLAY [overcloud] ***************************************************************',
+ u'',
+ u'TASK [Gathering Facts] *********************************************************',
+ u'ok: [172.16.0.25]',
+(...)
+ u'PLAY RECAP *********************************************************************',
+ u'172.16.0.25                : ok=59   changed=15   unreachable=0    failed=0   ',
+ u'']
+Waiting for messages on queue '8cf193cb-e177-415d-b49b-86eb664c78a2' with no timeout.
+Success
+```
+
+And check that the update actually did its job.
+
+```
+(undercloud) [stack@undercloud ~]$ ssh heat-admin@172.16.0.25 "sudo yum check-update ; sudo docker ps --format '{{ .Image }}'"
+Loaded plugins: product-id, search-disabled-repos, subscription-manager
+This system is not registered with an entitlement server. You can use subscription-manager to register.
+172.16.0.1:8787/rhosp12/openstack-cron:12.0-20180319.1
+172.16.0.1:8787/rhosp12/openstack-nova-compute:12.0-20180319.1
+172.16.0.1:8787/rhosp12/openstack-ceilometer-compute:12.0-20180319.1
+172.16.0.1:8787/rhosp12/openstack-nova-compute:12.0-20180319.1
+172.16.0.1:8787/rhosp12/openstack-nova-libvirt:12.0-20180319.1
+172.16.0.1:8787/rhosp12/openstack-nova-libvirt:12.0-20180319.1
+```
+
+If you've ever used Ansible, the output of the previous ``openstack overcloud
+update stack`` command will look very familiar.  In fact, TripleO uses Ansible
+for all minor node updates in OSP 12, and it is possible to download these
+playbooks, examine them, and run them manually for troubleshooting and testing
+purposes.
+
+Download the overcloud configuration.
+
+```
+(undercloud) [stack@undercloud ~]$ openstack overcloud config download
+The TripleO configuration has been successfully generated into: /home/stack/tripleo-Jku3uc-config
+```
+
+> **NOTE:** The directory name is randomly generated, so it will be different in
+> your environment.
+
+Change to the config directory and look around.
+
+```
+(undercloud) [stack@undercloud ~]$ cd /home/stack/tripleo-Jku3uc-config
+
+(undercloud) [stack@undercloud tripleo-Jku3uc-config]$ ls -l
+total 48
+drwx------. 2 stack stack 4096 May  1 17:13 BlockStorage
+drwx------. 2 stack stack 4096 May  1 17:13 CephStorage
+drwx------. 2 stack stack 4096 May  1 17:13 Compute
+drwx------. 2 stack stack 4096 May  1 17:13 Controller
+-rw-------. 1 stack stack  570 May  1 17:13 deploy_steps_playbook.yaml
+-rw-------. 1 stack stack 4265 May  1 17:13 deploy_steps_tasks.yaml
+drwx------. 2 stack stack 4096 May  1 17:13 ObjectStorage
+-rw-------. 1 stack stack  274 May  1 17:13 update_steps_playbook.yaml
+-rw-------. 1 stack stack  376 May  1 17:13 update_steps_tasks.yaml
+-rw-------. 1 stack stack  145 May  1 17:13 upgrade_steps_playbook.yaml
+-rw-------. 1 stack stack  381 May  1 17:13 upgrade_steps_tasks.yaml
+```
+
+Right away, we can see a couple of playbooks &mdash; ``update_steps_playbook.yaml``
+and ``upgrade_steps_playbook.yaml``.  Since we're doing a minor udate, we're
+interested in the former file.
+
+```
+(undercloud) [stack@undercloud tripleo-Jku3uc-config]$ cat update_steps_playbook.yaml
+- hosts: overcloud
+  serial: 1
+  tasks:
+    - include: update_steps_tasks.yaml
+      with_sequence: start=0 end=5
+      loop_control:
+        loop_var: step
+    - include: deploy_steps_tasks.yaml
+      with_sequence: start=1 end=5
+      loop_control:
+        loop_var: step
+```
+
+Let's look at the included file.
+
+```
+(undercloud) [stack@undercloud tripleo-Jku3uc-config]$ cat update_steps_tasks.yaml
+- include: Controller/update_tasks.yaml
+  when: role_name == 'Controller'
+- include: Compute/update_tasks.yaml
+  when: role_name == 'Compute'
+- include: BlockStorage/update_tasks.yaml
+  when: role_name == 'BlockStorage'
+- include: ObjectStorage/update_tasks.yaml
+  when: role_name == 'ObjectStorage'
+- include: CephStorage/update_tasks.yaml
+  when: role_name == 'CephStorage'
+```
+
+We just updated a compute node, so let's look at the included tasks for that
+node type.
+
+```
+(undercloud) [stack@undercloud tripleo-Jku3uc-config]$ cat Compute/update_tasks.yaml
+- block:
+  - failed_when: false
+    name: Detect if puppet on the docker profile would restart the service
+    register: puppet_docker_noop_output
+    shell: "puppet apply --noop --summarize --detailed-exitcodes --verbose \\\n  --modulepath\
+      \ /etc/puppet/modules:/opt/stack/puppet-modules:/usr/share/openstack-puppet/modules\
+      \ \\\n  --color=false -e \"class { 'tripleo::profile::base::docker': step =>\
+      \ 1, }\" 2>&1 | \\\nawk -F \":\" '/Out of sync:/ { print $2}'\n"
+  - changed_when: docker_check_update.rc == 100
+    failed_when: docker_check_update.rc not in [0, 100]
+    name: Is docker going to be updated
+    register: docker_check_update
+    shell: yum check-update docker
+  - name: Set docker_rpm_needs_update fact
+    set_fact: docker_rpm_needs_update={{ docker_check_update.rc == 100 }}
+  - name: Set puppet_docker_is_outofsync fact
+    set_fact: puppet_docker_is_outofsync={{ puppet_docker_noop_output.stdout|trim|int
+      >= 1 }}
+  - name: Stop all containers
+    shell: docker ps -q | xargs --no-run-if-empty -n1 docker stop
+    when: puppet_docker_is_outofsync or docker_rpm_needs_update
+  - name: Stop docker
+    service:
+      name: docker
+      state: stopped
+    when: puppet_docker_is_outofsync or docker_rpm_needs_update
+  - name: Update the docker package
+    when: docker_rpm_needs_update
+    yum: name=docker state=latest update_cache=yes
+  - changed_when: puppet_docker_apply.rc == 2
+    failed_when: puppet_docker_apply.rc not in [0, 2]
+    name: Apply puppet which will start the service again
+    register: puppet_docker_apply
+    shell: "puppet apply --detailed-exitcodes --verbose \\\n  --modulepath  /etc/puppet/modules:/opt/stack/puppet-modules:/usr/share/openstack-puppet/modules\
+      \ \\\n  -e \"class { 'tripleo::profile::base::docker': step => 1, }\"\n"
+  when: step|int == 2
+- name: Check for existing yum.pid
+  register: yum_pid_file
+  stat: path=/var/run/yum.pid
+  when: step == "0" or step == "3"
+- fail: msg="ERROR existing yum.pid detected - can't continue! Please ensure there
+    is no other package update process for the duration of the minor update worfklow.
+    Exiting."
+  name: Exit if existing yum process
+  when: (step == "0" or step == "3") and yum_pid_file.stat.exists
+- name: Update all packages
+  when: step == "3"
+  yum: name=* state=latest update_cache=yes
+```
+
+We won't delve into it, but you can see that it's reasonably straightforward.
+
+Not surprisingly, the update tasks file for controllers is a bit longer, but
+still quite reasonable.
+
+```bash
+ (undercloud) [stack@undercloud tripleo-Jku3uc-config]$ wc -l */update_tasks.yaml
+   48 BlockStorage/update_tasks.yaml
+   48 CephStorage/update_tasks.yaml
+   48 Compute/update_tasks.yaml
+  167 Controller/update_tasks.yaml
+   52 ObjectStorage/update_tasks.yaml
+  363 total
+```
+
+Let's run the update playbook manually on our Ceph nodes (again noting that
+we're updating our nodes in the wrong order).  In order to run an Ansible
+playbook, we need an inventory file to tell it which hosts to operate on.  We
+can generate this file automatically.
+
+```
+(undercloud) [stack@undercloud tripleo-Jku3uc-config]$ tripleo-ansible-inventory --static-inventory tripleo-inventory.yaml
+
+(undercloud) [stack@undercloud tripleo-Jku3uc-config]$ less tripleo-inventory.yaml
+(...)
+[CephStorage:children]
+lab-ceph01
+lab-ceph02
+lab-ceph03
+(...)
+```
+

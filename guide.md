@@ -46,7 +46,7 @@
   - [Testing Container Image Changes](#testing-container-image-changes)
     * [Modifying a Container Image](#modifying-a-container-image)
     * [Testing the Modified Images](#testing-the-modified-images)
-* [**Lab 5:** Extra Credit](#lab-5-extra-credit)
+* [**Lab 5:** Extra Credit &mdash; Minor Updates with Ansible](#lab-5-extra-credit--minor-updates-with-ansible)
 
 ## Lab 0: Introduction
 
@@ -141,7 +141,7 @@ platform don't fit the prototypical containerized application model.
 
 ### TripleO Terminology
 
-![TripleO](/images/overcloud-undercloud.png)
+![TripleO](images/overcloud-undercloud.png)
 
 OpenStack Platform director (OSP director) is based on the upstream TripleO
 project.  TripleO stands for "OpenStack on OpenStack," but what does this mean?
@@ -192,11 +192,11 @@ You will access your personal lab environment via a bastion VM, which also acts
 as an NTP server, yum repository server, and container image registry for your
 environment.
 
-![Lab diagram](/images/lab-diagram.svg)
+![Lab diagram](images/lab-diagram.svg)
 
 **Networks**
 
-![Lab networks](/images/lab-networks.svg)
+![Lab networks](images/lab-networks.svg)
 
 Because we're using pre-determined IP addresses, we already know what our
 overcloud nodes' addresses will be on these networks.

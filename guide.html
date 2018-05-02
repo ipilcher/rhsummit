@@ -159,7 +159,7 @@
 <a href="#testing-container-image-changes">Testing Container Image Changes</a>
 <ul>
 <li><a href="#modifying-a-container-image">Modifying a Container Image</a></li>
-<li><a href="#testing-the-modified-image">Testing the Modified Image</a></li>
+<li><a href="#testing-the-modified-images">Testing the Modified Images</a></li>
 </ul>
 </li>
 </ul>
@@ -174,19 +174,24 @@ hands-on lab — <strong>Understanding Containerized Red Hat OpenStack Platform<
 Hat OpenStack Platform, OSP 12 (which is based on the upstream OpenStack Pike
 release).  In particular, we will be looking at OSP 12's implementation of
 containerized OpenStack and infrastructure services and how containerization
-affects tasks such as deployment, updates, monitoring, troubleshooting, etc.</p>
+affects tasks such as deployment, updates, monitoring, and troubleshooting.</p>
 <p>This is an intermediate-to-advanced lab.  It is not an introduction to Linux
 containers, OpenStack, Red Hat OpenStack Platform, or OSP director/TripleO.
 This doesn't mean that you need to be an expert with these technologies, but we
 simply don't have time to talk about them individually in any depth.  (If you're
 interested in learning more about OSP director, we recommend attending <strong>Hands
 on with Red Hat OpenStack Platform director</strong> (L1010) at this time tomorrow.)</p>
+<blockquote>
+<p><strong>NOTE:</strong> The intent of this lab guide is that most commands should be copied
+from the guide into your terminal.  (You are, of course, free to enter them
+manually.)  This will make the most efficient use of our limited time.</p>
+</blockquote>
 <p>We have a number of Red Hat OpenStack subject matter experts in the room with us
 today.  If you have any problems or questions, please raise your hand, and one
 of them will be with you as soon as possible.</p>
 <h3>
 <a id="user-content-openstack-and-containers" class="anchor" href="#openstack-and-containers" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>OpenStack and Containers</h3>
-<p>Having written that we're not going to talk about containers, we're now going to
+<p>Having said that we're not going to talk about containers, we're now going to
 talk about containers, but only a few aspects that are relevant to Red Hat
 OpenStack Platform 12.</p>
 <p><strong>We are not talking about running containerized applications on OpenStack.</strong>
@@ -220,18 +225,18 @@ combinations of services.  Containerization eases the deployment of these
 custom service combinations.</li>
 <li>
 <strong>Control</strong> — Resource consumption can be limited at the container level,
-ensuring that a rogue service does not starve other services of resources.
-Architectures such as Red Hat Hyperconverged Infrastructure for Cloud could
-not be reliably deployed without this control.</li>
+ensuring that a service does not consume an excessive share of system
+resources, starving other services.  This can enable advanced architectures
+such as hyperconverged compute/storage nodes, etc.</li>
 </ul>
 <p>Note that there are a few ways in which the services in Red Hat OpenStack
-platform don't fit the traditional containerized application model.</p>
+platform don't fit the prototypical containerized application model.</p>
 <ul>
 <li>
-<strong>Networking</strong> — Red Hat OpenStack Platform has supported network isolation -
-separating OpenStack and workload traffic onto multiple physical networks -
+<strong>Networking</strong> — Red Hat OpenStack Platform has supported network isolation —
+separating OpenStack and workload traffic onto multiple physical networks —
 since its very first release.  Container runtimes and orchestrators, however,
-tend to be optimized for services that each have a single IP address on a
+tend to target services that each have a single IP address on a
 single flat network.  To accomodate OSP's requirement for multiple networks,
 all containers in OSP 12 run with <code>host</code> networking, where all host network
 interfaces, IP addresses, etc., are exposed to the containerized applications.</li>
@@ -240,17 +245,13 @@ interfaces, IP addresses, etc., are exposed to the containerized applications.</
 to use OSP director (TripleO) for installation and configuration.  Over those
 six releases, OSP director has developed a robust system for creating and
 customizing OpenStack (and other) configuration files - including support for
-site-specific customizations and a large ecosystem of partner plug-ins.  A
-later lab will explore how OSP 12 preserves compatibility with customer
-configurations and partner-plugins - including compatibility across upgrades
-from non-containerized OSP 11 to containerized OSP 12!</li>
+site-specific customizations and a large ecosystem of partner plug-ins.</li>
 <li>
 <strong>Logging</strong> — Just like OpenStack services expect to read their configuration
 from local configuration files, they expect to write their logs to local log
 files.  OSP 12 makes these log files visible to the host operating system,
 although their locations differ from those of the non-containerized services
-in OSP 11.  (A later lab will provide details.)  Tools that parse these log
-files will need to be updated for OSP 12.</li>
+in OSP 11.  (A later lab will provide details.)</li>
 <li>
 <strong>Privileged operations</strong> — Isolation from the host operating system is one of
 the benefits of containerizing applications, but there are certain services
@@ -308,18 +309,19 @@ found in real datacenters.  Red Hat has developed an IPMI "bridge," which maps
 IPMI commands to Ravello API calls, allowing us to use standard power control
 agents.  Finally, it also supports nested virtualization, which allows our
 compute node VM(s) to run KVM guests themselves.</p>
-<p>You will access your personal lab environment via a bastion VM.  To log in to
-the bastion, ...</p>
-<p>The bastion also acts as an NTP server, yum repository server, and container
-image registry for your environment.</p>
+<p>You will access your personal lab environment via a bastion VM, which also acts
+as an NTP server, yum repository server, and container image registry for your
+environment.</p>
 <p><a href="/images/lab-diagram.svg" target="_blank"><img src="/images/lab-diagram.svg" alt="Lab diagram" style="max-width:100%;"></a></p>
 <p><strong>Networks</strong></p>
 <p><a href="/images/lab-networks.svg" target="_blank"><img src="/images/lab-networks.svg" alt="Lab networks" style="max-width:100%;"></a></p>
 <p>Because we're using pre-determined IP addresses, we already know what our
-overcloud nodes' addresses will be on these networks.  (The exceptions are the
-provisioning network addresses, which are always dynamically assigned.  We
-happen to be sharing that network with our IPMI BMCs, so we actually have a mix
-of static and dynamic addresses on the same network.)</p>
+overcloud nodes' addresses will be on these networks.</p>
+<blockquote>
+<p><strong>NOTE:</strong> Overcloud node addresses on the <strong>provisioning</strong> network are always
+assigned dynamically.  Since our virtual IPMI BMCs are also on that network,
+however, it actually has a mix of static and dynamic IPs.</p>
+</blockquote>
 <table>
 <thead>
 <tr>
@@ -439,8 +441,8 @@ or connecting to your environment.</p>
 <h2>
 <a id="user-content-lab-2-containers-on-the-undercloud" class="anchor" href="#lab-2-containers-on-the-undercloud" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Lab 2: Containers on the Undercloud</h2>
 <p>Let's take a look at how the containerized service in Red Hat OpenStack Platform
-12 affect the undercloud.  First, we need to log into it, using <code>redhat</code> as
-the <code>stack</code> user's password.</p>
+12 affect the undercloud.  First, we need to log into the undercloud as the
+<code>stack</code> user, using the password <code>redhat</code>.</p>
 <pre><code>[lab-user@bastion-XXXX ~]$ <b>ssh stack@undercloud.example.com</b>
 The authenticity of host 'undercloud.example.com (192.168.122.253)' can't be established.
 ECDSA key fingerprint is SHA256:wRBB50VRT5XX6IqOy668ZGM28clpKbJ/K5FdHevw7Wg.
@@ -528,8 +530,6 @@ To show all installed unit files use 'systemctl list-unit-files'.
            ├─19973 /usr/sbin/httpd -DFOREGROUND
            ├─20117 /usr/sbin/httpd -DFOREGROUND
            └─24277 /usr/sbin/httpd -DFOREGROUND
-
-Warning: Journal has been rotated since unit was started. Log output is incomplete or unavailable.
 </code></pre>
 <p>Instead, the impact of containerization on the undercloud is all about telling
 OSP director what container image to use for each service and making those
@@ -539,6 +539,10 @@ images available to the overcloud nodes.</p>
 <p>During deployment and updates, TripleO parameters are used to specify the image
 used for each overcloud container.  In our deployment, these parameters are set
 in <code>templates/docker-registry.yaml</code>.</p>
+<blockquote>
+<p><strong>NOTE:</strong> This guide will make extensive use of the <code>fold</code> command to wrap
+output lines and reduce the amount of horizontal scrolling required.</p>
+</blockquote>
 <pre><code>[stack@undercloud ~]$ <b>fold -w 120 -s templates/docker-registry.yaml</b>
 # Generated with the following on 2018-03-16T12:51:39.460333
 #
@@ -980,6 +984,9 @@ parameter_defaults:
 <p>The final step in updating the container images on the undercloud is to pull
 the new images from the source registry and push them into the local
 registry.</p>
+<blockquote>
+<p><strong>NOTE</strong>: This command will take several minutes to complete.</p>
+</blockquote>
 <pre><code>[stack@undercloud ~]$ <b>openstack overcloud container image upload \
     --verbose --config-file container-images.yaml</b>
 START with options: [u'overcloud', u'container', u'image', u'upload', u'--verbose', u'--config-file', u'container-images.yaml']
@@ -994,14 +1001,14 @@ imagename: 192.168.1.10:5000/ceph/rhceph-2-rhel7:latest
 Completed upload for docker image 192.168.1.10:5000/ceph/rhceph-2-rhel7:latest
 END return value: 0
 </code></pre>
-<p>When this command has completed, which will take a few minutes, we can see both
+<p>When this command has completed, we can see both
 the old and new versions of each container image, each in both the source and
 local registry.  For example:</p>
-<pre><code>[stack@undercloud ~]$ <b>docker images | grep keystone</b>
-172.16.0.1:8787/rhosp12/openstack-keystone                    12.0-20180319.1       d929ef3fa786        5 weeks ago         687.4 MB
-192.168.1.10:5000/rhosp12/openstack-keystone                  12.0-20180319.1       d929ef3fa786        5 weeks ago         687.4 MB
-172.16.0.1:8787/rhosp12/openstack-keystone                    12.0-20180309.1       5f944b66282d        7 weeks ago         687.3 MB
-192.168.1.10:5000/rhosp12/openstack-keystone                  12.0-20180309.1       5f944b66282d        7 weeks ago         687.3 MB
+<pre><code>(undercloud) [stack@undercloud ~]$ <b>docker images --format '{{ .Repository }}\t{{ .Tag }}' | grep keystone</b>
+172.16.0.1:8787/rhosp12/openstack-keystone      12.0-20180319.1
+192.168.1.10:5000/rhosp12/openstack-keystone    12.0-20180319.1
+172.16.0.1:8787/rhosp12/openstack-keystone      12.0-20180309.1
+192.168.1.10:5000/rhosp12/openstack-keystone    12.0-20180309.1
 </code></pre>
 <h2>
 <a id="user-content-lab-3-containers-on-the-overcloud" class="anchor" href="#lab-3-containers-on-the-overcloud" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Lab 3: Containers on the Overcloud</h2>
@@ -1065,8 +1072,8 @@ be used to map the instances to their bare-metal nodes.)</p>
                  704 active+clean
 </code></pre>
 <blockquote>
-<p><strong>NOTE:</strong> The clock skew and "too many PGs per OSD" warnings are expected.
-Let an instructor know if you see any other warnings or errors.)</p>
+<p><strong>NOTE:</strong> The "clock skew detected" and "too many PGs per OSD" warnings are expected.
+Let an instructor know if you see any other warnings or errors.</p>
 </blockquote>
 <p>A number of items have been pre-created in the <strong>overcloud</strong>.</p>
 <ul>
@@ -1153,57 +1160,61 @@ Last login: Thu Apr 12 22:53:57 2018 from 172.16.0.1
 </code></pre>
 <p>We can use the <code>docker ps</code> command to see all of the containers running on our
 controller.</p>
-<pre><code>[heat-admin@lab-controller01 ~]$ <b>sudo docker ps</b>
-CONTAINER ID        IMAGE                                                                       COMMAND                  CREATED             STATUS                    PORTS               NAMES
-00c1febf51d2        172.16.0.1:8787/rhosp12/openstack-haproxy:pcmklatest                        "/bin/bash /usr/lo..."   33 minutes ago      Up 33 minutes                                 haproxy-bundle-docker-0
-43cfbcd74a4b        172.16.0.1:8787/rhosp12/openstack-redis:pcmklatest                          "/bin/bash /usr/lo..."   36 minutes ago      Up 35 minutes                                 redis-bundle-docker-0
-fc081b98c13e        172.16.0.1:8787/rhosp12/openstack-mariadb:pcmklatest                        "/bin/bash /usr/lo..."   37 minutes ago      Up 37 minutes                                 galera-bundle-docker-0
-511de88ad6c4        172.16.0.1:8787/rhosp12/openstack-rabbitmq:pcmklatest                       "/bin/bash /usr/lo..."   37 minutes ago      Up 37 minutes (healthy)                       rabbitmq-bundle-docker-0
-b2a5531d8b29        172.16.0.1:8787/ceph/rhceph-2-rhel7:latest                                  "/entrypoint.sh"         37 minutes ago      Up 37 minutes                                 ceph-mon-lab-controller01
-aac508a9e1b7        172.16.0.1:8787/rhosp12/openstack-gnocchi-api:12.0-20180309.1               "kolla_start"            3 days ago          Up 37 minutes                                 gnocchi_api
-fbd82bec10d2        172.16.0.1:8787/rhosp12/openstack-gnocchi-statsd:12.0-20180309.1            "kolla_start"            3 days ago          Up 29 minutes                                 gnocchi_statsd
-239cc2d1e27f        172.16.0.1:8787/rhosp12/openstack-gnocchi-metricd:12.0-20180309.1           "kolla_start"            3 days ago          Up 37 minutes                                 gnocchi_metricd
-fc2ec5181b0f        172.16.0.1:8787/rhosp12/openstack-panko-api:12.0-20180309.1                 "kolla_start"            3 days ago          Up 37 minutes                                 panko_api
-6daf33d978b1        172.16.0.1:8787/rhosp12/openstack-nova-api:12.0-20180309.1                  "kolla_start"            3 days ago          Up 37 minutes (healthy)                       nova_metadata
-29a778ff874d        172.16.0.1:8787/rhosp12/openstack-nova-api:12.0-20180309.1                  "kolla_start"            3 days ago          Up 37 minutes (healthy)                       nova_api
-0933cf235b28        172.16.0.1:8787/rhosp12/openstack-glance-api:12.0-20180309.1                "kolla_start"            3 days ago          Up 37 minutes (healthy)                       glance_api
-39aaba03d12c        172.16.0.1:8787/rhosp12/openstack-swift-account:12.0-20180309.1             "kolla_start"            3 days ago          Up 37 minutes (healthy)                       swift_account_server
-6f3f80430fe1        172.16.0.1:8787/rhosp12/openstack-aodh-listener:12.0-20180309.1             "kolla_start"            3 days ago          Up 37 minutes (healthy)                       aodh_listener
-95d6aea9aa80        172.16.0.1:8787/rhosp12/openstack-swift-container:12.0-20180309.1           "kolla_start"            3 days ago          Up 37 minutes (healthy)                       swift_container_auditor
-975b83fc3b72        172.16.0.1:8787/rhosp12/openstack-heat-api:12.0-20180309.1                  "kolla_start"            3 days ago          Up 37 minutes (healthy)                       heat_api_cron
-a1a9cb580dfc        172.16.0.1:8787/rhosp12/openstack-swift-proxy-server:12.0-20180309.1        "kolla_start"            3 days ago          Up 37 minutes (healthy)                       swift_object_expirer
-2bb87c565d5a        172.16.0.1:8787/rhosp12/openstack-swift-object:12.0-20180309.1              "kolla_start"            3 days ago          Up 37 minutes (healthy)                       swift_object_updater
-9d7dad2c82b9        172.16.0.1:8787/rhosp12/openstack-swift-container:12.0-20180309.1           "kolla_start"            3 days ago          Up 37 minutes (healthy)                       swift_container_replicator
-2eaebf03043b        172.16.0.1:8787/rhosp12/openstack-swift-account:12.0-20180309.1             "kolla_start"            3 days ago          Up 37 minutes (healthy)                       swift_account_auditor
-947d4ac93e31        172.16.0.1:8787/rhosp12/openstack-cron:12.0-20180309.1                      "kolla_start"            3 days ago          Up 37 minutes                                 logrotate_crond
-4b3b73d4462a        172.16.0.1:8787/rhosp12/openstack-heat-api-cfn:12.0-20180309.1              "kolla_start"            3 days ago          Up 37 minutes (healthy)                       heat_api_cfn
-c49ece44bdb0        172.16.0.1:8787/rhosp12/openstack-nova-conductor:12.0-20180309.1            "kolla_start"            3 days ago          Up 37 minutes (healthy)                       nova_conductor
-6245d6b572e7        172.16.0.1:8787/rhosp12/openstack-swift-object:12.0-20180309.1              "kolla_start"            3 days ago          Up 37 minutes (healthy)                       swift_object_replicator
-83e73ff5b689        172.16.0.1:8787/rhosp12/openstack-swift-container:12.0-20180309.1           "kolla_start"            3 days ago          Up 37 minutes (healthy)                       swift_container_server
-1177bb32afc4        172.16.0.1:8787/rhosp12/openstack-heat-engine:12.0-20180309.1               "kolla_start"            3 days ago          Up 37 minutes (healthy)                       heat_engine
-c41932eea6a4        172.16.0.1:8787/rhosp12/openstack-aodh-api:12.0-20180309.1                  "kolla_start"            3 days ago          Up 37 minutes                                 aodh_api
-2a2cfd159237        172.16.0.1:8787/rhosp12/openstack-swift-object:12.0-20180309.1              "kolla_start"            3 days ago          Up 37 minutes (healthy)                       swift_rsync
-f016068c3a0d        172.16.0.1:8787/rhosp12/openstack-nova-novncproxy:12.0-20180309.1           "kolla_start"            3 days ago          Up 37 minutes (healthy)                       nova_vnc_proxy
-97ba84956183        172.16.0.1:8787/rhosp12/openstack-ceilometer-notification:12.0-20180309.1   "kolla_start"            3 days ago          Up 37 minutes (healthy)                       ceilometer_agent_notification
-d3e3b00c11aa        172.16.0.1:8787/rhosp12/openstack-swift-account:12.0-20180309.1             "kolla_start"            3 days ago          Up 37 minutes (healthy)                       swift_account_reaper
-285a675d9cd9        172.16.0.1:8787/rhosp12/openstack-nova-consoleauth:12.0-20180309.1          "kolla_start"            3 days ago          Up 37 minutes (healthy)                       nova_consoleauth
-07ba693a6e11        172.16.0.1:8787/rhosp12/openstack-nova-api:12.0-20180309.1                  "kolla_start"            3 days ago          Up 37 minutes (healthy)                       nova_api_cron
-c8932637db4b        172.16.0.1:8787/rhosp12/openstack-aodh-notifier:12.0-20180309.1             "kolla_start"            3 days ago          Up 37 minutes (healthy)                       aodh_notifier
-c93cb7b9e75a        172.16.0.1:8787/rhosp12/openstack-ceilometer-central:12.0-20180309.1        "kolla_start"            3 days ago          Up 37 minutes (healthy)                       ceilometer_agent_central
-48e8befd1dc2        172.16.0.1:8787/rhosp12/openstack-swift-account:12.0-20180309.1             "kolla_start"            3 days ago          Up 37 minutes (healthy)                       swift_account_replicator
-f578f22a8357        172.16.0.1:8787/rhosp12/openstack-swift-object:12.0-20180309.1              "kolla_start"            3 days ago          Up 37 minutes (healthy)                       swift_object_auditor
-055c87a99e69        172.16.0.1:8787/rhosp12/openstack-heat-api:12.0-20180309.1                  "kolla_start"            3 days ago          Up 37 minutes (healthy)                       heat_api
-32ad554e92d6        172.16.0.1:8787/rhosp12/openstack-swift-proxy-server:12.0-20180309.1        "kolla_start"            3 days ago          Up 37 minutes (healthy)                       swift_proxy
-d662bfec9a1f        172.16.0.1:8787/rhosp12/openstack-swift-object:12.0-20180309.1              "kolla_start"            3 days ago          Up 37 minutes (healthy)                       swift_object_server
-c8801163d88b        172.16.0.1:8787/rhosp12/openstack-nova-scheduler:12.0-20180309.1            "kolla_start"            3 days ago          Up 33 minutes (healthy)                       nova_scheduler
-c9aa47cfce16        172.16.0.1:8787/rhosp12/openstack-swift-container:12.0-20180309.1           "kolla_start"            3 days ago          Up 37 minutes (healthy)                       swift_container_updater
-68d372e5242b        172.16.0.1:8787/rhosp12/openstack-aodh-evaluator:12.0-20180309.1            "kolla_start"            3 days ago          Up 37 minutes (healthy)                       aodh_evaluator
-f4bbdda9a0c4        172.16.0.1:8787/rhosp12/openstack-keystone:12.0-20180309.1                  "/bin/bash -c '/us..."   3 days ago          Up 37 minutes (healthy)                       keystone_cron
-6788a5076fba        172.16.0.1:8787/rhosp12/openstack-keystone:12.0-20180309.1                  "kolla_start"            3 days ago          Up 37 minutes (healthy)                       keystone
-9aaac2cb4978        172.16.0.1:8787/rhosp12/openstack-nova-placement-api:12.0-20180309.1        "kolla_start"            3 days ago          Up 37 minutes                                 nova_placement
-a5b320025088        172.16.0.1:8787/rhosp12/openstack-horizon:12.0-20180309.1                   "kolla_start"            3 days ago          Up 37 minutes                                 horizon
-db5b448fc09a        172.16.0.1:8787/rhosp12/openstack-mariadb:12.0-20180309.1                   "kolla_start"            3 days ago          Up 37 minutes                                 clustercheck
-3248787f3cfc        172.16.0.1:8787/rhosp12/openstack-memcached:12.0-20180309.1                 "/bin/bash -c 'sou..."   3 days ago          Up 37 minutes                                 memcached
+<blockquote>
+<p><strong>NOTE:</strong> The default output of <code>docker ps</code> is extremely wide, so we use a
+<code>--format</code> specification to limit the output to the fields in which we are
+interested.</p>
+</blockquote>
+<pre><code>[heat-admin@lab-controller01 ~]$ <b>sudo docker ps --format '{{ .Image }}\t{{ .Names }}\t{{ .Command }}' | column -t</b>
+172.16.0.1:8787/rhosp12/openstack-gnocchi-api:12.0-20180309.1              gnocchi_api                    "kolla_start"
+172.16.0.1:8787/rhosp12/openstack-gnocchi-statsd:12.0-20180309.1           gnocchi_statsd                 "kolla_start"
+172.16.0.1:8787/rhosp12/openstack-gnocchi-metricd:12.0-20180309.1          gnocchi_metricd                "kolla_start"
+172.16.0.1:8787/rhosp12/openstack-panko-api:12.0-20180309.1                panko_api                      "kolla_start"
+172.16.0.1:8787/rhosp12/openstack-nova-api:12.0-20180309.1                 nova_metadata                  "kolla_start"
+172.16.0.1:8787/rhosp12/openstack-nova-api:12.0-20180309.1                 nova_api                       "kolla_start"
+172.16.0.1:8787/rhosp12/openstack-glance-api:12.0-20180309.1               glance_api                     "kolla_start"
+172.16.0.1:8787/rhosp12/openstack-swift-account:12.0-20180309.1            swift_account_server           "kolla_start"
+172.16.0.1:8787/rhosp12/openstack-aodh-listener:12.0-20180309.1            aodh_listener                  "kolla_start"
+172.16.0.1:8787/rhosp12/openstack-swift-container:12.0-20180309.1          swift_container_auditor        "kolla_start"
+172.16.0.1:8787/rhosp12/openstack-heat-api:12.0-20180309.1                 heat_api_cron                  "kolla_start"
+172.16.0.1:8787/rhosp12/openstack-swift-proxy-server:12.0-20180309.1       swift_object_expirer           "kolla_start"
+172.16.0.1:8787/rhosp12/openstack-swift-object:12.0-20180309.1             swift_object_updater           "kolla_start"
+172.16.0.1:8787/rhosp12/openstack-swift-container:12.0-20180309.1          swift_container_replicator     "kolla_start"
+172.16.0.1:8787/rhosp12/openstack-swift-account:12.0-20180309.1            swift_account_auditor          "kolla_start"
+172.16.0.1:8787/rhosp12/openstack-cron:12.0-20180309.1                     logrotate_crond                "kolla_start"
+172.16.0.1:8787/rhosp12/openstack-heat-api-cfn:12.0-20180309.1             heat_api_cfn                   "kolla_start"
+172.16.0.1:8787/rhosp12/openstack-nova-conductor:12.0-20180309.1           nova_conductor                 "kolla_start"
+172.16.0.1:8787/rhosp12/openstack-swift-object:12.0-20180309.1             swift_object_replicator        "kolla_start"
+172.16.0.1:8787/rhosp12/openstack-swift-container:12.0-20180309.1          swift_container_server         "kolla_start"
+172.16.0.1:8787/rhosp12/openstack-heat-engine:12.0-20180309.1              heat_engine                    "kolla_start"
+172.16.0.1:8787/rhosp12/openstack-aodh-api:12.0-20180309.1                 aodh_api                       "kolla_start"
+172.16.0.1:8787/rhosp12/openstack-swift-object:12.0-20180309.1             swift_rsync                    "kolla_start"
+172.16.0.1:8787/rhosp12/openstack-nova-novncproxy:12.0-20180309.1          nova_vnc_proxy                 "kolla_start"
+172.16.0.1:8787/rhosp12/openstack-ceilometer-notification:12.0-20180309.1  ceilometer_agent_notification  "kolla_start"
+172.16.0.1:8787/rhosp12/openstack-swift-account:12.0-20180309.1            swift_account_reaper           "kolla_start"
+172.16.0.1:8787/rhosp12/openstack-nova-consoleauth:12.0-20180309.1         nova_consoleauth               "kolla_start"
+172.16.0.1:8787/rhosp12/openstack-nova-api:12.0-20180309.1                 nova_api_cron                  "kolla_start"
+172.16.0.1:8787/rhosp12/openstack-aodh-notifier:12.0-20180309.1            aodh_notifier                  "kolla_start"
+172.16.0.1:8787/rhosp12/openstack-ceilometer-central:12.0-20180309.1       ceilometer_agent_central       "kolla_start"
+172.16.0.1:8787/rhosp12/openstack-swift-account:12.0-20180309.1            swift_account_replicator       "kolla_start"
+172.16.0.1:8787/rhosp12/openstack-swift-object:12.0-20180309.1             swift_object_auditor           "kolla_start"
+172.16.0.1:8787/rhosp12/openstack-heat-api:12.0-20180309.1                 heat_api                       "kolla_start"
+172.16.0.1:8787/rhosp12/openstack-swift-proxy-server:12.0-20180309.1       swift_proxy                    "kolla_start"
+172.16.0.1:8787/rhosp12/openstack-swift-object:12.0-20180309.1             swift_object_server            "kolla_start"
+172.16.0.1:8787/rhosp12/openstack-nova-scheduler:12.0-20180309.1           nova_scheduler                 "kolla_start"
+172.16.0.1:8787/rhosp12/openstack-swift-container:12.0-20180309.1          swift_container_updater        "kolla_start"
+172.16.0.1:8787/rhosp12/openstack-aodh-evaluator:12.0-20180309.1           aodh_evaluator                 "kolla_start"
+172.16.0.1:8787/rhosp12/openstack-keystone:12.0-20180309.1                 keystone_cron                  "/bin/bash        -c           '/us..."
+172.16.0.1:8787/rhosp12/openstack-keystone:12.0-20180309.1                 keystone                       "kolla_start"
+172.16.0.1:8787/rhosp12/openstack-nova-placement-api:12.0-20180309.1       nova_placement                 "kolla_start"
+172.16.0.1:8787/rhosp12/openstack-horizon:12.0-20180309.1                  horizon                        "kolla_start"
+172.16.0.1:8787/rhosp12/openstack-mariadb:12.0-20180309.1                  clustercheck                   "kolla_start"
+172.16.0.1:8787/rhosp12/openstack-memcached:12.0-20180309.1                memcached                      "/bin/bash        -c           'sou..."
+172.16.0.1:8787/rhosp12/openstack-haproxy:pcmklatest                       haproxy-bundle-docker-0        "/bin/bash        /usr/lo..."
+172.16.0.1:8787/rhosp12/openstack-redis:pcmklatest                         redis-bundle-docker-0          "/bin/bash        /usr/lo..."
+172.16.0.1:8787/rhosp12/openstack-mariadb:pcmklatest                       galera-bundle-docker-0         "/bin/bash        /usr/lo..."
+172.16.0.1:8787/rhosp12/openstack-rabbitmq:pcmklatest                      rabbitmq-bundle-docker-0       "/bin/bash        /usr/lo..."
+172.16.0.1:8787/ceph/rhceph-2-rhel7:latest                                 ceph-mon-lab-controller01      "/entrypoint.sh"
 </code></pre>
 <p>There are 49 separate containers running on our controller.  They can be roughly
 divided into three different varieties:</p>
@@ -1322,9 +1333,13 @@ replicas=3 run-command="/bin/bash /usr/local/bin/kolla_start"
 <li>Host directories that are bind mounted (mostly read-only) into the container</li>
 </ul>
 <p>We can use the <code>docker inspect</code> command to see how these settings have been
-applied to the running container.  (<code>docker inspect</code> outputs a large amount of
-JSON, so we'll use the <code>jq</code> command to see the parts in which we're
-interested, but it can be instructive to look through the complete output.)</p>
+applied to the running container.</p>
+<pre><code>[heat-admin@lab-controller01 ~]$ <b>sudo docker inspect haproxy-bundle-docker-0 | less</b>
+(...)
+</code></pre>
+<p>As you can see, <code>docker inspect</code> gives us a lot of information about a
+container.  Because it is output in JSON, we can use the <code>jq</code> utility to
+select portions of the output that are of particular interest.</p>
 <pre><code>[heat-admin@lab-controller01 ~]$ <b>sudo docker inspect haproxy-bundle-docker-0 \
     | jq .[0].Config.Image</b>
 "172.16.0.1:8787/rhosp12/openstack-haproxy:pcmklatest"
@@ -1493,8 +1508,8 @@ it's been configured to run an OpenStack service.</p>
                 "KOLLA_CONFIG_STRATEGY=COPY_ALWAYS",
 (...)
 </code></pre>
-<p>We've copied a few of the more significant bits of output from this command
-above.</p>
+<p>A few of the more significant bits of output from this command are shown above.
+(We could also have used <code>jq</code> to select them.)</p>
 <h4>
 <a id="user-content-let-me-out-let-me-out" class="anchor" href="#let-me-out-let-me-out" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Let Me Out! Let Me Out!</h4>
 <p>Thus far, we've done all of our investigation from our controller's host
@@ -1597,7 +1612,7 @@ only <code>nova-scheduler</code> is running in this container.  What's going on?
 mounted into the container at <code>/var/log/nova</code>.  (A bind mount creates an
 alternative path to an existing directory or file, similar to a symbolic link.)
 Note also that this particular bind does <strong>not</strong> end with <code>:ro</code>; writing to a
-log file obviously requires read/write access.</p>
+log file obviously requires write access.</p>
 <p>After looking at the contents of this directory, it isn't much of a stretch to
 guess that the other Nova containers running on this host are also bind mounting
 this directory (<code>/var/log/containers/nova</code>) — effectively sharing it.</p>
@@ -1798,14 +1813,13 @@ Connection to 172.16.0.32 closed.
 Last login: Thu Apr 12 22:56:44 2018 from 172.16.0.1
 </code></pre>
 <p>List the running containers.</p>
-<pre><code>[heat-admin@lab-compute01 ~]$ <b>sudo docker ps</b>
-CONTAINER ID        IMAGE                                                                  COMMAND             CREATED             STATUS                  PORTS               NAMES
-2b24ef01f508        172.16.0.1:8787/rhosp12/openstack-cron:12.0-20180309.1                 "kolla_start"       6 days ago          Up 22 hours                                 logrotate_crond
-eadec14e872f        172.16.0.1:8787/rhosp12/openstack-nova-compute:12.0-20180309.1         "kolla_start"       6 days ago          Up 22 hours (healthy)                       nova_migration_target
-0cc416053d1f        172.16.0.1:8787/rhosp12/openstack-ceilometer-compute:12.0-20180309.1   "kolla_start"       6 days ago          Up 22 hours                                 ceilometer_agent_compute
-51c5a1f97ade        172.16.0.1:8787/rhosp12/openstack-nova-compute:12.0-20180309.1         "kolla_start"       6 days ago          Up 22 hours (healthy)                       nova_compute
-b55823464afc        172.16.0.1:8787/rhosp12/openstack-nova-libvirt:12.0-20180309.1         "kolla_start"       6 days ago          Up 22 hours                                 nova_libvirt
-7a9b459e16af        172.16.0.1:8787/rhosp12/openstack-nova-libvirt:12.0-20180309.1         "kolla_start"       6 days ago          Up 22 hours                                 nova_virtlogd
+<pre><code>[heat-admin@lab-compute01 ~]$ <b>sudo docker ps --format '{{ .Image }}\t{{ .Names }}\t{{ .Command }}' | column -t</b>
+172.16.0.1:8787/rhosp12/openstack-cron:12.0-20180309.1                logrotate_crond           "kolla_start"
+172.16.0.1:8787/rhosp12/openstack-nova-compute:12.0-20180309.1        nova_migration_target     "kolla_start"
+172.16.0.1:8787/rhosp12/openstack-ceilometer-compute:12.0-20180309.1  ceilometer_agent_compute  "kolla_start"
+172.16.0.1:8787/rhosp12/openstack-nova-compute:12.0-20180309.1        nova_compute              "kolla_start"
+172.16.0.1:8787/rhosp12/openstack-nova-libvirt:12.0-20180309.1        nova_libvirt              "kolla_start"
+172.16.0.1:8787/rhosp12/openstack-nova-libvirt:12.0-20180309.1        nova_virtlogd             "kolla_start"
 </code></pre>
 <p>As one might expect, we see a number of Nova compute and libvirt containers
 running.  All of them are using <code>kolla_start</code> to set up their configuration
@@ -1847,11 +1861,10 @@ Connection to 172.16.0.25 closed.
 (undercloud) [stack@undercloud ~]$ <b>ssh heat-admin@172.16.0.31</b>
 [heat-admin@lab-ceph01 ~]$
 
-[heat-admin@lab-ceph01 ~]$ <b>sudo docker ps</b>
-CONTAINER ID        IMAGE                                                    COMMAND             CREATED             STATUS              PORTS               NAMES
-9012f9714a02        172.16.0.1:8787/ceph/rhceph-2-rhel7:latest               "/entrypoint.sh"    23 hours ago        Up 23 hours                             ceph-osd-lab-ceph01-vdb
-e34e9894d493        172.16.0.1:8787/ceph/rhceph-2-rhel7:latest               "/entrypoint.sh"    23 hours ago        Up 23 hours                             ceph-osd-lab-ceph01-vdc
-e54c65b75b77        172.16.0.1:8787/rhosp12/openstack-cron:12.0-20180309.1   "kolla_start"       6 days ago          Up 23 hours                             logrotate_crond
+[heat-admin@lab-ceph01 ~]$ <b>sudo docker ps --format '{{ .Image }}\t{{ .Names }}\t{{ .Command }}' | column -t</b>
+172.16.0.1:8787/rhosp12/openstack-cron:12.0-20180309.1  logrotate_crond          "kolla_start"
+172.16.0.1:8787/ceph/rhceph-2-rhel7:latest              ceph-osd-lab-ceph01-vdb  "/entrypoint.sh"
+172.16.0.1:8787/ceph/rhceph-2-rhel7:latest              ceph-osd-lab-ceph01-vdc  "/entrypoint.sh"
 </code></pre>
 <p>We see that <code>ceph-ansible</code> has created a separate container for each Ceph OSD,
 each of which corresponds to a single data disk.</p>
@@ -2033,9 +2046,13 @@ nova_api_cron
 nova_scheduler
 nova_placement
 
+(undercloud) [stack@undercloud ~]$ <b>TAINERS=`ssh heat-admin@172.16.0.32 sudo docker ps --format "'{{ .Names }}'" | grep nova`</b>
+
+(undercloud) [stack@undercloud ~]$ <b>echo $TAINERS</b>
+nova_metadata nova_api nova_conductor nova_vnc_proxy nova_consoleauth nova_api_cron nova_scheduler nova_placement
 
 (undercloud) [stack@undercloud ~]$ <b>for C in 172.16.0.{22,36} ; do
-        ssh heat-admin@$C sudo docker stop nova_{metadata,api,conductor,vnc_proxy,consoleauth,api_cron,scheduler,placement}
+        ssh heat-admin@$C sudo docker stop $TAINERS
     done</b>
 nova_metadata
 nova_api
@@ -2081,7 +2098,23 @@ four such services in our deployment — RabbitMQ, Galera, Redis, and
 HAProxy — the technique in this lab can only be safely applied to HAProxy
 (to the knowledge of your humble author; Galera is definitely out).</p>
 <p>Let's look at the current status of our Pacemaker cluster.</p>
-<pre><code>[heat-admin@lab-controller01 ~]$ <b>sudo pcs status | fold -w 120 -s</b>
+<pre><code>(undercloud) [stack@undercloud ~]$ <b>openstack server list</b>
++--------------------------------------+------------------+--------+----------------------+-------+--------------+
+| ID                                   | Name             | Status | Networks             | Image | Flavor       |
++--------------------------------------+------------------+--------+----------------------+-------+--------------+
+| 47e02f2f-b3fe-4f0a-83b6-d0305004aec9 | lab-ceph02       | ACTIVE | ctlplane=172.16.0.23 |       | ceph-storage |
+| 5c2f6fd7-3351-4ca6-bd41-3fafb1de5162 | lab-controller03 | ACTIVE | ctlplane=172.16.0.36 |       | control      |
+| b837722d-0d91-4e50-a359-223487fbdb2e | lab-controller01 | ACTIVE | ctlplane=172.16.0.32 |       | control      |
+| f8c7a2b3-73c8-476f-87a9-4c0af28e7595 | lab-controller02 | ACTIVE | ctlplane=172.16.0.22 |       | control      |
+| 9e7924fd-4611-41de-a29a-c600502e12a0 | lab-ceph03       | ACTIVE | ctlplane=172.16.0.33 |       | ceph-storage |
+| 66515ba8-15eb-480a-ad37-c3e91da47df8 | lab-ceph01       | ACTIVE | ctlplane=172.16.0.31 |       | ceph-storage |
+| 87920ee2-dd27-432d-b8b1-52a2ab49a9ff | lab-compute01    | ACTIVE | ctlplane=172.16.0.25 |       | compute      |
++--------------------------------------+------------------+--------+----------------------+-------+--------------+
+
+(undercloud) [stack@undercloud ~]$ <b>ssh heat-admin@172.16.0.32</b>
+Last login: Wed May  2 03:48:57 2018 from 172.16.0.1
+
+[heat-admin@lab-controller01 ~]$ <b>sudo pcs status | fold -w 120 -s</b>
 Cluster name: tripleo_cluster
 Stack: corosync
 Current DC: lab-controller01 (version 1.1.16-12.el7_4.8-94ff4df) - partition with quorum
@@ -2379,8 +2412,8 @@ root        1350  0.0  0.0  47448  1676 ?        R+   20:31   0:00 ps aux
 <p>Recall from lab 2 that "normal" containers have a Docker restart policy of
 <code>always</code>, so we would expect the <code>docker</code> daemon to automatically restart
 the <code>nova_scheduler</code> container.</p>
-<pre><code>[heat-admin@lab-controller01 ~]$ <b>sudo docker ps | grep scheduler</b>
-c8801163d88b        172.16.0.1:8787/rhosp12/openstack-nova-scheduler:12.0-20180309.1            "kolla_start"            13 days ago         Up About a minute (healthy)                       nova_scheduler
+<pre><code>[heat-admin@lab-controller01 ~]$ <b>sudo docker ps --format '{{ .Image }}\t{{ .Names }}\t{{ .Status }}' | grep scheduler</b>
+172.16.0.1:8787/rhosp12/openstack-nova-scheduler:12.0-20180309.1        nova_scheduler  Up About a minute (healthy)
 </code></pre>
 <p>That worked as expected.  But what about our configuration file change?</p>
 <pre><code>[heat-admin@lab-controller01 ~]$ <b>sudo docker exec -it -u root nova_scheduler /bin/sh</b>
@@ -2578,7 +2611,8 @@ Removing intermediate container 05288d8e08c0
 Successfully built 95e7c11793a4
 </code></pre>
 <p>Push the new image into the registry on the undercloud.</p>
-<pre><code>(undercloud) [stack@undercloud haproxy]$ <b>docker push 172.16.0.1:8787/rhosp12/openstack-haproxy:12.0-20180309.1.fun</b>
+<pre><code>(undercloud) [stack@undercloud haproxy]$ <b>docker push \
+    172.16.0.1:8787/rhosp12/openstack-haproxy:12.0-20180309.1.fun</b>
 The push refers to a repository [172.16.0.1:8787/rhosp12/openstack-haproxy]
 6e77bfc415dc: Pushed 
 38f4bbab5a7a: Layer already exists 
@@ -2668,7 +2702,8 @@ Step 4 : USER nova
 Removing intermediate container 454d7d895ea7
 Successfully built 03f479435e32
 
-(undercloud) [stack@undercloud nova_scheduler]$ <b>docker push 172.16.0.1:8787/rhosp12/openstack-nova-scheduler:12.0-20180309.1.fun</b>
+(undercloud) [stack@undercloud nova_scheduler]$ <b>docker push \
+    172.16.0.1:8787/rhosp12/openstack-nova-scheduler:12.0-20180309.1.fun</b>
 The push refers to a repository [172.16.0.1:8787/rhosp12/openstack-nova-scheduler]
 daede3fec6c3: Pushed 
 b9f60a193ebe: Layer already exists 
@@ -2841,10 +2876,9 @@ Digest: sha256:75a03af827ac3272d3153dfb933f227a957cdc14aee8e070d17fe0afed04752e
 Status: Downloaded newer image for 172.16.0.1:8787/rhosp12/openstack-nova-scheduler:12.0-20180309.1.fun
 c25914f2dc85b22157f6f907c4e70609b5bfdb2489526109047c91b04e30db41
 
-[heat-admin@lab-controller01 ~]$ <b>sudo docker ps | grep fun | fold -w 120 -s</b>
-c25914f2dc85        172.16.0.1:8787/rhosp12/openstack-nova-scheduler:12.0-20180309.1.fun        "kolla_start"           
- About a minute ago   Up About a minute (healthy)                       nova_scheduler.fun
- 
+[heat-admin@lab-controller01 ~]$ <b>sudo docker ps --format '{{ .Image }}\t{{ .Names }}\t{{ .Status }}' | grep fun</b>
+172.16.0.1:8787/rhosp12/openstack-nova-scheduler:12.0-20180309.1.fun    nova_scheduler.fun      Up About a minute (healthy)
+
 [heat-admin@lab-controller01 ~]$ <b>sudo docker exec nova_scheduler.fun cat /fun</b>
 Are you not entertained?!
 </code></pre>
@@ -2896,9 +2930,8 @@ replicas=3 run-command="/bin/bash /usr/local/bin/kolla_start"
    options=ro source-dir=/etc/pki/tls/private/overcloud_endpoint.pem target-dir=/var/lib/kolla/config_files/src-tls/etc/pki/tls/private/overcloud_endpoint.pem (haproxy-cert)  
 </code></pre>
 <p>Check the container running on this controller.</p>
-<pre><code>[heat-admin@lab-controller01 ~]$ <b>sudo docker ps | grep haproxy | fold -w 120 -s</b>
-62554f3988d2        172.16.0.1:8787/rhosp12/openstack-haproxy:12.0-20180309.1.fun               "/bin/bash /usr/lo..."  
- 15 seconds ago      Up 14 seconds                                 haproxy-bundle-docker-0
+<pre><code>[heat-admin@lab-controller01 ~]$ <b>sudo docker ps --format '{{ .Image }}\t{{ .Names }}\t{{ .Status }}' | grep fun</b>
+172.16.0.1:8787/rhosp12/openstack-haproxy:12.0-20180309.1.fun   haproxy-bundle-docker-0 Up 16 seconds
 
 [heat-admin@lab-controller01 ~]$ <b>sudo docker exec haproxy-bundle-docker-0 cat /fun</b>
 Are you not entertained?!

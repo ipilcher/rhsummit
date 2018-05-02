@@ -10,6 +10,7 @@
 * Greg Charot <<gcharot@redhat.com>>
 * Jacob Liberman <<jliberma@redhat.com>>
 * Rhys Oxenham <<roxenham@redhat.com>>
+* Richard Rios <<rrios@redhat.com>>
 
 ## Lab Contents
 

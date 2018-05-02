@@ -428,7 +428,7 @@ which shows your unique GUID.</p>
 (The command is circled in the screenshot above.)  An SSH key has been
 pre-provisioned, so you should not need a password to connect to your bastion
 host.</p>
-<pre><code>[lab-user@HostXXXXXXXXXXXX ~]$ <b>ssh bastion-XXXX.rhpds.opentlc.com</b>
+<pre><code>[lab-user@HostXXXXXXXXXXXX ~]$ @@ssh bastion-XXXX.rhpds.opentlc.com@/
 Warning: Permantntly added 'bastion-XXXX.rhpds.opentlc.com,176.126.90.96' (ECDSA
 ) to the list of known hosts.
 Last login: Sun Apr 29 13:03:52 2018 from 70.119.136.2
@@ -441,23 +441,23 @@ or connecting to your environment.</p>
 <p>Let's take a look at how the containerized service in Red Hat OpenStack Platform
 12 affect the undercloud.  First, we need to log into it, using <code>redhat</code> as
 the <code>stack</code> user's password.</p>
-<pre><code>[lab-user@bastion-XXXX ~]$ <b>ssh stack@undercloud.example.com</b>
+<pre><code>[lab-user@bastion-XXXX ~]$ @@ssh stack@undercloud.example.com@/
 The authenticity of host 'undercloud.example.com (192.168.122.253)' can't be established.
 ECDSA key fingerprint is SHA256:wRBB50VRT5XX6IqOy668ZGM28clpKbJ/K5FdHevw7Wg.
 ECDSA key fingerprint is MD5:0b:33:69:86:26:4a:07:5e:04:a1:63:2e:ef:da:01:1a.
-Are you sure you want to continue connecting (yes/no)? <b>yes</b>
+Are you sure you want to continue connecting (yes/no)? @@yes@/
 Warning: Permanently added 'undercloud.example.com,192.168.122.253' (ECDSA) to the list of known hosts.
-stack@undercloud.example.com's password: <b>redhat</b>
+stack@undercloud.example.com's password: @@redhat@/
 Last login: Thu Apr 12 19:37:45 2018 from bastion.example.com
 </code></pre>
 <p>In Red Hat OpenStack Platform 12, only services running on the <strong>overcloud</strong> are
 containerized.  All of the services on the undercloud still run as traditional
 non-containerized services, managed directly by <code>systemd</code>, or as WSGI services
 under Apache <code>httpd</code>.</p>
-<pre><code>[stack@undercloud ~]$ <b>docker ps</b>
+<pre><code>[stack@undercloud ~]$ @@docker ps@/
 CONTAINER ID        IMAGE               COMMAND             CREATED             STATUS              PORTS               NAMES
 
-[stack@undercloud ~]$ <b>systemctl list-units 'openstack-*' 'neutron-*'</b>
+[stack@undercloud ~]$ @@systemctl list-units 'openstack-*' 'neutron-*'@/
 UNIT                                         LOAD   ACTIVE SUB     DESCRIPTION
 neutron-destroy-patch-ports.service          loaded active exited  OpenStack Neutron Destroy Patch Ports
 neutron-dhcp-agent.service                   loaded active running OpenStack Neutron DHCP Agent
@@ -495,7 +495,7 @@ SUB    = The low-level unit activation state, values depend on unit type.
 28 loaded units listed. Pass --all to see loaded but inactive units, too.
 To show all installed unit files use 'systemctl list-unit-files'.
 
-[stack@undercloud ~]$ <b>systemctl status httpd</b>
+[stack@undercloud ~]$ @@systemctl status httpd@/
 ● httpd.service - The Apache HTTP Server
    Loaded: loaded (/usr/lib/systemd/system/httpd.service; enabled; vendor preset: disabled)
    Active: active (running) since Thu 2018-04-26 15:05:18 EDT; 24h ago
@@ -539,7 +539,7 @@ images available to the overcloud nodes.</p>
 <p>During deployment and updates, TripleO parameters are used to specify the image
 used for each overcloud container.  In our deployment, these parameters are set
 in <code>templates/docker-registry.yaml</code>.</p>
-<pre><code>[stack@undercloud ~]$ <b>fold -w 120 -s templates/docker-registry.yaml</b>
+<pre><code>[stack@undercloud ~]$ @@fold -w 120 -s templates/docker-registry.yaml@/
 # Generated with the following on 2018-03-16T12:51:39.460333
 #
 #   openstack overcloud container image prepare --env-file /home/stack/templates/docker-registry.yaml --namespace 
@@ -663,9 +663,9 @@ and image registry for the Ceph image.</p>
 <p>How can one know what value should be used for the <code>--tag</code> parameter?  Red Hat
 OpenStack Platform 12 includes a command that can discover the latest version of
 an OpenStack container image in the Red Hat Container Catalog.</p>
-<pre><code>[stack@undercloud ~]$ <b>openstack overcloud container image tag discover \
+<pre><code>[stack@undercloud ~]$ @@openstack overcloud container image tag discover \
    --image registry.access.redhat.com/rhosp12/openstack-base:latest \
-   --tag-from-label version-release</b>
+   --tag-from-label version-release@/
 12.0-20180405.1
 </code></pre>
 <blockquote>
@@ -680,7 +680,7 @@ above — has changed.  Thus, we cannot simply use <code>latest</code> as the ta
 the overcloud nodes should pull the images — <code>172.16.0.1:8787</code>.  This
 is actually the IP address of the undercloud itself.  In OpenStack Plaftorm 12,
 the undercloud automatically runs a container image registry.</p>
-<pre><code>[stack@undercloud ~]$ <b>systemctl status docker-distribution</b>
+<pre><code>[stack@undercloud ~]$ @@systemctl status docker-distribution@/
 ● docker-distribution.service - v2 Registry server for Docker
    Loaded: loaded (/usr/lib/systemd/system/docker-distribution.service; enabled; vendor preset: disabled)
    Active: active (running) since Fri 2018-04-20 14:40:49 EDT; 1h 6min ago
@@ -700,7 +700,7 @@ command expects a configuration file which specifies the container images to be
 pulled from an upstream registry, such as the Red Hat Container Catalog, and
 pushed to the local registry.  Let's look at the file that was used during the
 initial deployment of our environment.</p>
-<pre><code>[stack@undercloud ~]$ <b>cat container-images.yaml</b>
+<pre><code>[stack@undercloud ~]$ @@cat container-images.yaml@/
 container_images:
 - imagename: 192.168.1.10:5000/rhosp12/openstack-aodh-api:12.0-20180309.1
 - imagename: 192.168.1.10:5000/rhosp12/openstack-aodh-evaluator:12.0-20180309.1
@@ -767,14 +767,14 @@ deployment.  Including all environment files that will be used for the
 deployment/update is the recommended way to ensure that all images are
 included.</p>
 </blockquote>
-<pre><code>[stack@undercloud ~]$ <b>cp container-images.yaml{,.bak}</b>
+<pre><code>[stack@undercloud ~]$ @@cp container-images.yaml{,.bak}@/
 
-[stack@undercloud ~]$ <b>openstack overcloud container image prepare \
+[stack@undercloud ~]$ @@openstack overcloud container image prepare \
      --environment-file /usr/share/openstack-tripleo-heat-templates/environments/ceph-ansible/ceph-ansible.yaml \
      --namespace 192.168.1.10:5000/rhosp12 \
      --tag 12.0-20180319.1 \
      --set ceph_namespace=192.168.1.10:5000/ceph \
-     --output-images-file container-images.yaml</b>
+     --output-images-file container-images.yaml@/
 container_images:
 - imagename: 192.168.1.10:5000/rhosp12/openstack-aodh-api:12.0-20180319.1
 - imagename: 192.168.1.10:5000/rhosp12/openstack-aodh-evaluator:12.0-20180319.1
@@ -815,7 +815,7 @@ container_images:
 </code></pre>
 <p>This command always writes the image list to standard output.  The
 <code>--output-images-file</code> parameter causes it to <strong>also</strong> write the list to a file.</p>
-<pre><code>[stack@undercloud ~]$ <b>cat container-images.yaml</b>
+<pre><code>[stack@undercloud ~]$ @@cat container-images.yaml@/
 container_images:
 - imagename: 192.168.1.10:5000/rhosp12/openstack-aodh-api:12.0-20180319.1
 - imagename: 192.168.1.10:5000/rhosp12/openstack-aodh-evaluator:12.0-20180319.1
@@ -855,14 +855,14 @@ container_images:
 - imagename: 192.168.1.10:5000/ceph/rhceph-2-rhel7:latest
 </code></pre>
 <p>Now let's create an updated <code>docker-registry.yaml</code> for our templates.</p>
-<pre><code>[stack@undercloud ~]$ <b>cp templates/docker-registry.yaml{,.bak}</b>
+<pre><code>[stack@undercloud ~]$ @@cp templates/docker-registry.yaml{,.bak}@/
 
-[stack@undercloud ~]$ <b>openstack overcloud container image prepare \
+[stack@undercloud ~]$ @@openstack overcloud container image prepare \
      --environment-file /usr/share/openstack-tripleo-heat-templates/environments/ceph-ansible/ceph-ansible.yaml \
      --namespace 172.16.0.1:8787/rhosp12 \
      --tag 12.0-20180319.1 \
      --set ceph_namespace=172.16.0.1:8787/ceph \
-     --output-env-file templates/docker-registry.yaml</b>
+     --output-env-file templates/docker-registry.yaml@/
 container_images:
 - imagename: 172.16.0.1:8787/rhosp12/openstack-aodh-api:12.0-20180319.1
 - imagename: 172.16.0.1:8787/rhosp12/openstack-aodh-evaluator:12.0-20180319.1
@@ -904,7 +904,7 @@ container_images:
 <p>In this case, the image list written to standard output is not useful, as it
 specifies an incorrect <strong>source</strong> for the images.  The important output in this
 case is <code>docker-registry.yaml</code>.</p>
-<pre><code>[stack@undercloud ~]$ <b>fold -w 120 -s templates/docker-registry.yaml</b>
+<pre><code>[stack@undercloud ~]$ @@fold -w 120 -s templates/docker-registry.yaml@/
 # Generated with the following on 2018-04-27T19:35:01.035909
 #
 #   openstack overcloud container image prepare --environment-file 
@@ -980,8 +980,8 @@ parameter_defaults:
 <p>The final step in updating the container images on the undercloud is to pull
 the new images from the source registry and push them into the local
 registry.</p>
-<pre><code>[stack@undercloud ~]$ <b>openstack overcloud container image upload \
-    --verbose --config-file container-images.yaml</b>
+<pre><code>[stack@undercloud ~]$ @@openstack overcloud container image upload \
+    --verbose --config-file container-images.yaml@/
 START with options: [u'overcloud', u'container', u'image', u'upload', u'--verbose', u'--config-file', u'container-images.yaml']
 command: overcloud container image upload -&gt; tripleoclient.v1.container_image.UploadImage (auth=False)
 Using config files: [u'container-images.yaml']
@@ -997,7 +997,7 @@ END return value: 0
 <p>When this command has completed, which will take a few minutes, we can see both
 the old and new versions of each container image, each in both the source and
 local registry.  For example:</p>
-<pre><code>[stack@undercloud ~]$ <b>docker images | grep keystone</b>
+<pre><code>[stack@undercloud ~]$ @@docker images | grep keystone@/
 172.16.0.1:8787/rhosp12/openstack-keystone                    12.0-20180319.1       d929ef3fa786        5 weeks ago         687.4 MB
 192.168.1.10:5000/rhosp12/openstack-keystone                  12.0-20180319.1       d929ef3fa786        5 weeks ago         687.4 MB
 172.16.0.1:8787/rhosp12/openstack-keystone                    12.0-20180309.1       5f944b66282d        7 weeks ago         687.3 MB
@@ -1012,14 +1012,14 @@ deployment.</p>
 <p>Before doing anything else, let's check that our deployment is working properly.
 (It was just powered on for the first time in several days.)</p>
 <p>Source the <code>stackrc</code> file to access OpenStack services on the undercloud.</p>
-<pre><code>[stack@undercloud ~]$ <b>. stackrc</b>
+<pre><code>[stack@undercloud ~]$ @@. stackrc@/
 (undercloud) [stack@undercloud ~]$
 </code></pre>
 <p>Check the status of our overcloud nodes.  (Remember that these nodes are
 managed by the Ironic service on the <strong>undercloud</strong>.)</p>
 <p>Please let one of the instructors know if any of your nodes show <code>None</code> in the
 power state column or <code>True</code> in the maintenance column.</p>
-<pre><code>(undercloud) [stack@undercloud ~]$ <b>openstack baremetal node list</b>
+<pre><code>(undercloud) [stack@undercloud ~]$ @@openstack baremetal node list@/
 +--------------------------------------+---------------------+--------------------------------------+-------------+--------------------+-------------+
 | UUID                                 | Name                | Instance UUID                        | Power State | Provisioning State | Maintenance |
 +--------------------------------------+---------------------+--------------------------------------+-------------+--------------------+-------------+
@@ -1036,7 +1036,7 @@ power state column or <code>True</code> in the maintenance column.</p>
 <p>Now list look at the overcloud hosts.  From the undercloud's point of view,
 these are <strong>instances</strong> that run on the bare-metal nodes.  (The instance IDs can
 be used to map the instances to their bare-metal nodes.)</p>
-<pre><code>(undercloud) [stack@undercloud ~]$ <b>openstack server list</b>
+<pre><code>(undercloud) [stack@undercloud ~]$ @@openstack server list@/
 +--------------------------------------+------------------+--------+----------------------+----------------+--------------+
 | ID                                   | Name             | Status | Networks             | Image          | Flavor       |
 +--------------------------------------+------------------+--------+----------------------+----------------+--------------+
@@ -1050,7 +1050,7 @@ be used to map the instances to their bare-metal nodes.)</p>
 +--------------------------------------+------------------+--------+----------------------+----------------+--------------+
 </code></pre>
 <p>Check the status of the Ceph storage cluster.</p>
-<pre><code>(undercloud) [stack@undercloud ~]$ <b>ssh heat-admin@172.16.0.32 sudo ceph -s</b>
+<pre><code>(undercloud) [stack@undercloud ~]$ @@ssh heat-admin@172.16.0.32 sudo ceph -s@/
     cluster 62e500d2-3e8a-11e8-8abf-2cc26041e5e3
      health HEALTH_WARN
             clock skew detected on mon.lab-controller02, mon.lab-controller03
@@ -1086,11 +1086,11 @@ Let an instructor know if you see any other warnings or errors.)</p>
 <code>test1</code> instance</li>
 </ul>
 <p>Source the <code>testrc</code> file to access the overcloud as the <code>test</code> user.</p>
-<pre><code>(undercloud) [stack@undercloud ~]$ <b>. testrc</b>
+<pre><code>(undercloud) [stack@undercloud ~]$ @@. testrc@/
 (test@overcloud) [stack@undercloud ~]$
 </code></pre>
 <p>Check the status of the instance.  It should be <code>SHUTOFF</code>.</p>
-<pre><code>(test@overcloud) [stack@undercloud ~]$ <b>openstack server list</b>
+<pre><code>(test@overcloud) [stack@undercloud ~]$ @@openstack server list@/
 +--------------------------------------+-------+---------+--------------------------------+---------------------+---------+
 | ID                                   | Name  | Status  | Networks                       | Image               | Flavor  |
 +--------------------------------------+-------+---------+--------------------------------+---------------------+---------+
@@ -1098,9 +1098,9 @@ Let an instructor know if you see any other warnings or errors.)</p>
 +--------------------------------------+-------+---------+--------------------------------+---------------------+---------+
 </code></pre>
 <p>Start the instance and wait for it to become <code>ACTIVE</code>.</p>
-<pre><code>(test@overcloud) [stack@undercloud ~]$ <b>openstack server start test1</b>
+<pre><code>(test@overcloud) [stack@undercloud ~]$ @@openstack server start test1@/
 
-(test@overcloud) [stack@undercloud ~]$ <b>openstack server list</b>
+(test@overcloud) [stack@undercloud ~]$ @@openstack server list@/
 +--------------------------------------+-------+---------+--------------------------------+---------------------+---------+
 | ID                                   | Name  | Status  | Networks                       | Image               | Flavor  |
 +--------------------------------------+-------+---------+--------------------------------+---------------------+---------+
@@ -1109,7 +1109,7 @@ Let an instructor know if you see any other warnings or errors.)</p>
 
 (...)
 
-(test@overcloud) [stack@undercloud ~]$ <b>openstack server list</b>
+(test@overcloud) [stack@undercloud ~]$ @@openstack server list@/
 +--------------------------------------+-------+--------+--------------------------------+---------------------+---------+
 | ID                                   | Name  | Status | Networks                       | Image               | Flavor  |
 +--------------------------------------+-------+--------+--------------------------------+---------------------+---------+
@@ -1118,15 +1118,15 @@ Let an instructor know if you see any other warnings or errors.)</p>
 </code></pre>
 <p>You should be able to log in to the the instance using the <code>stack</code> user's
 default SSH key.</p>
-<pre><code>(test@overcloud) [stack@undercloud ~]$ <b>ssh cirros@192.168.122.154</b>
+<pre><code>(test@overcloud) [stack@undercloud ~]$ @@ssh cirros@192.168.122.154@/
 The authenticity of host '192.168.122.154 (192.168.122.154)' can't be established.
 RSA key fingerprint is SHA256:8/gIYkbqVlCt0N5Kte8fZPETgbp6TAbdXTrh4tJUABg.
 RSA key fingerprint is MD5:f9:17:09:dc:ab:b6:6f:5a:86:35:a5:5e:50:69:43:5d.
-Are you sure you want to continue connecting (yes/no)? <b>yes</b>
+Are you sure you want to continue connecting (yes/no)? @@yes@/
 Warning: Permanently added '192.168.122.154' (RSA) to the list of known hosts.
 $
 
-$ <b>exit</b>
+$ @@exit@/
 Connection to 192.168.122.154 closed.
 </code></pre>
 <p>Success!  We haz cloud!</p>
@@ -1134,9 +1134,9 @@ Connection to 192.168.122.154 closed.
 <a id="user-content-containers-three-different-ones" class="anchor" href="#containers-three-different-ones" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Containers (Three Different Ones)</h3>
 <p>Now that we've verified that we have a working OSP deployment, let's take a look
 at the running containers that make it work, starting on one of the controllers.</p>
-<pre><code>(test@overcloud) [stack@undercloud ~]$ <b>. stackrc</b>
+<pre><code>(test@overcloud) [stack@undercloud ~]$ @@. stackrc@/
 
-(undercloud) [stack@undercloud ~]$ <b>openstack server list</b>
+(undercloud) [stack@undercloud ~]$ @@openstack server list@/
 +--------------------------------------+------------------+--------+----------------------+----------------+--------------+
 | ID                                   | Name             | Status | Networks             | Image          | Flavor       |
 +--------------------------------------+------------------+--------+----------------------+----------------+--------------+
@@ -1148,12 +1148,12 @@ at the running containers that make it work, starting on one of the controllers.
 | 66515ba8-15eb-480a-ad37-c3e91da47df8 | lab-ceph01       | ACTIVE | ctlplane=172.16.0.31 | overcloud-full | ceph-storage |
 | 87920ee2-dd27-432d-b8b1-52a2ab49a9ff | lab-compute01    | ACTIVE | ctlplane=172.16.0.25 | overcloud-full | compute      |
 +--------------------------------------+------------------+--------+----------------------+----------------+--------------+
-(undercloud) [stack@undercloud ~]$ <b>ssh heat-admin@172.16.0.32</b>
+(undercloud) [stack@undercloud ~]$ @@ssh heat-admin@172.16.0.32@/
 Last login: Thu Apr 12 22:53:57 2018 from 172.16.0.1
 </code></pre>
 <p>We can use the <code>docker ps</code> command to see all of the containers running on our
 controller.</p>
-<pre><code>[heat-admin@lab-controller01 ~]$ <b>sudo docker ps</b>
+<pre><code>[heat-admin@lab-controller01 ~]$ @@sudo docker ps@/
 CONTAINER ID        IMAGE                                                                       COMMAND                  CREATED             STATUS                    PORTS               NAMES
 00c1febf51d2        172.16.0.1:8787/rhosp12/openstack-haproxy:pcmklatest                        "/bin/bash /usr/lo..."   33 minutes ago      Up 33 minutes                                 haproxy-bundle-docker-0
 43cfbcd74a4b        172.16.0.1:8787/rhosp12/openstack-redis:pcmklatest                          "/bin/bash /usr/lo..."   36 minutes ago      Up 35 minutes                                 redis-bundle-docker-0
@@ -1225,7 +1225,7 @@ non-containerized OSP 11.  Services all run in exactly the same place — as
 determined by the standard/customer roles; they are just running as
 containers, rather than traditional services.)</p>
 <p>Let's look at our Pacemaker cluster.</p>
-<pre><code>[heat-admin@lab-controller01 ~]$ <b>sudo pcs status | fold -w 120 -s</b>
+<pre><code>[heat-admin@lab-controller01 ~]$ @@sudo pcs status | fold -w 120 -s@/
 Cluster name: tripleo_cluster
 Stack: corosync
 Current DC: lab-controller02 (version 1.1.16-12.el7_4.8-94ff4df) - partition with quorum
@@ -1297,7 +1297,7 @@ managed by Pacemaker — <code>rabbitmq</code>, <code>galera</code>, <code>redis
 </ol>
 <p>Bundles are a new Pacemaker resource type that define how Pacemaker should run
 a container.  For example:</p>
-<pre><code>[heat-admin@lab-controller01 ~]$ <b>sudo pcs resource show haproxy-bundle | fold -w 173 -s</b>
+<pre><code>[heat-admin@lab-controller01 ~]$ @@sudo pcs resource show haproxy-bundle | fold -w 173 -s@/
  Bundle: haproxy-bundle
   Docker: image=172.16.0.1:8787/rhosp12/openstack-haproxy:pcmklatest network=host options="--user=root --log-driver=journald -e KOLLA_CONFIG_STRATEGY=COPY_ALWAYS" 
 replicas=3 run-command="/bin/bash /usr/local/bin/kolla_start"
@@ -1325,23 +1325,23 @@ replicas=3 run-command="/bin/bash /usr/local/bin/kolla_start"
 applied to the running container.  (<code>docker inspect</code> outputs a large amount of
 JSON, so we'll use the <code>jq</code> command to see the parts in which we're
 interested, but it can be instructive to look through the complete output.)</p>
-<pre><code>[heat-admin@lab-controller01 ~]$ <b>sudo docker inspect haproxy-bundle-docker-0 \
-    | jq .[0].Config.Image</b>
+<pre><code>[heat-admin@lab-controller01 ~]$ @@sudo docker inspect haproxy-bundle-docker-0 \
+    | jq .[0].Config.Image@/
 "172.16.0.1:8787/rhosp12/openstack-haproxy:pcmklatest"
 
-[heat-admin@lab-controller01 ~]$ <b>sudo docker inspect haproxy-bundle-docker-0 \
-    | jq .[0].HostConfig.NetworkMode</b>
+[heat-admin@lab-controller01 ~]$ @@sudo docker inspect haproxy-bundle-docker-0 \
+    | jq .[0].HostConfig.NetworkMode@/
 "host"
 
-[heat-admin@lab-controller01 ~]$ <b>sudo docker inspect haproxy-bundle-docker-0 \
-    | jq .[0].Config.Cmd</b>
+[heat-admin@lab-controller01 ~]$ @@sudo docker inspect haproxy-bundle-docker-0 \
+    | jq .[0].Config.Cmd@/
 [
   "/bin/bash",
   "/usr/local/bin/kolla_start"
 ]
 
-[heat-admin@lab-controller01 ~]$ <b>sudo docker inspect haproxy-bundle-docker-0 \
-    | jq .[0].HostConfig.Binds</b>
+[heat-admin@lab-controller01 ~]$ @@sudo docker inspect haproxy-bundle-docker-0 \
+    | jq .[0].HostConfig.Binds@/
 [
   "/etc/pki/tls/certs/ca-bundle.crt:/etc/pki/tls/certs/ca-bundle.crt:ro",
   "/etc/pki/tls/certs/ca-bundle.trust.crt:/etc/pki/tls/certs/ca-bundle.trust.crt:ro",
@@ -1356,8 +1356,8 @@ interested, but it can be instructive to look through the complete output.)</p>
 ]
 </code></pre>
 <p>One final item, which is true of all Pacemaker-managed containers.</p>
-<pre><code>[heat-admin@lab-controller01 ~]$ <b>sudo docker inspect haproxy-bundle-docker-0 \
-    | jq .[0].HostConfig.RestartPolicy.Name</b>
+<pre><code>[heat-admin@lab-controller01 ~]$ @@sudo docker inspect haproxy-bundle-docker-0 \
+    | jq .[0].HostConfig.RestartPolicy.Name@/
 "no"
 </code></pre>
 <p>If one of the Pacemaker-managed containers dies for some reason, we don't want
@@ -1375,8 +1375,8 @@ mechanism that is used for standalone Ceph installations.  This will be
 discussed further in the <strong>Deployment</strong> lab below.</p>
 <p>One thing which is significant is the startup mechanism for the Ceph containers,
 so let's take a look.</p>
-<pre><code>[heat-admin@lab-controller01 ~]$ <b>sudo docker inspect ceph-mon-lab-controller01 \
-    |  jq .[0].HostConfig.RestartPolicy</b>
+<pre><code>[heat-admin@lab-controller01 ~]$ @@sudo docker inspect ceph-mon-lab-controller01 \
+    |  jq .[0].HostConfig.RestartPolicy@/
 {
   "MaximumRetryCount": 0,
   "Name": "no"
@@ -1386,7 +1386,7 @@ so let's take a look.</p>
 are they started?</p>
 <p>The answer is <code>systemd</code>.  <code>ceph-ansible</code> creates a <code>systemd</code> service for
 each container that it wishes to run.</p>
-<pre><code>[heat-admin@lab-controller01 ~]$ <b>systemctl list-units --type service ceph*</b>
+<pre><code>[heat-admin@lab-controller01 ~]$ @@systemctl list-units --type service ceph*@/
 UNIT                              LOAD   ACTIVE SUB     DESCRIPTION
 ceph-mon@lab-controller01.service loaded active running Ceph Monitor
 
@@ -1397,7 +1397,7 @@ SUB    = The low-level unit activation state, values depend on unit type.
 1 loaded units listed. Pass --all to see loaded but inactive units, too.
 To show all installed unit files use 'systemctl list-unit-files'.
 
-[heat-admin@lab-controller01 ~]$ <b>systemctl status ceph-mon@lab-controller01.service</b>
+[heat-admin@lab-controller01 ~]$ @@systemctl status ceph-mon@lab-controller01.service@/
 ● ceph-mon@lab-controller01.service - Ceph Monitor
    Loaded: loaded (/etc/systemd/system/ceph-mon@.service; enabled; vendor preset: disabled)
    Active: active (running) since Sat 2018-04-28 16:53:15 UTC; 6h ago
@@ -1417,10 +1417,10 @@ Apr 28 23:27:30 lab-controller01 docker[4753]: 2018-04-28 23:27:30.658762 7f40ff
 Apr 28 23:27:32 lab-controller01 docker[4753]: 2018-04-28 23:27:32.759232 7f40fe9ae700  0 mon.... MB
 Hint: Some lines were ellipsized, use -l to show in full.
 
-[heat-admin@lab-controller01 ~]$ <b>systemctl is-enabled ceph-mon@lab-controller01.service</b>
+[heat-admin@lab-controller01 ~]$ @@systemctl is-enabled ceph-mon@lab-controller01.service@/
 enabled
 
-[heat-admin@lab-controller01 ~]$ <b>cat /etc/systemd/system/ceph-mon@.service</b>
+[heat-admin@lab-controller01 ~]$ @@cat /etc/systemd/system/ceph-mon@.service@/
 [Unit]
 Description=Ceph Monitor
 After=docker.service
@@ -1458,8 +1458,8 @@ WantedBy=multi-user.target
 <p>The remainder of the containers running on our controllers are what we will call
 "normal" containers (for lack of a better term).  These containers are set to be
 automatically started by the Docker daemon.</p>
-<pre><code>[heat-admin@lab-controller01 ~]$ <b>sudo docker inspect memcached \
-    | jq .[0].HostConfig.RestartPolicy.Name</b>
+<pre><code>[heat-admin@lab-controller01 ~]$ @@sudo docker inspect memcached \
+    | jq .[0].HostConfig.RestartPolicy.Name@/
 "always"
 </code></pre>
 <h3>
@@ -1467,7 +1467,7 @@ automatically started by the Docker daemon.</p>
 <p>Let's take a detailed look at one of our running containers, to understand how
 it's been configured to run an OpenStack service.</p>
 <p>First, let's look at the full output of <code>docker inspect</code>.</p>
-<pre><code>[heat-admin@lab-controller01 ~]$ <b>sudo docker inspect nova_scheduler | less</b>
+<pre><code>[heat-admin@lab-controller01 ~]$ @@sudo docker inspect nova_scheduler | less@/
 (...)
         "Path": "kolla_start",
 (...)
@@ -1500,13 +1500,13 @@ above.</p>
 <p>Thus far, we've done all of our investigation from our controller's host
 operating system — effectively examining containers from the outside.
 Let's get an "inside" view.</p>
-<pre><code>[heat-admin@lab-controller01 ~]$ sudo docker exec -it nova_scheduler /bin/sh
+<pre><code>[heat-admin@lab-controller01 ~]$ @@sudo docker exec -it nova_scheduler /bin/sh@/
 ()[nova@lab-controller01 /]$
 </code></pre>
 <p>Note that our containerized shell is running as the <code>nova</code> user.  This matches
 the user setting of the container that we saw with <code>docker inspect</code>.</p>
 <p>Let's see what is running in the container.</p>
-<pre><code>()[nova@lab-controller01 /]$ ps aux
+<pre><code>()[nova@lab-controller01 /]$ @@ps aux@/
 USER         PID %CPU %MEM    VSZ   RSS TTY      STAT START   TIME COMMAND
 nova           1  0.1  0.7 273240 96276 ?        Ss   19:11   0:10 /usr/bin/python2 /usr/bin/nova-scheduler
 nova        1375  0.0  0.0  11776  1748 ?        Ss   20:37   0:00 /bin/sh
@@ -1515,7 +1515,7 @@ nova        1525  0.0  0.0  47448  1664 ?        R+   20:44   0:00 ps aux
 <p>Not much!  Other than our shell and <code>ps</code> command, only the <code>nova-scheduler</code>
 process is running.</p>
 <p>What about networking?</p>
-<pre><code>()[nova@lab-controller01 /]$ ip link
+<pre><code>()[nova@lab-controller01 /]$ @@ip link@/
 1: lo: &lt;LOOPBACK,UP,LOWER_UP&gt; mtu 65536 qdisc noqueue state UNKNOWN mode DEFAULT qlen 1
     link/loopback 00:00:00:00:00:00 brd 00:00:00:00:00:00
 2: eth0: &lt;BROADCAST,MULTICAST,UP,LOWER_UP&gt; mtu 1500 qdisc pfifo_fast state UP mode DEFAULT qlen 1000
@@ -1559,7 +1559,7 @@ within the container.)</p>
 <a id="user-content-logging" class="anchor" href="#logging" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Logging</h4>
 <p>Now let's look at logging.  OpenStack Nova services generally write their logs
 to files in <code>/var/log/nova</code>, so let's look at that directory.</p>
-<pre><code>()[nova@lab-controller01 /]$ ls -l /var/log/nova
+<pre><code>()[nova@lab-controller01 /]$ @@ls -l /var/log/nova@/
 total 52532
 -rw-r--r--. 1 nova nova  4324332 Apr 17 21:01 nova-api-metadata.log
 -rw-r--r--. 1 nova nova 10835400 Apr 13 12:00 nova-api-metadata.log.1
@@ -1603,7 +1603,7 @@ guess that the other Nova containers running on this host are also bind mounting
 this directory (<code>/var/log/containers/nova</code>) — effectively sharing it.</p>
 <p>Let's add an entry to the Nova scheduler log file.  Later, we'll verify that it
 is visible from the host operating system.</p>
-<pre><code>()[nova@lab-controller01 /]$ echo 'This is not a dance!' &gt;&gt; /var/log/nova/nova-scheduler.log
+<pre><code>()[nova@lab-controller01 /]$ @@echo 'This is not a dance!' &gt;&gt; /var/log/nova/nova-scheduler.log@/
 </code></pre>
 <h4>
 <a id="user-content-configuration-files" class="anchor" href="#configuration-files" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Configuration Files</h4>
@@ -1616,10 +1616,10 @@ versions of all those files get there?</p>
 <p>To answer that question, we need to look at our container's startup process.  We
 saw with <code>docker inspect</code> that our container's entry point is something called
 <code>kolla_start</code>.  Let's look at that script.</p>
-<pre><code>()[nova@lab-controller01 /]$ which kolla_start
+<pre><code>()[nova@lab-controller01 /]$ @@which kolla_start@/
 /usr/local/bin/kolla_start
 
-()[nova@lab-controller01 /]$ cat /usr/local/bin/kolla_start
+()[nova@lab-controller01 /]$ @@cat /usr/local/bin/kolla_start@/
 #!/bin/bash
 set -o errexit
 
@@ -1642,10 +1642,10 @@ exec ${CMD} ${ARGS}
 it's doing — run (as <code>root</code>) the <code>kolla_set_configs</code> script and then
 run the command specified in <code>/run_command</code>.  Let's start at the end and check
 the command that will be run:</p>
-<pre><code>()[nova@lab-controller01 /]$ cat /run_command &amp;&amp; echo
+<pre><code>()[nova@lab-controller01 /]$ @@cat /run_command &amp;&amp; echo@/
 /usr/bin/nova-scheduler
 </code></pre>
-<p>(Apparently cool kids don't use newlines.)</p>
+<p>(Newlines are so last century!)</p>
 <p>OK, that makes sense.  Once <code>kolla_set_configs</code> has done it's work, this
 container (<code>nova_scheduler</code>) will run <code>/usr/bin/nova-scheduler</code>.  Now let's
 look at what <code>kolla_set_configs</code> is doing.</p>
@@ -1656,28 +1656,28 @@ from <code>/var/lib/kolla/config_files/nova_scheduler.json</code>.  That naming
 convention allows different <code>config.json</code> files, for different containers, to
 coexist in the host's <code>/var/lib/kolla/config_files</code> directory.  What is
 actually in that file?</p>
-<pre><code>()[nova@lab-controller01 /]$ cat /var/lib/kolla/config_files/config.json
+<pre><code>()[nova@lab-controller01 /]$ @@cat /var/lib/kolla/config_files/config.json@/
 cat: /var/lib/kolla/config_files/config.json: Permission denied
 </code></pre>
 <p>Oops.  Recall that <code>kolla_start</code> uses <code>sudo</code> to run <code>kolla_set_configs</code>
 with <code>root</code> privileges, and we're currently running as the <code>nova</code> user.
 Let's exit our containerized shell, so that we can start a new one as <code>root</code>.</p>
-<pre><code>()[nova@lab-controller01 /]$ exit
+<pre><code>()[nova@lab-controller01 /]$ @@exit@/
 exit
 [heat-admin@lab-controller01 ~]$
 </code></pre>
 <p>Before starting our new shell, let's check that our log entry is visible from
 the host operating system.</p>
-<pre><code>[heat-admin@lab-controller01 ~]$ grep dance /var/log/containers/nova/*
+<pre><code>[heat-admin@lab-controller01 ~]$ @@grep dance /var/log/containers/nova/*@/
 /var/log/containers/nova/nova-scheduler.log:This is not a dance!
 </code></pre>
 <p>Now that we've confirmed that, start the new shell.</p>
-<pre><code>[heat-admin@lab-controller01 ~]$ sudo docker exec -u root -it nova_scheduler /bin/sh
+<pre><code>[heat-admin@lab-controller01 ~]$ @@sudo docker exec -u root -it nova_scheduler /bin/sh@/
 ()[root@lab-controller01 /]$
 </code></pre>
 <p>Recall that <code>kolla_start</code> runs <code>sudo -E kolla_set_configs</code>.  Let's look at
 the rules that allow that.</p>
-<pre><code>()[root@lab-controller01 /]$ cat /etc/sudoers
+<pre><code>()[root@lab-controller01 /]$ @@cat /etc/sudoers@/
 # The idea here is a container service adds their UID to the kolla group
 # via usermod -a -G kolla &lt;uid&gt;.  Then the kolla_start may run
 # kolla_set_configs via sudo as the root user which is necessary to protect
@@ -1699,7 +1699,7 @@ root ALL=(ALL) ALL
 </code></pre>
 <p>Now we can look at <code>config.json</code>.  (<code>jq</code> isn't available in the container,
 so we'll use a Python module to format the JSON.)</p>
-<pre><code>()[root@lab-controller01 /]$ cat /var/lib/kolla/config_files/config.json | python -m json.tool
+<pre><code>()[root@lab-controller01 /]$ @@cat /var/lib/kolla/config_files/config.json | python -m json.tool@/
 {
     "command": "/usr/bin/nova-scheduler",
     "config_files": [
@@ -1727,10 +1727,10 @@ copied files (ownership, permissions, etc.).  It's also going to recursively
 set the permissions of the <code>/var/log/nova</code> directory.</p>
 <p>Why is the destination directory <code>/</code>, rather than <code>/etc</code>?  Let's look at the
 files under <code>/var/lib/kolla/config_files/src</code>.</p>
-<pre><code>()[root@lab-controller01 /]$ ls /var/lib/kolla/config_files/src
+<pre><code>()[root@lab-controller01 /]$ @@ls /var/lib/kolla/config_files/src@/
 etc  var
 
-()[root@lab-controller01 /]$ find /var/lib/kolla/config_files/src/var -type f
+()[root@lab-controller01 /]$ @@find /var/lib/kolla/config_files/src/var -type f@/
 /var/lib/kolla/config_files/src/var/spool/cron/nova
 /var/lib/kolla/config_files/src/var/www/cgi-bin/nova/nova-api
 </code></pre>
@@ -1747,10 +1747,10 @@ state by simply restarting the container.</p>
 <p>A final note about <code>kolla_set_configs</code> — All of its actions are logged
 to <code>stderr</code>/<code>stdout</code>, and they can be viewed with the <code>docker logs</code>
 command.</p>
-<pre><code>()[root@lab-controller01 /]$ exit
+<pre><code>()[root@lab-controller01 /]$ @@exit@/
 exit
 
-[heat-admin@lab-controller01 ~]$ sudo docker logs nova_scheduler 2&gt;&amp;1 | less
+[heat-admin@lab-controller01 ~]$ @@sudo docker logs nova_scheduler 2&gt;&amp;1 | less@/
 INFO:__main__:Loading config file at /var/lib/kolla/config_files/config.json
 INFO:__main__:Validating config file
 INFO:__main__:Kolla config strategy set to: COPY_ALWAYS
@@ -1777,11 +1777,11 @@ compute and Ceph storage.</p>
 <h4>
 <a id="user-content-compute-nodes" class="anchor" href="#compute-nodes" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Compute Nodes</h4>
 <p>First, log out of the controller and log in to the compute node.</p>
-<pre><code>[heat-admin@lab-controller01 ~]$ exit
+<pre><code>[heat-admin@lab-controller01 ~]$ @@exit@/
 logout
 Connection to 172.16.0.32 closed.
 
-(undercloud) [stack@undercloud ~]$ openstack server list
+(undercloud) [stack@undercloud ~]$ @@openstack server list@/
 +--------------------------------------+------------------+--------+----------------------+----------------+--------------+
 | ID                                   | Name             | Status | Networks             | Image          | Flavor       |
 +--------------------------------------+------------------+--------+----------------------+----------------+--------------+
@@ -1794,11 +1794,11 @@ Connection to 172.16.0.32 closed.
 | 87920ee2-dd27-432d-b8b1-52a2ab49a9ff | lab-compute01    | ACTIVE | ctlplane=172.16.0.25 | overcloud-full | compute      |
 +--------------------------------------+------------------+--------+----------------------+----------------+--------------+
 
-(undercloud) [stack@undercloud ~]$ ssh heat-admin@172.16.0.25
+(undercloud) [stack@undercloud ~]$ @@ssh heat-admin@172.16.0.25@/
 Last login: Thu Apr 12 22:56:44 2018 from 172.16.0.1
 </code></pre>
 <p>List the running containers.</p>
-<pre><code>[heat-admin@lab-compute01 ~]$ sudo docker ps
+<pre><code>[heat-admin@lab-compute01 ~]$ @@sudo docker ps@/
 CONTAINER ID        IMAGE                                                                  COMMAND             CREATED             STATUS                  PORTS               NAMES
 2b24ef01f508        172.16.0.1:8787/rhosp12/openstack-cron:12.0-20180309.1                 "kolla_start"       6 days ago          Up 22 hours                                 logrotate_crond
 eadec14e872f        172.16.0.1:8787/rhosp12/openstack-nova-compute:12.0-20180309.1         "kolla_start"       6 days ago          Up 22 hours (healthy)                       nova_migration_target
@@ -1813,10 +1813,10 @@ files.  (The <code>qemu-kvm</code> process that represents our test instance, ho
 not running in a container.)</p>
 <p>Also as expected, the compute services make extensive use of privileged
 containers to manage virtual machines.</p>
-<pre><code>[heat-admin@lab-compute01 ~]$ for TAINER in `sudo docker ps --format '{{ .Names }}'` ; do
+<pre><code>[heat-admin@lab-compute01 ~]$ @@for TAINER in `sudo docker ps --format '{{ .Names }}'` ; do
         echo -n "${TAINER}:  "
         sudo docker inspect $TAINER | jq .[0].HostConfig.Privileged
-    done
+    done@/
 logrotate_crond:  true
 nova_migration_target:  true
 ceilometer_agent_compute:  false
@@ -1827,11 +1827,11 @@ nova_virtlogd:  true
 <h4>
 <a id="user-content-ceph-storage-nodes" class="anchor" href="#ceph-storage-nodes" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Ceph Storage Nodes</h4>
 <p>Now let's look at the containers on one of our Ceph storage nodes.</p>
-<pre><code>[heat-admin@lab-compute01 ~]$ exit
+<pre><code>[heat-admin@lab-compute01 ~]$ @@exit@/
 logout
 Connection to 172.16.0.25 closed.
 
-(undercloud) [stack@undercloud ~]$ openstack server list
+(undercloud) [stack@undercloud ~]$ @@openstack server list@/
 +--------------------------------------+------------------+--------+----------------------+----------------+--------------+
 | ID                                   | Name             | Status | Networks             | Image          | Flavor       |
 +--------------------------------------+------------------+--------+----------------------+----------------+--------------+
@@ -1844,10 +1844,10 @@ Connection to 172.16.0.25 closed.
 | 87920ee2-dd27-432d-b8b1-52a2ab49a9ff | lab-compute01    | ACTIVE | ctlplane=172.16.0.25 | overcloud-full | compute      |
 +--------------------------------------+------------------+--------+----------------------+----------------+--------------+
 
-(undercloud) [stack@undercloud ~]$ ssh heat-admin@172.16.0.31
+(undercloud) [stack@undercloud ~]$ @@ssh heat-admin@172.16.0.31@/
 [heat-admin@lab-ceph01 ~]$
 
-[heat-admin@lab-ceph01 ~]$ sudo docker ps
+[heat-admin@lab-ceph01 ~]$ @@sudo docker ps@/
 CONTAINER ID        IMAGE                                                    COMMAND             CREATED             STATUS              PORTS               NAMES
 9012f9714a02        172.16.0.1:8787/ceph/rhceph-2-rhel7:latest               "/entrypoint.sh"    23 hours ago        Up 23 hours                             ceph-osd-lab-ceph01-vdb
 e34e9894d493        172.16.0.1:8787/ceph/rhceph-2-rhel7:latest               "/entrypoint.sh"    23 hours ago        Up 23 hours                             ceph-osd-lab-ceph01-vdc
@@ -1858,13 +1858,14 @@ each of which corresponds to a single data disk.</p>
 <p>And just like the Ceph monitor containers on our controllers, each of these
 containers is a separate <code>systemd</code> unit, rather than being automatically
 started by the Docker daemon.</p>
-<pre><code>[heat-admin@lab-ceph01 ~]$ sudo docker inspect ceph-osd-lab-ceph01-vdb | jq .[0].HostConfig.RestartPolicy
+<pre><code>[heat-admin@lab-ceph01 ~]$ @@sudo docker inspect ceph-osd-lab-ceph01-vdb \
+    | jq .[0].HostConfig.RestartPolicy@/
 {
   "MaximumRetryCount": 0,
   "Name": "no"
 }
 
-[heat-admin@lab-ceph01 ~]$ systemctl list-units --type service ceph*
+[heat-admin@lab-ceph01 ~]$ @@systemctl list-units --type service ceph*@/
 UNIT                 LOAD   ACTIVE SUB     DESCRIPTION
 ceph-osd@vdb.service loaded active running Ceph OSD
 ceph-osd@vdc.service loaded active running Ceph OSD
@@ -1876,7 +1877,7 @@ SUB    = The low-level unit activation state, values depend on unit type.
 2 loaded units listed. Pass --all to see loaded but inactive units, too.
 To show all installed unit files use 'systemctl list-unit-files'.
 
-[heat-admin@lab-ceph01 ~]$ systemctl status ceph-osd@vdb.service
+[heat-admin@lab-ceph01 ~]$ @@systemctl status ceph-osd@vdb.service@/
 ● ceph-osd@vdb.service - Ceph OSD
    Loaded: loaded (/etc/systemd/system/ceph-osd@.service; enabled; vendor preset: disabled)
    Active: active (running) since Sat 2018-04-28 16:53:00 UTC; 6h ago
@@ -1900,7 +1901,7 @@ Apr 28 16:53:42 lab-ceph01 ceph-osd-run.sh[2306]: 2018-04-28 16:53:42.956013 7f3
 Hint: Some lines were ellipsized, use -l to show in full.
 
 
-[heat-admin@lab-ceph01 ~]$ cat /etc/systemd/system/ceph-osd@.service
+[heat-admin@lab-ceph01 ~]$ @@cat /etc/systemd/system/ceph-osd@.service@/
 # Please do not change this file directly since it is managed by Ansible and will be overwritten
 [Unit]
 Description=Ceph OSD
@@ -1920,7 +1921,7 @@ TimeoutStopSec=15
 [Install]
 WantedBy=multi-user.target
 
-[heat-admin@lab-ceph01 ~]$ less /usr/share/ceph-osd-run.sh
+[heat-admin@lab-ceph01 ~]$ @@cat /usr/share/ceph-osd-run.sh@/
 (...)
 ########
 # MAIN #
@@ -1950,7 +1951,7 @@ WantedBy=multi-user.target
 </code></pre>
 <p>This concludes our whirlwind tour of the deployed overcloud.  Log out of the
 Ceph storage node, in preparation for the next lab.</p>
-<pre><code>[heat-admin@lab-ceph01 ~]$ exit
+<pre><code>[heat-admin@lab-ceph01 ~]$ @@exit@/
 logout
 Connection to 172.16.0.31 closed.
 </code></pre>
@@ -1984,7 +1985,7 @@ containers can be temporarily stopped on a particular host with the <code>docker
 <p>Assume that we are troubleshooting a Nova issue.  Rather than worrying about
 multiple Nova logs on multiple hosts, let's stop all Nova containers on
 <code>lab-controller02</code> and <code>lab-controller03</code>.</p>
-<pre><code>(undercloud) [stack@undercloud ~]$ openstack server list
+<pre><code>(undercloud) [stack@undercloud ~]$ @@openstack server list@/
 +--------------------------------------+------------------+--------+----------------------+----------------+--------------+
 | ID                                   | Name             | Status | Networks             | Image          | Flavor       |
 +--------------------------------------+------------------+--------+----------------------+----------------+--------------+
@@ -1997,11 +1998,11 @@ multiple Nova logs on multiple hosts, let's stop all Nova containers on
 | 87920ee2-dd27-432d-b8b1-52a2ab49a9ff | lab-compute01    | ACTIVE | ctlplane=172.16.0.25 | overcloud-full | compute      |
 +--------------------------------------+------------------+--------+----------------------+----------------+--------------+
 
-(undercloud) [stack@undercloud ~]$ for C in 172.16.0.{32,22,36} ; do
+(undercloud) [stack@undercloud ~]$ @@for C in 172.16.0.{32,22,36} ; do
         echo $C
         ssh heat-admin@$C sudo docker ps --format "'{{ .Names }}'" | grep nova
         echo
-    done
+    done@/
 172.16.0.32
 nova_metadata
 nova_api
@@ -2033,9 +2034,9 @@ nova_scheduler
 nova_placement
 
 
-(undercloud) [stack@undercloud ~]$ for C in 172.16.0.{22,36} ; do
+(undercloud) [stack@undercloud ~]$ @@for C in 172.16.0.{22,36} ; do
         ssh heat-admin@$C sudo docker stop nova_{metadata,api,conductor,vnc_proxy,consoleauth,api_cron,scheduler,placement}
-    done
+    done@/
 nova_metadata
 nova_api
 nova_conductor
@@ -2053,11 +2054,11 @@ nova_api_cron
 nova_scheduler
 nova_placement
 
-(undercloud) [stack@undercloud ~]$ for C in 172.16.0.{32,22,36} ; do
+(undercloud) [stack@undercloud ~]$ @@for C in 172.16.0.{32,22,36} ; do
         echo $C
         ssh heat-admin@$C sudo docker ps --format "'{{ .Names }}'" | grep nova
         echo
-    done
+    done@/
 172.16.0.32
 nova_metadata
 nova_api
@@ -2080,7 +2081,7 @@ four such services in our deployment — RabbitMQ, Galera, Redis, and
 HAProxy — the technique in this lab can only be safely applied to HAProxy
 (to the knowledge of your humble author; Galera is definitely out).</p>
 <p>Let's look at the current status of our Pacemaker cluster.</p>
-<pre><code>[heat-admin@lab-controller01 ~]$ sudo pcs status | fold -w 120 -s
+<pre><code>[heat-admin@lab-controller01 ~]$ @@sudo pcs status | fold -w 120 -s@/
 Cluster name: tripleo_cluster
 Stack: corosync
 Current DC: lab-controller01 (version 1.1.16-12.el7_4.8-94ff4df) - partition with quorum
@@ -2135,7 +2136,7 @@ environment.</p>
 <p>Placement of the virtual IPs is important, because they must be assigned to hosts on
 which HAProxy is running.  Red Hat OpenStack Platform's cluster configuration
 includes constraints that ensure this is the case.</p>
-<pre><code>[heat-admin@lab-controller01 ~]$ sudo pcs constraint colocation
+<pre><code>[heat-admin@lab-controller01 ~]$ @@sudo pcs constraint colocation@/
 Colocation Constraints:
   ip-172.16.0.250 with haproxy-bundle (score:INFINITY)
   ip-192.168.122.150 with haproxy-bundle (score:INFINITY)
@@ -2148,14 +2149,14 @@ Colocation Constraints:
 before capturing network traffic with <code>tcpdump</code>, for example.  We'll use the
 <code>pcs resource ban</code> command to prevent our <code>haproxy-bundle</code> from running on
 <code>lab-controller02</code> or <code>lab-controller03</code>.</p>
-<pre><code>[heat-admin@lab-controller01 ~]$ sudo pcs resource ban haproxy-bundle lab-controller02 \
-    | fold -w 100 -s
+<pre><code>[heat-admin@lab-controller01 ~]$ @@sudo pcs resource ban haproxy-bundle lab-controller02 \
+    | fold -w 100 -s@/
 Warning: Creating location constraint cli-ban-haproxy-bundle-on-lab-controller02 with a score of
 -INFINITY for resource haproxy-bundle on node lab-controller02.
 This will prevent haproxy-bundle from running on lab-controller02 until the constraint is removed.
 This will be the case even if lab-controller02 is the last node in the cluster.
 
-[heat-admin@lab-controller01 ~]$ sudo pcs status | fold -w 120 -s
+[heat-admin@lab-controller01 ~]$ @@sudo pcs status | fold -w 120 -s@/
 Cluster name: tripleo_cluster
 Stack: corosync
 Current DC: lab-controller01 (version 1.1.16-12.el7_4.8-94ff4df) - partition with quorum
@@ -2201,14 +2202,14 @@ Daemon Status:
   pacemaker: active/enabled
   pcsd: active/enabled
 
-[heat-admin@lab-controller01 ~]$ sudo pcs resource ban haproxy-bundle lab-controller03 \
-    | fold -w 100 -s
+[heat-admin@lab-controller01 ~]$ @@sudo pcs resource ban haproxy-bundle lab-controller03 \
+    | fold -w 100 -s@/
 Warning: Creating location constraint cli-ban-haproxy-bundle-on-lab-controller03 with a score of
 -INFINITY for resource haproxy-bundle on node lab-controller03.
 This will prevent haproxy-bundle from running on lab-controller03 until the constraint is removed.
 This will be the case even if lab-controller03 is the last node in the cluster.
 
-[heat-admin@lab-controller01 ~]$ sudo pcs status | fold -w 120 -s
+[heat-admin@lab-controller01 ~]$ @@sudo pcs status | fold -w 120 -s@/
 Cluster name: tripleo_cluster
 Stack: corosync
 Current DC: lab-controller01 (version 1.1.16-12.el7_4.8-94ff4df) - partition with quorum
@@ -2260,7 +2261,8 @@ moved all of the virtual IP addresses to that host.</p>
 creating constraints that <strong>permanently</strong> prevent a resource from running on a
 cluster node.  These constraints must be removed to restore the cluster to
 normal operation.</p>
-<pre><code>[heat-admin@lab-controller01 ~]$  sudo pcs constraint location --full | grep -A5 'Resource: haproxy-bundle'
+<pre><code>[heat-admin@lab-controller01 ~]$ @@sudo pcs constraint location --full \
+    | grep -A5 'Resource: haproxy-bundle'@/
   Resource: haproxy-bundle
     Disabled on: lab-controller02 (score:-INFINITY) (role: Started) (id:cli-ban-haproxy-bundle-on-lab-controller02)
     Disabled on: lab-controller03 (score:-INFINITY) (role: Started) (id:cli-ban-haproxy-bundle-on-lab-controller03)
@@ -2270,11 +2272,11 @@ normal operation.</p>
 </code></pre>
 <p>Since we won't actually be running <code>tcpdump</code> in this lab, let's go ahead and
 remove the constraints.</p>
-<pre><code>[heat-admin@lab-controller01 ~]$ sudo pcs constraint remove cli-ban-haproxy-bundle-on-lab-controller02
+<pre><code>[heat-admin@lab-controller01 ~]$ @@sudo pcs constraint remove cli-ban-haproxy-bundle-on-lab-controller02@/
 
-[heat-admin@lab-controller01 ~]$ sudo pcs constraint remove cli-ban-haproxy-bundle-on-lab-controller03
+[heat-admin@lab-controller01 ~]$ @@sudo pcs constraint remove cli-ban-haproxy-bundle-on-lab-controller03@/
 
-[heat-admin@lab-controller01 ~]$ sudo pcs status | fold -w 120 -s
+[heat-admin@lab-controller01 ~]$ @@sudo pcs status | fold -w 120 -s@/
 Cluster name: tripleo_cluster
 Stack: corosync
 Current DC: lab-controller01 (version 1.1.16-12.el7_4.8-94ff4df) - partition with quorum
@@ -2324,12 +2326,9 @@ Daemon Status:
 the virtual IPs are still all running on <code>lab-controller01</code>, because that
 satisfies the colocation constraints.  We can re-distribute them by restarting
 the Pacemaker resources.</p>
-<pre><code>(undercloud) [stack@undercloud ~]$ ssh heat-admin@172.16.0.32
-Last login: Wed Apr 25 20:08:11 2018 from 172.16.0.1
+<pre><code>[heat-admin@lab-controller01 ~]$ @@VIPS=`sudo pcs status | grep 'ip-' | awk '{ print $1 }'`@/
 
-[heat-admin@lab-controller01 ~]$ VIPS=`sudo pcs status | grep 'ip-' | awk '{ print $1 }'`
-
-[heat-admin@lab-controller01 ~]$ for VIP in $VIPS ; do sudo pcs resource restart $VIP ; done
+[heat-admin@lab-controller01 ~]$ @@for VIP in $VIPS ; do sudo pcs resource restart $VIP ; done@/
 ip-172.16.0.250 successfully restarted
 ip-192.168.122.150 successfully restarted
 ip-172.17.1.10 successfully restarted
@@ -2337,7 +2336,7 @@ ip-172.17.1.150 successfully restarted
 ip-172.17.3.150 successfully restarted
 ip-172.17.4.150 successfully restarted
 
-[heat-admin@lab-controller01 ~]$ sudo pcs status | grep 'ip-'
+[heat-admin@lab-controller01 ~]$ @@sudo pcs status | grep 'ip-'@/
  ip-172.16.0.250        (ocf::heartbeat:IPaddr2):       Started lab-controller01
  ip-192.168.122.150     (ocf::heartbeat:IPaddr2):       Started lab-controller02
  ip-172.17.1.10 (ocf::heartbeat:IPaddr2):       Started lab-controller03
@@ -2353,40 +2352,40 @@ uses to "inject" configuration files into containers.</p>
 <p>Prior to containerization, testing a configuration file change was a matter of
 modifying the file and restarting the appropriate service.  Let's try this with
 one of our containerized services.</p>
-<pre><code>[heat-admin@lab-controller01 ~]$ sudo docker exec -it -u root nova_scheduler /bin/sh
+<pre><code>[heat-admin@lab-controller01 ~]$ @@sudo docker exec -it -u root nova_scheduler /bin/sh@/
 ()[root@lab-controller01 /]$
 
-()[root@lab-controller01 /]$ crudini --get /etc/nova/nova.conf DEFAULT debug
+()[root@lab-controller01 /]$ @@crudini --get /etc/nova/nova.conf DEFAULT debug@/
 Parameter not found: debug
 
-()[root@lab-controller01 /]$ crudini --set /etc/nova/nova.conf DEFAULT debug True
+()[root@lab-controller01 /]$ @@crudini --set /etc/nova/nova.conf DEFAULT debug True@/
 
-()[root@lab-controller01 /]$ crudini --get /etc/nova/nova.conf DEFAULT debug
+()[root@lab-controller01 /]$ @@crudini --get /etc/nova/nova.conf DEFAULT debug@/
 True
 </code></pre>
 <p>That's all well and good, but how do we restart the service from within the
 container?  In fact, there's no way to do so, because the service <strong>is</strong> the
 container.  If the service stops, the container will stop.</p>
-<pre><code>()[root@lab-controller01 /]$ ps aux
+<pre><code>()[root@lab-controller01 /]$ @@ps aux@/
 USER         PID %CPU %MEM    VSZ   RSS TTY      STAT START   TIME COMMAND
 nova           1  0.2  0.7 272912 96260 ?        Ss   19:12   0:09 /usr/bin/python2 /usr/bin/nova-scheduler
 root        1272  0.0  0.0  11772  1728 ?        Ss   20:29   0:00 /bin/sh
 root        1350  0.0  0.0  47448  1676 ?        R+   20:31   0:00 ps aux
 
-()[root@lab-controller01 /]$ kill -TERM 1
+()[root@lab-controller01 /]$ @@kill -TERM 1@/
 ()[root@lab-controller01 /]$ [heat-admin@lab-controller01 ~]$
 </code></pre>
 <p>Indeed, killing <code>nova-scheduler</code> terminated the container rather abruptly.</p>
 <p>Recall from lab 2 that "normal" containers have a Docker restart policy of
 <code>always</code>, so we would expect the <code>docker</code> daemon to automatically restart
 the <code>nova_scheduler</code> container.</p>
-<pre><code>[heat-admin@lab-controller01 ~]$ sudo docker ps | grep scheduler
+<pre><code>[heat-admin@lab-controller01 ~]$ @@sudo docker ps | grep scheduler@/
 c8801163d88b        172.16.0.1:8787/rhosp12/openstack-nova-scheduler:12.0-20180309.1            "kolla_start"            13 days ago         Up About a minute (healthy)                       nova_scheduler
 </code></pre>
 <p>That worked as expected.  But what about our configuration file change?</p>
-<pre><code>[heat-admin@lab-controller01 ~]$ sudo docker exec -it -u root nova_scheduler /bin/sh
+<pre><code>[heat-admin@lab-controller01 ~]$ @@sudo docker exec -it -u root nova_scheduler /bin/sh@/
 
-()[root@lab-controller01 /]$ crudini --get /etc/nova/nova.conf DEFAULT debug
+()[root@lab-controller01 /]$ @@crudini --get /etc/nova/nova.conf DEFAULT debug@/
 Parameter not found: debug
 </code></pre>
 <p>Unsurprisingly, <code>nova.conf</code> has reverted to the persistent version from
@@ -2402,30 +2401,31 @@ be changed without restarting a service.  The <code>debug</code> setting in <cod
 is one of the small number of configurations options that has been made
 mutable.  Let's test this capability with our <code>nova_scheduler</code> container.</p>
 <p>First, verify that <code>DEBUG</code> messages are not being logged.</p>
-<pre><code>()[root@lab-controller01 /]$ grep DEBUG /var/log/nova/nova-scheduler.log
+<pre><code>()[root@lab-controller01 /]$ @@grep DEBUG /var/log/nova/nova-scheduler.log@/
 </code></pre>
 <p>(The <code>grep</code> command should produce no output.)</p>
 <p>Now set the <code>debug</code> setting</p>
-<pre><code>()[root@lab-controller01 /]$ crudini --set /etc/nova/nova.conf DEFAULT debug True
+<pre><code>()[root@lab-controller01 /]$ @@crudini --set /etc/nova/nova.conf DEFAULT debug True@/
 </code></pre>
 <p>Send a <code>SIGHUP</code> signal to the <code>nova-scheduler</code> process.</p>
-<pre><code>()[root@lab-controller01 /]$ ps aux
+<pre><code>()[root@lab-controller01 /]$ @@ps aux@/
 USER         PID %CPU %MEM    VSZ   RSS TTY      STAT START   TIME COMMAND
 nova           1  0.3  0.7 272872 96068 ?        Ss   20:32   0:05 /usr/bin/python2 /usr/bin/nova-scheduler
 root         156  0.0  0.0  11772  1728 ?        Ss   20:41   0:00 /bin/sh
 root         461  0.0  0.0  47448  1672 ?        R+   20:56   0:00 ps aux
 
-()[root@lab-controller01 /]$ kill -HUP 1
+()[root@lab-controller01 /]$ @@kill -HUP 1@/
 </code></pre>
 <p>Check the results.</p>
-<pre><code>()[root@lab-controller01 /]$ grep DEBUG /var/log/nova/nova-scheduler.log
+<pre><code>()[root@lab-controller01 /]$ @@grep DEBUG /var/log/nova/nova-scheduler.log@/
 (...)
 </code></pre>
-<p>That worked.  Let's revert the change lazy way by restarting the container.</p>
-<pre><code>()[root@lab-controller01 /]$ exit
+<p>That worked (to put it mildly).  Let's revert the change lazy way — by
+restarting the container.</p>
+<pre><code>()[root@lab-controller01 /]$ @@exit@/
 exit
 
-[heat-admin@lab-controller01 ~]$ sudo docker restart nova_scheduler
+[heat-admin@lab-controller01 ~]$ @@sudo docker restart nova_scheduler@/
 nova_scheduler
 </code></pre>
 <h4>
@@ -2440,14 +2440,15 @@ effectively restart these OpenStack services without stopping the parent
 <p>Let's test this with our <code>nova_api</code> container, which runs <code>httpd</code>, and a
 non-mutable configuration option — <code>log_dir</code> (chosen because it is easy
 to check).</p>
-<pre><code>[heat-admin@lab-controller01 ~]$ sudo docker exec -it nova_api /bin/sh
+<pre><code>[heat-admin@lab-controller01 ~]$ @@sudo docker exec -it nova_api /bin/sh@/
 
-()[root@lab-controller01 /]$ mkdir /var/log/nova-debug
-()[root@lab-controller01 /]$ chown nova:nova /var/log/nova-debug
+()[root@lab-controller01 /]$ @@mkdir /var/log/nova-debug@/
 
-()[root@lab-controller01 /]$ crudini --set /etc/nova/nova.conf DEFAULT log_dir /var/log/nova-debug
+()[root@lab-controller01 /]$ @@chown nova:nova /var/log/nova-debug@/
 
-()[root@lab-controller01 /]$ ps aux      
+()[root@lab-controller01 /]$ @@crudini --set /etc/nova/nova.conf DEFAULT log_dir /var/log/nova-debug@/
+
+()[root@lab-controller01 /]$ @@ps aux@/
 USER         PID %CPU %MEM    VSZ   RSS TTY      STAT START   TIME COMMAND
 root           1  0.0  0.0 260796  8232 ?        Ss   22:50   0:00 /usr/sbin/httpd -DFOREGROUND
 nova          14  1.4  1.0 710352 132376 ?       Sl   22:50   0:07 nova_api_wsgi   -DFOREGROUND
@@ -2467,9 +2468,9 @@ apache        39  0.0  0.0 262928  8220 ?        S    22:50   0:00 /usr/sbin/htt
 root         268  0.0  0.0  11772  1740 ?        Ss   22:56   0:00 /bin/sh
 root         411  0.0  0.0  47448  1668 ?        R+   22:58   0:00 ps aux
 
-()[root@lab-controller01 /]$ kill -USR1 1
+()[root@lab-controller01 /]$ @@kill -USR1 1@/
 
-()[root@lab-controller01 /]$ ps aux
+()[root@lab-controller01 /]$ @@ps aux@/
 USER         PID %CPU %MEM    VSZ   RSS TTY      STAT START   TIME COMMAND
 root           1  0.0  0.0 260796  8240 ?        Ss   22:50   0:00 /usr/sbin/httpd -DFOREGROUND
 root         268  0.0  0.0  11772  1748 ?        Ss   22:56   0:00 /bin/sh
@@ -2484,7 +2485,7 @@ apache       464  0.1  0.0 262928  7708 ?        S    22:59   0:00 /usr/sbin/htt
 apache       465  0.0  0.0 262928  7708 ?        S    22:59   0:00 /usr/sbin/httpd -DFOREGROUND
 root         484  0.0  0.0  47448  1676 ?        R+   22:59   0:00 ps aux
 
-()[root@lab-controller01 /]$ ls /var/log/nova-debug
+()[root@lab-controller01 /]$ @@ls /var/log/nova-debug@/
 nova-api.log
 </code></pre>
 <p>We can see that the PIDs of the <code>httpd</code> worker processes have all changed, and
@@ -2498,29 +2499,29 @@ modifying the appropriate file within the correct sub-directory should change
 the file that gets used by the containerized service.</p>
 <p>Recall that the value of the <code>debug</code> parameter is not explicitly set in our
 <code>nova.conf</code> file.  Let's explicitly set it to <code>False</code> (its default value).</p>
-<pre><code>()[root@lab-controller01 /]$ crudini --get /etc/nova/nova.conf DEFAULT debug
+<pre><code>()[root@lab-controller01 /]$ @@crudini --get /etc/nova/nova.conf DEFAULT debug@/
 Parameter not found: debug
 
-()[root@lab-controller01 /]$ exit
+()[root@lab-controller01 /]$ @@exit@/
 exit
 
-[heat-admin@lab-controller01 ~]$ sudo crudini --get \
-    /var/lib/config-data/puppet-generated/nova/etc/nova/nova.conf DEFAULT debug
+[heat-admin@lab-controller01 ~]$ @@sudo crudini --get \
+    /var/lib/config-data/puppet-generated/nova/etc/nova/nova.conf DEFAULT debug@/
 Parameter not found: debug
 
-[heat-admin@lab-controller01 ~]$ sudo crudini --set \
-    /var/lib/config-data/puppet-generated/nova/etc/nova/nova.conf DEFAULT debug False
+[heat-admin@lab-controller01 ~]$ @@sudo crudini --set \
+    /var/lib/config-data/puppet-generated/nova/etc/nova/nova.conf DEFAULT debug False@/
 
-[heat-admin@lab-controller01 ~]$ sudo docker restart nova_api
+[heat-admin@lab-controller01 ~]$ @@sudo docker restart nova_api@/
 nova_api
 
-[heat-admin@lab-controller01 ~]$ sudo docker exec -it nova_api \
-    crudini --get /etc/nova/nova.conf DEFAULT debug
+[heat-admin@lab-controller01 ~]$ @@sudo docker exec -it nova_api \
+    crudini --get /etc/nova/nova.conf DEFAULT debug@/
 False
 </code></pre>
 <p>Do note that there may be multiple versions of a particular configuration file,
 used by different containers.</p>
-<pre><code>[heat-admin@lab-controller01 ~]$ sudo find /var/lib/config-data/puppet-generated -name nova.conf
+<pre><code>[heat-admin@lab-controller01 ~]$ @@sudo find /var/lib/config-data/puppet-generated -name nova.conf@/
 /var/lib/config-data/puppet-generated/nova_placement/etc/nova/nova.conf
 /var/lib/config-data/puppet-generated/nova/etc/nova/nova.conf
 </code></pre>
@@ -2546,27 +2547,27 @@ directory of the images.</p>
 <p>First, return to the undercloud and create a subdirectory in which we will
 create the dockerfile for our new image.  (The <code>docker build</code> command takes a
 path to a <strong>directory</strong>, which must contain a dockerfile named <code>Dockerfile</code>.)</p>
-<pre><code>[heat-admin@lab-controller01 ~]$ exit
+<pre><code>[heat-admin@lab-controller01 ~]$ @@exit@/
 logout
 Connection to 172.16.0.32 closed.
 
-(undercloud) [stack@undercloud ~]$ mkdir /tmp/haproxy
+(undercloud) [stack@undercloud ~]$ @@mkdir /tmp/haproxy@/
 
-(undercloud) [stack@undercloud ~]$ cd /tmp/haproxy
+(undercloud) [stack@undercloud ~]$ @@cd /tmp/haproxy@/
 </code></pre>
 <p>Create a simple dockerfile and use it to build a new image, specifying an
 appropriate tag.</p>
-<pre><code>(undercloud) [stack@undercloud haproxy]$ cat &lt;&lt; 'EOF' &gt; Dockerfile
+<pre><code>(undercloud) [stack@undercloud haproxy]$ @@cat &lt;&lt; 'EOF' &gt; Dockerfile
 FROM 172.16.0.1:8787/rhosp12/openstack-haproxy:12.0-20180309.1
 RUN echo "Are you not entertained?!" &gt; /fun
-EOF
+EOF@/
 
-(undercloud) [stack@undercloud haproxy]$ cat Dockerfile
+(undercloud) [stack@undercloud haproxy]$ @@cat Dockerfile@/
 FROM 172.16.0.1:8787/rhosp12/openstack-haproxy:12.0-20180309.1
 RUN echo "Are you not entertained?!" &gt; /fun
 
-(undercloud) [stack@undercloud haproxy]$ docker build \
-    -t 172.16.0.1:8787/rhosp12/openstack-haproxy:12.0-20180309.1.fun .
+(undercloud) [stack@undercloud haproxy]$ @@docker build \
+    -t 172.16.0.1:8787/rhosp12/openstack-haproxy:12.0-20180309.1.fun .@/
 Sending build context to Docker daemon 2.048 kB
 Step 1 : FROM 172.16.0.1:8787/rhosp12/openstack-haproxy:12.0-20180309.1
  ---&gt; 613946718d1e
@@ -2577,7 +2578,7 @@ Removing intermediate container 05288d8e08c0
 Successfully built 95e7c11793a4
 </code></pre>
 <p>Push the new image into the registry on the undercloud.</p>
-<pre><code>(undercloud) [stack@undercloud haproxy]$ docker push 172.16.0.1:8787/rhosp12/openstack-haproxy:12.0-20180309.1.fun
+<pre><code>(undercloud) [stack@undercloud haproxy]$ @@docker push 172.16.0.1:8787/rhosp12/openstack-haproxy:12.0-20180309.1.fun@/
 The push refers to a repository [172.16.0.1:8787/rhosp12/openstack-haproxy]
 6e77bfc415dc: Pushed 
 38f4bbab5a7a: Layer already exists 
@@ -2587,21 +2588,21 @@ e9fb39060494: Layer already exists
 12.0-20180309.1.fun: digest: sha256:262bba45ccaa0dfc471c9965f9dcfd5fb69d3ed93bee4a274fbbd40cd9e1f00f size: 1369
 </code></pre>
 <p>Now, let's do the same thing for the <code>nova_scheduler</code> image.</p>
-<pre><code>(undercloud) [stack@undercloud haproxy]$ mkdir /tmp/nova_scheduler
+<pre><code>(undercloud) [stack@undercloud haproxy]$ @@mkdir /tmp/nova_scheduler@/
 
-(undercloud) [stack@undercloud haproxy]$ cd /tmp/nova_scheduler
+(undercloud) [stack@undercloud haproxy]$ @@cd /tmp/nova_scheduler@/
 
-(undercloud) [stack@undercloud nova_scheduler]$ cat &lt;&lt; 'EOF' &gt; Dockerfile
+(undercloud) [stack@undercloud nova_scheduler]$ @@cat &lt;&lt; 'EOF' &gt; Dockerfile
 FROM 172.16.0.1:8787/rhosp12/openstack-nova-scheduler:12.0-20180309.1
 RUN echo "Are you not entertained?!" &gt; /fun
-EOF
+EOF@/
 
-(undercloud) [stack@undercloud nova_scheduler]$ cat Dockerfile
+(undercloud) [stack@undercloud nova_scheduler]$ @@cat Dockerfile@/
 FROM 172.16.0.1:8787/rhosp12/openstack-nova-scheduler:12.0-20180309.1
 RUN echo "Are you not entertained?!" &gt; /fun
 
-(undercloud) [stack@undercloud nova_scheduler]$ docker build \
-    -t 172.16.0.1:8787/rhosp12/openstack-nova-scheduler:12.0-20180309.1.fun .
+(undercloud) [stack@undercloud nova_scheduler]$ @@docker build \
+    -t 172.16.0.1:8787/rhosp12/openstack-nova-scheduler:12.0-20180309.1.fun .@/
 Sending build context to Docker daemon 2.048 kB
 Step 1 : FROM 172.16.0.1:8787/rhosp12/openstack-nova-scheduler:12.0-20180309.1
  ---&gt; 27903e04824f
@@ -2619,27 +2620,27 @@ potentially rely on <code>sudo</code> to temporarily elevate their privilege
 <p>It turns out that the HAProxy container is the first type, and the Nova
 scheduler container is the second type.  This can be seen by inspecting the
 images.</p>
-<pre><code>(undercloud) [stack@undercloud nova_scheduler]$ docker inspect \
+<pre><code>(undercloud) [stack@undercloud nova_scheduler]$ @@docker inspect \
     172.16.0.1:8787/rhosp12/openstack-nova-scheduler:12.0-20180309.1 \
-    | jq .[0].ContainerConfig.User
+    | jq .[0].ContainerConfig.User@/
 "nova"
 
-(undercloud) [stack@undercloud nova_scheduler]$ docker inspect \
+(undercloud) [stack@undercloud nova_scheduler]$ @@docker inspect \
     172.16.0.1:8787/rhosp12/openstack-haproxy:12.0-20180309.1 \
-    | jq .[0].ContainerConfig.User
+    | jq .[0].ContainerConfig.User@/
 ""
 </code></pre>
 <p>The empty user (<code>""</code>) is equivalent to <code>root</code>.</p>
 <p>Let's update our dockerfile to account for the fact that the <code>nova_scheduler</code>
 container starts as the <code>nova</code> user.</p>
-<pre><code>(undercloud) [stack@undercloud nova_scheduler]$ cat &lt;&lt; 'EOF' &gt; Dockerfile
+<pre><code>(undercloud) [stack@undercloud nova_scheduler]$ @@cat &lt;&lt; 'EOF' &gt; Dockerfile
 FROM 172.16.0.1:8787/rhosp12/openstack-nova-scheduler:12.0-20180309.1
 USER root
 RUN echo "Are you not entertained?!" &gt; /fun
 USER nova
-EOF
+EOF@/
 
-(undercloud) [stack@undercloud nova_scheduler]$ cat Dockerfile
+(undercloud) [stack@undercloud nova_scheduler]$ @@cat Dockerfile@/
 FROM 172.16.0.1:8787/rhosp12/openstack-nova-scheduler:12.0-20180309.1
 USER root
 RUN echo "Are you not entertained?!" &gt; /fun
@@ -2648,8 +2649,8 @@ USER nova
 <p>When doing this, it is very important to set the user <strong>back</strong> to the correct
 non-root user.</p>
 <p>We should be able to build and push our image now.</p>
-<pre><code>(undercloud) [stack@undercloud nova_scheduler]$ docker build \
-    -t 172.16.0.1:8787/rhosp12/openstack-nova-scheduler:12.0-20180309.1.fun .
+<pre><code>(undercloud) [stack@undercloud nova_scheduler]$ @@docker build \
+    -t 172.16.0.1:8787/rhosp12/openstack-nova-scheduler:12.0-20180309.1.fun .@/
 Sending build context to Docker daemon 2.048 kB
 Step 1 : FROM 172.16.0.1:8787/rhosp12/openstack-nova-scheduler:12.0-20180309.1
  ---&gt; 27903e04824f
@@ -2667,7 +2668,7 @@ Step 4 : USER nova
 Removing intermediate container 454d7d895ea7
 Successfully built 03f479435e32
 
-(undercloud) [stack@undercloud nova_scheduler]$ docker push 172.16.0.1:8787/rhosp12/openstack-nova-scheduler:12.0-20180309.1.fun
+(undercloud) [stack@undercloud nova_scheduler]$ @@docker push 172.16.0.1:8787/rhosp12/openstack-nova-scheduler:12.0-20180309.1.fun@/
 The push refers to a repository [172.16.0.1:8787/rhosp12/openstack-nova-scheduler]
 daede3fec6c3: Pushed 
 b9f60a193ebe: Layer already exists 
@@ -2679,7 +2680,7 @@ e9fb39060494: Layer already exists
 12.0-20180309.1.fun: digest: sha256:6a15614f6e62f249c1096e4fb7bc153c2546a4d38b49154f875de0b9f60f32df size: 1791
 </code></pre>
 <h4>
-<a id="user-content-testing-the-modified-image" class="anchor" href="#testing-the-modified-image" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Testing the Modified Image</h4>
+<a id="user-content-testing-the-modified-images" class="anchor" href="#testing-the-modified-images" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Testing the Modified Images</h4>
 <p>We've built modified images for the HAProxy and Nova scheduler containers and
 pushed them to the image registry on our undercloud, where they can be accessed
 by the overcloud nodes.  Now we need to actually run containers with those
@@ -2695,11 +2696,24 @@ final step used a utility called <code>paunch</code>, which reads a container de
 in JSON format and calls <code>docker run</code> to create the container.</p>
 <p>The JSON files used by <code>paunch</code> can be found in the
 <code>/var/lib/tripleo-config</code> directory on the overcloud nodes.</p>
-<pre><code>(undercloud) [stack@undercloud nova_scheduler]$ ssh heat-admin@172.16.0.32
+<pre><code>(undercloud) [stack@undercloud nova_scheduler]$ @@openstack server list@/
++--------------------------------------+------------------+--------+----------------------+-------+--------------+
+| ID                                   | Name             | Status | Networks             | Image | Flavor       |
++--------------------------------------+------------------+--------+----------------------+-------+--------------+
+| 47e02f2f-b3fe-4f0a-83b6-d0305004aec9 | lab-ceph02       | ACTIVE | ctlplane=172.16.0.23 |       | ceph-storage |
+| 5c2f6fd7-3351-4ca6-bd41-3fafb1de5162 | lab-controller03 | ACTIVE | ctlplane=172.16.0.36 |       | control      |
+| b837722d-0d91-4e50-a359-223487fbdb2e | lab-controller01 | ACTIVE | ctlplane=172.16.0.32 |       | control      |
+| f8c7a2b3-73c8-476f-87a9-4c0af28e7595 | lab-controller02 | ACTIVE | ctlplane=172.16.0.22 |       | control      |
+| 9e7924fd-4611-41de-a29a-c600502e12a0 | lab-ceph03       | ACTIVE | ctlplane=172.16.0.33 |       | ceph-storage |
+| 66515ba8-15eb-480a-ad37-c3e91da47df8 | lab-ceph01       | ACTIVE | ctlplane=172.16.0.31 |       | ceph-storage |
+| 87920ee2-dd27-432d-b8b1-52a2ab49a9ff | lab-compute01    | ACTIVE | ctlplane=172.16.0.25 |       | compute      |
++--------------------------------------+------------------+--------+----------------------+-------+--------------+
+
+(undercloud) [stack@undercloud nova_scheduler]$ @@ssh heat-admin@172.16.0.32@/
 Last login: Fri Apr 20 18:21:49 2018 from 172.16.0.1
 
 
-[heat-admin@lab-controller01 ~]$ ls -l /var/lib/tripleo-config
+[heat-admin@lab-controller01 ~]$ @@ls -l /var/lib/tripleo-config@/
 total 164
 -rw-------. 1 root root  6092 Apr 12 20:10 docker-container-startup-config-step_1.json
 -rw-------. 1 root root  8531 Apr 12 20:10 docker-container-startup-config-step_2.json
@@ -2734,20 +2748,14 @@ container with the new configuration.</p>
 <p>Fortunately, <code>paunch</code> includes a number of debugging options.  First, let's
 use it to determine which step (and thus which JSON file) defines the <code>nova_scheduler</code>
 container.</p>
-<pre><code>[heat-admin@lab-controller01 ~]$ sudo paunch list | grep nova_scheduler | fold -w 80 -s
-| tripleo_step4 | nova_scheduler                | 
-172.16.0.1:8787/rhosp12/openstack-nova-scheduler:12.0-20180309.1          | 
-kolla_start                                                                     
-                                                                                
-                                                                                
-                                                                                
-                             | running |
+<pre><code>[heat-admin@lab-controller01 ~]$ @@sudo paunch list | grep nova_scheduler | awk '{ print $2 }'@/
+tripleo_step4
 </code></pre>
 <p>It was defined in step 4, so its configuration will be in
 <code>hashed-docker-container-startup-config-step_4.json</code>.  What can <code>paunch</code>
 tell us about this container?</p>
-<pre><code>[heat-admin@lab-controller01 ~]$ sudo paunch debug --action dump-json --container nova_scheduler \
-    --file /var/lib/tripleo-config/hashed-docker-container-startup-config-step_4.json
+<pre><code>[heat-admin@lab-controller01 ~]$ @@sudo paunch debug --action dump-json --container nova_scheduler \
+    --file /var/lib/tripleo-config/hashed-docker-container-startup-config-step_4.json@/
 {
     "nova_scheduler": {
         "environment": [
@@ -2776,9 +2784,9 @@ tell us about this container?</p>
     }
 }
 
-[heat-admin@lab-controller01 ~]$ sudo paunch debug --action print-cmd --container nova_scheduler \
+[heat-admin@lab-controller01 ~]$ @@sudo paunch debug --action print-cmd --container nova_scheduler \
      --file /var/lib/tripleo-config/hashed-docker-container-startup-config-step_4.json \
-     | fold -w 100 -s
+     | fold -w 100 -s@/
 docker run --name nova_scheduler-jrvh61wy --detach=true --env=KOLLA_CONFIG_STRATEGY=COPY_ALWAYS 
 --env=TRIPLEO_CONFIG_HASH=8abb1cabf209039cde5421b00dfc80ff --net=host --privileged=false 
 --restart=always --volume=/etc/hosts:/etc/hosts:ro --volume=/etc/localtime:/etc/localtime:ro 
@@ -2799,7 +2807,7 @@ the name of the container on the command line.  This allows us to run a
 temporary container without deleting the existing one.)  Let's use the command
 line information to stop the running Nova scheduler container and start a new
 one with our modified image.</p>
-<pre><code>[heat-admin@lab-controller01 ~]$ sudo docker stop nova_scheduler &amp;&amp; \
+<pre><code>[heat-admin@lab-controller01 ~]$ @@sudo docker stop nova_scheduler &amp;&amp; \
     sudo docker run --name nova_scheduler.fun \
     --detach=true --env=KOLLA_CONFIG_STRATEGY=COPY_ALWAYS \
     --env=TRIPLEO_CONFIG_HASH=8abb1cabf209039cde5421b00dfc80ff \
@@ -2817,7 +2825,7 @@ one with our modified image.</p>
     --volume=/var/lib/config-data/puppet-generated/nova/:/var/lib/kolla/config_files/src:ro \
     --volume=/run:/run \
     --volume=/var/log/containers/nova:/var/log/nova \
-    172.16.0.1:8787/rhosp12/openstack-nova-scheduler:12.0-20180309.1.fun
+    172.16.0.1:8787/rhosp12/openstack-nova-scheduler:12.0-20180309.1.fun@/
 nova_scheduler
 Unable to find image '172.16.0.1:8787/rhosp12/openstack-nova-scheduler:12.0-20180309.1.fun' locally
 Trying to pull repository 172.16.0.1:8787/rhosp12/openstack-nova-scheduler ... 
@@ -2833,25 +2841,25 @@ Digest: sha256:75a03af827ac3272d3153dfb933f227a957cdc14aee8e070d17fe0afed04752e
 Status: Downloaded newer image for 172.16.0.1:8787/rhosp12/openstack-nova-scheduler:12.0-20180309.1.fun
 c25914f2dc85b22157f6f907c4e70609b5bfdb2489526109047c91b04e30db41
 
-[heat-admin@lab-controller01 ~]$ sudo docker ps | grep fun | fold -w 120 -s
+[heat-admin@lab-controller01 ~]$ @@sudo docker ps | grep fun | fold -w 120 -s@/
 c25914f2dc85        172.16.0.1:8787/rhosp12/openstack-nova-scheduler:12.0-20180309.1.fun        "kolla_start"           
  About a minute ago   Up About a minute (healthy)                       nova_scheduler.fun
  
-[heat-admin@lab-controller01 ~]$ sudo docker exec nova_scheduler.fun cat /fun
+[heat-admin@lab-controller01 ~]$ @@sudo docker exec nova_scheduler.fun cat /fun@/
 Are you not entertained?!
 </code></pre>
 <p>When finished testing, revert to the unmodified container.</p>
-<pre><code>[heat-admin@lab-controller01 ~]$ sudo docker stop nova_scheduler.fun &amp;&amp; sudo docker start nova_scheduler
+<pre><code>[heat-admin@lab-controller01 ~]$ @@sudo docker stop nova_scheduler.fun &amp;&amp; sudo docker start nova_scheduler@/
 nova_scheduler.fun
 nova_scheduler
 
-[heat-admin@lab-controller01 ~]$ sudo docker exec nova_scheduler cat /fun
+[heat-admin@lab-controller01 ~]$ @@sudo docker exec nova_scheduler cat /fun@/
 cat: /fun: No such file or directory
 </code></pre>
 <p><strong>Pacemaker-Managed Containers</strong></p>
 <p>We saw in lab 3 that Pacemaker-managed containers are defined as <code>bundle</code>
 resources, which specify all ofthe information required to run the container.</p>
-<pre><code>[heat-admin@lab-controller01 ~]$ sudo pcs resource show haproxy-bundle | fold -w 173 -s
+<pre><code>[heat-admin@lab-controller01 ~]$ @@sudo pcs resource show haproxy-bundle | fold -w 173 -s@/
  Bundle: haproxy-bundle
   Docker: image=172.16.0.1:8787/rhosp12/openstack-haproxy:pcmklatest network=host options="--user=root --log-driver=journald -e KOLLA_CONFIG_STRATEGY=COPY_ALWAYS" 
 replicas=3 run-command="/bin/bash /usr/local/bin/kolla_start"
@@ -2868,10 +2876,10 @@ replicas=3 run-command="/bin/bash /usr/local/bin/kolla_start"
    options=ro source-dir=/etc/pki/tls/private/overcloud_endpoint.pem target-dir=/var/lib/kolla/config_files/src-tls/etc/pki/tls/private/overcloud_endpoint.pem (haproxy-cert)
 </code></pre>
 <p>Let's modify this definition.</p>
-<pre><code>[heat-admin@lab-controller01 ~]$ sudo pcs resource bundle update haproxy-bundle \
-    container image=172.16.0.1:8787/rhosp12/openstack-haproxy:12.0-20180309.1.fun
+<pre><code>[heat-admin@lab-controller01 ~]$ @@sudo pcs resource bundle update haproxy-bundle \
+    container image=172.16.0.1:8787/rhosp12/openstack-haproxy:12.0-20180309.1.fun@/
 
-[heat-admin@lab-controller01 ~]$ sudo pcs resource show haproxy-bundle | fold -w 173 -s
+[heat-admin@lab-controller01 ~]$ @@sudo pcs resource show haproxy-bundle | fold -w 173 -s@/
  Bundle: haproxy-bundle
   Docker: image=172.16.0.1:8787/rhosp12/openstack-haproxy:12.0-20180309.1.fun network=host options="--user=root --log-driver=journald -e KOLLA_CONFIG_STRATEGY=COPY_ALWAYS" 
 replicas=3 run-command="/bin/bash /usr/local/bin/kolla_start"
@@ -2888,39 +2896,39 @@ replicas=3 run-command="/bin/bash /usr/local/bin/kolla_start"
    options=ro source-dir=/etc/pki/tls/private/overcloud_endpoint.pem target-dir=/var/lib/kolla/config_files/src-tls/etc/pki/tls/private/overcloud_endpoint.pem (haproxy-cert)  
 </code></pre>
 <p>Check the container running on this controller.</p>
-<pre><code>[heat-admin@lab-controller01 ~]$ sudo docker ps | grep haproxy | fold -w 120 -s
+<pre><code>[heat-admin@lab-controller01 ~]$ @@sudo docker ps | grep haproxy | fold -w 120 -s@/
 62554f3988d2        172.16.0.1:8787/rhosp12/openstack-haproxy:12.0-20180309.1.fun               "/bin/bash /usr/lo..."  
  15 seconds ago      Up 14 seconds                                 haproxy-bundle-docker-0
 
-[heat-admin@lab-controller01 ~]$ sudo docker exec haproxy-bundle-docker-0 cat /fun
+[heat-admin@lab-controller01 ~]$ @@sudo docker exec haproxy-bundle-docker-0 cat /fun@/
 Are you not entertained?!
 </code></pre>
 <p>What about the other two controllers?  Pacemaker should have restarted the
 container, with the new image, on all 3.</p>
-<pre><code>[heat-admin@lab-controller01 ~]$ exit
+<pre><code>[heat-admin@lab-controller01 ~]$ @@exit@/
 logout
 Connection to 172.16.0.32 closed.
 
-(undercloud) [stack@undercloud nova_scheduler]$ cd
+(undercloud) [stack@undercloud nova_scheduler]$ @@cd@/
 
-(undercloud) [stack@undercloud ~]$ I=0 ; for C in 172.16.0.{32,22,36} ; do
+(undercloud) [stack@undercloud ~]$ @@I=0 ; for C in 172.16.0.{32,22,36} ; do
         ssh heat-admin@$C sudo docker exec haproxy-bundle-docker-$I cat /fun
         I=$((I+1))
-    done
+    done@/
 Are you not entertained?!
 Are you not entertained?!
 Are you not entertained?!
 </code></pre>
 <p>To revert, simply change the image back to the <code>pcmklatest</code> tag, which TripleO
 uses for all Pacemaker-manager container images.</p>
-<pre><code>(undercloud) [stack@undercloud ~]$ ssh heat-admin@172.16.0.32 \
+<pre><code>(undercloud) [stack@undercloud ~]$ @@ssh heat-admin@172.16.0.32 \
     sudo pcs resource bundle update haproxy-bundle container \
-        image=172.16.0.1:8787/rhosp12/openstack-haproxy:pcmklatest
+        image=172.16.0.1:8787/rhosp12/openstack-haproxy:pcmklatest@/
 
-(undercloud) [stack@undercloud ~]$ I=0 ; for C in 172.16.0.{32,22,36} ; do
+(undercloud) [stack@undercloud ~]$ @@I=0 ; for C in 172.16.0.{32,22,36} ; do
         ssh heat-admin@$C sudo docker exec haproxy-bundle-docker-$I cat /fun
         I=$((I+1))
-    done
+    done@/
 cat: /fun: No such file or directory
 cat: /fun: No such file or directory
 cat: /fun: No such file or directory
@@ -3429,12 +3437,12 @@ lab-ceph02
 lab-ceph03
 (...)
 
-(undercloud) [stack@undercloud tripleo-Jku3uc-config]$ <b>ansible-playbook \
+(undercloud) [stack@undercloud tripleo-Jku3uc-config]$ @@ansible-playbook \
     update_steps_playbook.yaml \
     --become \
     --module-path /usr/share/ansible-modules \
     --inventory tripleo-inventory.yaml \
-    --limit CephStorage<b>
+    --limit CephStorage@@
    [DEPRECATION WARNING]: The use of 'include' for tasks has been deprecated. Use 'import_tasks' for static inclusions or 'include_tasks' for dynamic inclusions. This feature 
 will be removed in a future release. Deprecation warnings can be disabled by setting deprecation_warnings=False in ansible.cfg.
 [DEPRECATION WARNING]: include is kept for backwards compatibility but usage is discouraged. The module documentation details page may explain more about this rationale.. This

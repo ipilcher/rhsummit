@@ -48,6 +48,12 @@
     * [Modifying Container Images](#modifying-container-images)
     * [Testing the Modified Images](#testing-the-modified-images)
 * [**Lab 5:** Extra Credit &mdash; Minor Updates with Ansible](#lab-5-extra-credit--minor-updates-with-ansible)
+  - [Step 1: Prepare the Undercloud](#step-1-prepare-the-undercloud)
+  - [Step 2: Update the Overcloud Disk Images (Optional)](#step-2-update-the-overcloud-disk-images-optional)
+  - [Step 3: Initialize the Update](#step-3-initialize-the-update)
+  - [Step 4: Update the Nodes](#step-4-update-the-nodes)
+    * [Updating With ``openstack overcloud update stack``](#updating-with-openstack-overcloud-update-stack)
+    * [Updating With ``ansible-playbook``](#updating-with-ansible-playbook)
 
 ## Lab 0: Introduction
 
@@ -230,14 +236,14 @@ to request a lab environment for your individual use.  (The **Firefox**
 browser on your workstation should already be open, and it is configured to
 automatically display the form.)
 
-![GUID request](/images/screenshot1.png)
+![GUID request](images/screenshot1.png)
 
 Select **L1018 - Understanding Containerized Red Hat OpenStack Platform** as the
 lab code, enter ``tainers`` in the activation key field, and click the Next
 button.  After a short wait, you will be presented with an assignment page,
 which shows your unique GUID.
 
-![GUID assignment](/images/screenshot3.png)
+![GUID assignment](images/screenshot3.png)
 
 Open a terminal (if necessary) and copy the ``ssh`` command from the browser.
 (The command is circled in the screenshot above.)  An SSH key has been
@@ -364,7 +370,7 @@ During deployment and updates, TripleO parameters are used to specify the image
 used for each overcloud container.  In our deployment, these parameters are set
 in ``templates/docker-registry.yaml``.
 
-> **NOTE:** This guide will make extensive use of the ``fold`` command to wrap
+> **NOTE:** This guide uses the ``fold`` command to wrap
 > output lines and reduce the amount of horizontal scrolling required.
 
 ```
@@ -2040,10 +2046,12 @@ nova_api_cron
 nova_scheduler
 nova_placement
 
-(undercloud) [stack@undercloud ~]$ @@TAINERS=`ssh heat-admin@172.16.0.32 sudo docker ps --format "'{{ .Names }}'" | grep nova`@/
+(undercloud) [stack@undercloud nova_scheduler]$ @@TAINERS=`ssh heat-admin@172.16.0.32 \
+    "sudo docker ps --format '{{ .Names }}'" | grep nova`@/
 
-(undercloud) [stack@undercloud ~]$ @@echo $TAINERS@/
-nova_metadata nova_api nova_conductor nova_vnc_proxy nova_consoleauth nova_api_cron nova_scheduler nova_placement
+(undercloud) [stack@undercloud ~]$ @@echo $TAINERS | fold -s@/
+nova_metadata nova_api nova_conductor nova_vnc_proxy nova_consoleauth
+nova_api_cron nova_scheduler nova_placement
 
 (undercloud) [stack@undercloud ~]$ @@for C in 172.16.0.{22,36} ; do
         ssh heat-admin@$C sudo docker stop $TAINERS
@@ -3089,23 +3097,34 @@ cat: /fun: No such file or directory
 cat: /fun: No such file or directory
 ```
 
-Congratulations!!  You've completed the main portion of this hands-on lab.
+Congratulations!!  You've completed the main portion of this hands-on lab.  Feel
+free to relax, review the lab materials, or simply head for the nearest bar.
+
+If you have at least 30 minutes of time remaining, you can proceed to the next
+lab, which covers the new Ansible-based update process in Red Hat OpenStack
+Platform 12.
+
+## Lab 5: Extra Credit &mdash; Minor Updates with Ansible
 
 You may remember that, during lab 2, we updated the container-related files on
 our undercloud and pushed updated container images into the registry on the
 undercloud, but we didn't proceed any farther down the update path, because of
-time constraints.  If you've finished early, feel free to proceed to the next
-section, where we'll look at the remainder of the update process &mdash; which
-now makes extensive use of Red Hat Ansible.
+time constraints.  This lab will cover the remainder of the minor update
+process.
 
-## Lab 5: Extra Credit &mdash; Minor Updates with Ansible
+> **NOTE:** Red Hat makes a strong distinction between **minor** updates (updating
+> software to the latest packages, maintenance level, minor version, etc.) and
+> **major** upgrades &mdash; such as upgrades from Red Hat Enterprise Linux 6 to
+> Red Hat Enterprise Linux 7 or Red Hat OpenStack Platform 11 to Red Hat OpenStack
+> Platform 12.
+
+### Step 1: Prepare the Undercloud
 
 The first thing that we need to do is update the ``python-tripleoclient``
-package on the undercloud.  (This package provides all of the ``openstack
-overcloud`` commands.)
+package on the undercloud.
 
 ```
-(undercloud) [stack@undercloud haproxy]$ sudo yum -y update python-tripleoclient
+(undercloud) [stack@undercloud haproxy]$ @@sudo yum -y update python-tripleoclient@/
 Loaded plugins: search-disabled-repos
 rhelosp-12.0-puddle                                                          | 2.9 kB  00:00:00     
 rhelosp-ceph-2.0-mon                                                         | 2.9 kB  00:00:00     
@@ -3161,24 +3180,18 @@ Complete!
 Now stop the OpenStack services on the undercloud.
 
 ```
-(undercloud) [stack@undercloud haproxy]$ sudo systemctl stop 'openstack-*' 'neutron-*' httpd
+(undercloud) [stack@undercloud haproxy]$ @@sudo systemctl stop 'openstack-*' 'neutron-*' httpd@/
 ```
 
 Next, run the ``openstack undercloud upgrade`` command (even though we're
 actually running a minor **update**).  This will update the packages and
 service configurations on the undercloud.
 
-> **NOTE:** Red Hat makes a strong distinction between **minor** updates (updating
-> software to the latest packages, maintenance level, minor version, etc.) and
-> **major** upgrades &mdash; such as upgrades from Red Hat Enterprise Linux 6 to
-> Red Hat Enterprise Linux 7 or Red Hat OpenStack Platform 11 to Red Hat OpenStack
-> Platform 12.
-
-This command will take approximately 10 minutes to complete.  (Yellow warning
+This command will take approximately 10 minutes to complete.  (The yellow warning
 text can be ignored.)
 
 ```
-(undercloud) [stack@undercloud haproxy]$ openstack undercloud upgrade
+(undercloud) [stack@undercloud haproxy]$ @@openstack undercloud upgrade@/
 (...)
 #############################################################################
 Undercloud upgrade complete.
@@ -3197,34 +3210,46 @@ secured.
 Reboot and log back in to the undercloud.
 
 ```
-(undercloud) [stack@undercloud haproxy]$ sudo reboot
+(undercloud) [stack@undercloud haproxy]$ @@sudo reboot@/
 Connection to undercloud.example.com closed by remote host.
 Connection to undercloud.example.com closed.
 
-[lab-user@bastion-XXXX ~]$ ssh stack@undercloud.example.com
+[lab-user@bastion-XXXX ~]$ @@ssh stack@undercloud.example.com@/
 stack@undercloud.example.com's password: 
 Last login: Sun Apr 29 14:06:45 2018 from bastion.example.com
 
-[stack@undercloud ~]$ . stackrc
+[stack@undercloud ~]$ @@. stackrc@/
 (undercloud) [stack@undercloud ~]$
 ```
 
-Optionally update the overcloud disk images (not container images).  This step
-is not required for this lab, as we will not be deploying additional overcloud
-nodes (scaling out).
+### Step 2: Update the Overcloud Disk Images (Optional)
+
+During an update, the new overcloud disk images (if any) should normally be
+loaded into the Glance image service on the undercloud, and the Ironic node
+configurations should be updated to use the new images.  This will ensure that
+any new/replacement nodes will be deployed with the latest packages &mdash;
+making them consistent with existing nodes.
+
+This step is not required for this lab, as we will not be deploying or replacing
+overcloud nodes.  If time is short, skip to step 3.
+
+Our first task is to determine if updated image packages were installed during
+the ``openstack undercloud upgrade`` process.
 
 ```
-(undercloud) [stack@undercloud ~]$ cd images
-
-(undercloud) [stack@undercloud images]$ rpm -qa | grep images
+(undercloud) [stack@undercloud ~]$ @@rpm -qa | grep images@/
 rhosp-director-images-ipa-12.0-20180309.2.el7ost.noarch
 rhosp-director-images-12.0-20180402.1.el7ost.noarch
 rhosp-director-images-12.0-20180309.2.el7ost.noarch
 rhosp-director-images-ipa-12.0-20180402.1.el7ost.noarch
+```
 
-(undercloud) [stack@undercloud ~]$ sudo yum -y remove \
+New packages were installed, so remove the older versions.
+
+```
+(undercloud) [stack@undercloud ~]$ @@sudo yum -y remove \
     rhosp-director-images-ipa-12.0-20180309.2.el7ost.noarch \
-    rhosp-director-images-12.0-20180309.2.el7ost.noarch
+    rhosp-director-images-12.0-20180309.2.el7ost.noarch@/
 Loaded plugins: search-disabled-repos
 Resolving Dependencies
 --> Running transaction check
@@ -3261,35 +3286,55 @@ Removed:
   rhosp-director-images-ipa.noarch 0:12.0-20180309.2.el7ost                                         
 
 Complete!
+```
 
-(undercloud) [stack@undercloud images]$ rpm -ql \
+Extract the new images from the tarballs within the packages.
+
+```
+(undercloud) [stack@undercloud ~]$ @@cd images@/
+
+(undercloud) [stack@undercloud images]$ @@rpm -ql \
     rhosp-director-images-12.0-20180402.1.el7ost.noarch \
-    rhosp-director-images-ipa-12.0-20180402.1.el7ost.noarch
+    rhosp-director-images-ipa-12.0-20180402.1.el7ost.noarch@/
 /usr/share/rhosp-director-images/overcloud-full-12.0-20180402.1.el7ost.tar
 /usr/share/rhosp-director-images/version-12.0-20180402.1.el7ost.txt
 /usr/share/rhosp-director-images/ironic-python-agent-12.0-20180402.1.el7ost.tar
 
-(undercloud) [stack@undercloud images]$ tar xvf /usr/share/rhosp-director-images/overcloud-full-12.0-20180402.1.el7ost.tar
+(undercloud) [stack@undercloud images]$ @@tar xvf \
+    /usr/share/rhosp-director-images/overcloud-full-12.0-20180402.1.el7ost.tar@/
 overcloud-full.qcow2
 overcloud-full.initrd
 overcloud-full.vmlinuz
 overcloud-full-rpm.manifest
 overcloud-full-signature.manifest
 
-(undercloud) [stack@undercloud images]$ tar xvf /usr/share/rhosp-director-images/ironic-python-agent-12.0-20180402.1.el7ost.tar
+(undercloud) [stack@undercloud images]$ @@tar xvf \
+    /usr/share/rhosp-director-images/ironic-python-agent-12.0-20180402.1.el7ost.tar@/
 ironic-python-agent.initramfs
 ironic-python-agent.kernel
+```
 
-(undercloud) [stack@undercloud images]$ virt-customize -a overcloud-full.qcow2 \
+Add our custom ``yum`` repositories (on the bastion host) to the overcloud
+disk image.  (This is an optional step, within an optional step, in an optional
+lab.)
+
+```
+(undercloud) [stack@undercloud images]$ @@virt-customize -a overcloud-full.qcow2 \
     --copy-in /etc/yum.repos.d/lab.repo:/etc/yum.repos.d/ \
-    --selinux-relabel
+    --selinux-relabel@/
 [   0.0] Examining the guest ...
 [  22.2] Setting a random seed
 [  22.2] Copying: /etc/yum.repos.d/lab.repo to /etc/yum.repos.d/
 [  22.2] SELinux relabelling
 [  72.6] Finishing off
+```
 
-(undercloud) [stack@undercloud images]$ openstack overcloud image upload --update-existing
+Load the new images into Glance.  This also copies the new provisioning
+kernel and ramdisk to the ``/httpboot`` directory, where they are used to
+PXE-boot overcloud nodes during provisioning.
+
+```
+(undercloud) [stack@undercloud images]$ @@openstack overcloud image upload --update-existing@/
 Image "overcloud-full-vmlinuz" was uploaded.
 +--------------------------------------+------------------------+-------------+---------+--------+
 |                  ID                  |          Name          | Disk Format |   Size  | Status |
@@ -3326,21 +3371,23 @@ Update the Ironic node properties with the UUIDs of the new ``bm-deploy-kernel``
 and ``bm-deploy-ramdisk`` images.
 
 ```
-(undercloud) [stack@undercloud images]$ NODES=`openstack baremetal node list -f csv -c Name --quote none | sed 1d | paste -s -d ' '`
+(undercloud) [stack@undercloud ~]$ @@NODES=`openstack baremetal node list -f csv -c Name --quote none \
+    | sed 1d | paste -s -d ' '`@/
 
-(undercloud) [stack@undercloud images]$ echo $NODES
-overcloud-ctrl01 overcloud-ctrl02 overcloud-ctrl03 overcloud-ceph01 overcloud-ceph02 overcloud-ceph03 overcloud-compute01 overcloud-compute02
+(undercloud) [stack@undercloud ~]$ @@echo $NODES | fold -s@/
+overcloud-ctrl01 overcloud-ctrl02 overcloud-ctrl03 overcloud-ceph01 
+overcloud-ceph02 overcloud-ceph03 overcloud-compute01 overcloud-compute02
 
-(undercloud) [stack@undercloud images]$ openstack overcloud node configure $NODES
+(undercloud) [stack@undercloud images]$ @@openstack overcloud node configure $NODES@/
 Started Mistral Workflow tripleo.baremetal.v1.configure. Execution ID: fc7c6801-81d5-46b5-b553-af9c35da1c59
 Waiting for messages on queue '6c48070f-eb9c-401a-ab62-b0ceec60e077' with no timeout.
 Successfully configured the nodes.
 ```
 
-Remove the old images from the Glance service (on the undercloud).
+Remove the old images from Glance.
 
 ```
-(undercloud) [stack@undercloud images]$ openstack image list
+(undercloud) [stack@undercloud images]$ @@openstack image list@/
 +--------------------------------------+-----------------------------------------+--------+
 | ID                                   | Name                                    | Status |
 +--------------------------------------+-----------------------------------------+--------+
@@ -3356,14 +3403,17 @@ Remove the old images from the Glance service (on the undercloud).
 | 37bdc1c0-3b85-4c2e-a37f-0638faf442a8 | overcloud-full_20180412T194559Z         | active |
 +--------------------------------------+-----------------------------------------+--------+
 
-(undercloud) [stack@undercloud images]$ IMAGES=`openstack image list -f csv -c Name --quote none | grep 2018`
+(undercloud) [stack@undercloud images]$ @@IMAGES=`openstack image list -f csv -c Name --quote none \
+    | grep 2018`@/
 
-(undercloud) [stack@undercloud images]$ echo $IMAGES
-bm-deploy-kernel_20180316T123554Z bm-deploy-ramdisk_20180316T123556Z overcloud-full-initrd_20180316T123533Z overcloud-full-vmlinuz_20180316T123531Z overcloud-full_20180412T194559Z
+(undercloud) [stack@undercloud images]$ @@echo $IMAGES | fold -s@/
+bm-deploy-kernel_20180316T123554Z bm-deploy-ramdisk_20180316T123556Z 
+overcloud-full-initrd_20180316T123533Z overcloud-full-vmlinuz_20180316T123531Z 
+overcloud-full_20180412T194559Z
 
-(undercloud) [stack@undercloud images]$ for IMAGE in $IMAGES ; do openstack image delete $IMAGE ; done
+(undercloud) [stack@undercloud images]$ @@for IMAGE in $IMAGES ; do openstack image delete $IMAGE ; done@/
 
-(undercloud) [stack@undercloud images]$ openstack image list
+(undercloud) [stack@undercloud images]$ @@openstack image list@/
 +--------------------------------------+------------------------+--------+
 | ID                                   | Name                   | Status |
 +--------------------------------------+------------------------+--------+
@@ -3374,21 +3424,22 @@ bm-deploy-kernel_20180316T123554Z bm-deploy-ramdisk_20180316T123556Z overcloud-f
 | 1eb290af-c9ac-4fee-ab3a-6e24bf5033e8 | overcloud-full-vmlinuz | active |
 +--------------------------------------+------------------------+--------+
 
-(undercloud) [stack@undercloud images]$ cd
+(undercloud) [stack@undercloud images]$ @@cd@/
 ```
+
+### Step 3: Initialize the Update
 
 Now we're ready to run the first stage of the actual overcloud update.  This
 step will update the resources on the **undercloud** that define the overcloud
 &mdash; the TripleO plan, Mistral workflows, and Heat stack.  This step will
 **not** actually make any changes to the overcloud nodes.
 
-This command will take 15-20 minutes to complete (and it will likely run for
-several minutes with no output at the ``[...WorkflowTasks_Step2_Execution]``
-step).
+> **NOTE:** This command takes 15-20 minutes to complete, and it will appear to pause
+> (produce no output) for a few minutes at least once.
 
 ```
-(undercloud) [stack@undercloud ~]$ openstack overcloud update stack --init-minor-update \
-    --container-registry-file templates/docker-registry.yaml
+(undercloud) [stack@undercloud ~]$ @@openstack overcloud update stack --init-minor-update \
+    --container-registry-file templates/docker-registry.yaml@/
 Started Mistral Workflow tripleo.package_update.v1.package_update_plan. Execution ID: 44054b51-9de9-41a3-ae01-412e1430dd95
 Waiting for messages on queue 'aa2349a6-983d-4bf5-801a-aad42dfaa05c' with no timeout.
 (...)
@@ -3402,17 +3453,21 @@ Success
 Init minor update on stack overcloud complete.
 ```
 
+### Step 4: Update the Nodes
+
 Finally!  We're ready to start actually updating the overcloud nodes.  The
 supported order for updating the nodes in our deployment is:
 
 1. Controllers,
 2. Ceph storage (OSD) nodes, and
-3. Compute node.
+3. Compute node(s).
+
+#### Updating With ``openstack overcloud update stack``
 
 Unfortunately, updating the controller nodes in this environment takes more than
-an hour &mdash; time that we simply don't have.  (The controller updates is I/O
+an hour &mdash; time that we simply don't have.  (The controller update is I/O
 intensive, because it involves updating the images for all 49 containers on all
-3 controllers, and our 3 virtualized controllers are all sharing the same
+3 controllers &mdash; and our 3 virtualized controllers are all sharing the same
 physical disk!)  Even though it may break our overcloud, let's update the
 compute node, which will only take a few minutes.
 
@@ -3420,7 +3475,7 @@ First, let's check for available package updates and list the container images
 being used on the compute node.
 
 ```
-(undercloud) [stack@undercloud ~]$ openstack server list
+(undercloud) [stack@undercloud ~]$ @@openstack server list@/
 +--------------------------------------+------------------+--------+----------------------+-------+--------------+
 | ID                                   | Name             | Status | Networks             | Image | Flavor       |
 +--------------------------------------+------------------+--------+----------------------+-------+--------------+
@@ -3433,7 +3488,8 @@ being used on the compute node.
 | 87920ee2-dd27-432d-b8b1-52a2ab49a9ff | lab-compute01    | ACTIVE | ctlplane=172.16.0.25 |       | compute      |
 +--------------------------------------+------------------+--------+----------------------+-------+--------------+
 
-(undercloud) [stack@undercloud ~]$ ssh heat-admin@172.16.0.25 "sudo yum check-update ; sudo docker ps --format '{{ .Image }}'"
+(undercloud) [stack@undercloud ~]$ @@ssh heat-admin@172.16.0.25 "sudo yum check-update ;
+    sudo docker ps --format '{{ .Image }}'"@/
 Loaded plugins: product-id, search-disabled-repos, subscription-manager
 This system is not registered with an entitlement server. You can use subscription-manager to register.
 
@@ -3457,7 +3513,7 @@ tzdata.noarch                   2018d-1.el7              rhelosp-rhel-7.4-server
 Update the compute node.
 
 ```
-(undercloud) [stack@undercloud ~]$ openstack overcloud update stack --nodes Compute
+(undercloud) [stack@undercloud ~]$ @@openstack overcloud update stack --nodes Compute@/
 Started Mistral Workflow tripleo.package_update.v1.update_nodes. Execution ID: 9f90b23a-60a8-4eb5-8baa-fe25b4f0cf8b
 [u"[DEPRECATION WARNING]: The use of 'include' for tasks has been deprecated. Use ",
  u"'import_tasks' for static inclusions or 'include_tasks' for dynamic inclusions.",
@@ -3483,7 +3539,8 @@ Success
 And check that the update actually did its job.
 
 ```
-(undercloud) [stack@undercloud ~]$ ssh heat-admin@172.16.0.25 "sudo yum check-update ; sudo docker ps --format '{{ .Image }}'"
+(undercloud) [stack@undercloud ~]$ @@ssh heat-admin@172.16.0.25 "sudo yum check-update ;
+    sudo docker ps --format '{{ .Image }}'"@/
 Loaded plugins: product-id, search-disabled-repos, subscription-manager
 This system is not registered with an entitlement server. You can use subscription-manager to register.
 172.16.0.1:8787/rhosp12/openstack-cron:12.0-20180319.1
@@ -3494,7 +3551,9 @@ This system is not registered with an entitlement server. You can use subscripti
 172.16.0.1:8787/rhosp12/openstack-nova-libvirt:12.0-20180319.1
 ```
 
-If you've ever used Ansible, the output of the previous ``openstack overcloud
+#### Updating with ``ansible-playbook``
+
+If you've ever used Ansible, the output of that  ``openstack overcloud
 update stack`` command will look very familiar.  In fact, TripleO uses Ansible
 for all minor node updates in OSP 12, and it is possible to download these
 playbooks, examine them, and run them manually for troubleshooting and testing
@@ -3503,7 +3562,7 @@ purposes.
 Download the overcloud configuration.
 
 ```
-(undercloud) [stack@undercloud ~]$ openstack overcloud config download
+(undercloud) [stack@undercloud ~]$ @@openstack overcloud config download@/
 The TripleO configuration has been successfully generated into: /home/stack/tripleo-Jku3uc-config
 ```
 
@@ -3513,9 +3572,9 @@ The TripleO configuration has been successfully generated into: /home/stack/trip
 Change to the config directory and look around.
 
 ```
-(undercloud) [stack@undercloud ~]$ cd /home/stack/tripleo-Jku3uc-config
+(undercloud) [stack@undercloud ~]$ @@cd /home/stack/tripleo-Jku3uc-config@/
 
-(undercloud) [stack@undercloud tripleo-Jku3uc-config]$ ls -l
+(undercloud) [stack@undercloud @@tripleo-Jku3uc-config]$ ls -l@/
 total 48
 drwx------. 2 stack stack 4096 May  1 17:13 BlockStorage
 drwx------. 2 stack stack 4096 May  1 17:13 CephStorage
@@ -3535,7 +3594,7 @@ and ``upgrade_steps_playbook.yaml``.  Since we're doing a minor udate, we're
 interested in the former file.
 
 ```
-(undercloud) [stack@undercloud tripleo-Jku3uc-config]$ cat update_steps_playbook.yaml
+(undercloud) [stack@undercloud tripleo-Jku3uc-config]$ @@cat update_steps_playbook.yaml@/
 - hosts: overcloud
   serial: 1
   tasks:
@@ -3552,7 +3611,7 @@ interested in the former file.
 Let's look at the included file.
 
 ```
-(undercloud) [stack@undercloud tripleo-Jku3uc-config]$ cat update_steps_tasks.yaml
+(undercloud) [stack@undercloud tripleo-Jku3uc-config]$ @@cat update_steps_tasks.yaml@/
 - include: Controller/update_tasks.yaml
   when: role_name == 'Controller'
 - include: Compute/update_tasks.yaml
@@ -3569,7 +3628,7 @@ We just updated a compute node, so let's look at the included tasks for that
 node type.
 
 ```
-(undercloud) [stack@undercloud tripleo-Jku3uc-config]$ cat Compute/update_tasks.yaml
+(undercloud) [stack@undercloud tripleo-Jku3uc-config]$ @@cat Compute/update_tasks.yaml@/
 - block:
   - failed_when: false
     name: Detect if puppet on the docker profile would restart the service
@@ -3626,7 +3685,7 @@ Not surprisingly, the update tasks file for controllers is a bit longer, but
 still quite reasonable.
 
 ```
- (undercloud) [stack@undercloud tripleo-Jku3uc-config]$ wc -l */update_tasks.yaml
+ (undercloud) [stack@undercloud tripleo-Jku3uc-config]$ @@wc -l */update_tasks.yaml@/
    48 BlockStorage/update_tasks.yaml
    48 CephStorage/update_tasks.yaml
    48 Compute/update_tasks.yaml
@@ -3643,10 +3702,10 @@ can generate this file automatically.
 This should take 7 or 8 minutes.
 
 ```
-(undercloud) [stack@undercloud tripleo-Jku3uc-config]$ tripleo-ansible-inventory \
-    --static-inventory tripleo-inventory.yaml
+(undercloud) [stack@undercloud tripleo-Jku3uc-config]$ @@tripleo-ansible-inventory \
+    --static-inventory tripleo-inventory.yaml@/
 
-(undercloud) [stack@undercloud tripleo-Jku3uc-config]$ less tripleo-inventory.yaml
+(undercloud) [stack@undercloud tripleo-Jku3uc-config]$ @@less tripleo-inventory.yaml@/
 (...)
 [CephStorage:children]
 lab-ceph01
@@ -3659,44 +3718,22 @@ lab-ceph03
     --become \
     --module-path /usr/share/ansible-modules \
     --inventory tripleo-inventory.yaml \
-    --limit CephStorage@@
-   [DEPRECATION WARNING]: The use of 'include' for tasks has been deprecated. Use 'import_tasks' for static inclusions or 'include_tasks' for dynamic inclusions. This feature 
-will be removed in a future release. Deprecation warnings can be disabled by setting deprecation_warnings=False in ansible.cfg.
-[DEPRECATION WARNING]: include is kept for backwards compatibility but usage is discouraged. The module documentation details page may explain more about this rationale.. This
- feature will be removed in a future release. Deprecation warnings can be disabled by setting deprecation_warnings=False in ansible.cfg.
+    --limit CephStorage@/
+[DEPRECATION WARNING]: The use of 'include' for tasks has been deprecated. Use 'import_tasks' for 
+static inclusions or 'include_tasks' for dynamic inclusions. This feature will be removed in a 
+future release. Deprecation warnings can be disabled by setting deprecation_warnings=False in 
+ansible.cfg.
+[DEPRECATION WARNING]: include is kept for backwards compatibility but usage is discouraged. The 
+module documentation details page may explain more about this rationale.. This feature will be 
+removed in a future release. Deprecation warnings can be disabled by setting 
+deprecation_warnings=False in ansible.cfg.
 
-PLAY [overcloud] ***************************************************************************************************************************************************************
-
-TASK [Gathering Facts] *********************************************************************************************************************************************************
-ok: [172.16.0.31]
-
-TASK [include] *****************************************************************************************************************************************************************
-included: /home/stack/tripleo-Jku3uc-config/update_steps_tasks.yaml for 172.16.0.31
-included: /home/stack/tripleo-Jku3uc-config/update_steps_tasks.yaml for 172.16.0.31
-included: /home/stack/tripleo-Jku3uc-config/update_steps_tasks.yaml for 172.16.0.31
-included: /home/stack/tripleo-Jku3uc-config/update_steps_tasks.yaml for 172.16.0.31
-included: /home/stack/tripleo-Jku3uc-config/update_steps_tasks.yaml for 172.16.0.31
-included: /home/stack/tripleo-Jku3uc-config/update_steps_tasks.yaml for 172.16.0.31
-
-TASK [include] *****************************************************************************************************************************************************************
-skipping: [172.16.0.31]
-
-TASK [include] *****************************************************************************************************************************************************************
-skipping: [172.16.0.31]
-
-TASK [include] *****************************************************************************************************************************************************************
-skipping: [172.16.0.31]
-
-TASK [include] *****************************************************************************************************************************************************************
-skipping: [172.16.0.31]
-
-TASK [include] *****************************************************************************************************************************************************************
-included: /home/stack/tripleo-Jku3uc-config/CephStorage/update_tasks.yaml for 172.16.0.31
+PLAY [overcloud] ***********************************************************************************
 (...)
-PLAY RECAP *********************************************************************************************************************************************************************
+PLAY RECAP *****************************************************************************************
 172.16.0.23                : ok=57   changed=15   unreachable=0    failed=0   
 172.16.0.31                : ok=57   changed=15   unreachable=0    failed=0   
-172.16.0.33                : ok=57   changed=15   unreachable=0    failed=0
+172.16.0.33                : ok=57   changed=15   unreachable=0    failed=0   
 ```
 
 If you've made it this far without running out of time, feel free to start the
@@ -3704,13 +3741,23 @@ controller update.
 
 
 ```
-(undercloud) [stack@undercloud tripleo-Jku3uc-config]$ ansible-playbook \
+(undercloud) [stack@undercloud tripleo-Jku3uc-config]$ @@ansible-playbook \
     update_steps_playbook.yaml \
     --become \
     --module-path /usr/share/ansible-modules \
     --inventory tripleo-inventory.yaml \
-    --limit Controller
+    --limit Controller@/
+[DEPRECATION WARNING]: The use of 'include' for tasks has been deprecated. Use 'import_tasks' for 
+static inclusions or 'include_tasks' for dynamic inclusions. This feature will be removed in a 
+future release. Deprecation warnings can be disabled by setting deprecation_warnings=False in 
+ansible.cfg.
+[DEPRECATION WARNING]: include is kept for backwards compatibility but usage is discouraged. The 
+module documentation details page may explain more about this rationale.. This feature will be 
+removed in a future release. Deprecation warnings can be disabled by setting 
+deprecation_warnings=False in ansible.cfg.
+
+PLAY [overcloud] ***********************************************************************************
 (...)
 ```
 
-And exhale!
+Sit back, relax, and enjoy the pretty colors!

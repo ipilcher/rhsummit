@@ -44,7 +44,7 @@
     * [Non-Persistent Configuration Changes (v2)](#non-persistent-configuration-changes-v2)
     * [Persistent Configuration Changes](#persistent-configuration-changes)
   - [Testing Container Image Changes](#testing-container-image-changes)
-    * [Modifying a Container Image](#modifying-container-images)
+    * [Modifying Container Images](#modifying-container-images)
     * [Testing the Modified Images](#testing-the-modified-images)
 * [**Lab 5:** Extra Credit &mdash; Minor Updates with Ansible](#lab-5-extra-credit--minor-updates-with-ansible)
 

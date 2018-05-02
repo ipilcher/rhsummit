@@ -1213,22 +1213,23 @@ JSON, so we'll use the ``jq`` command to see the parts in which we're
 interested, but it can be instructive to look through the complete output.)
 
 ```
-[heat-admin@lab-controller01 ~]$ sudo docker inspect haproxy-bundle-docker-0 | jq .[0].Config.Image
+[heat-admin@lab-controller01 ~]$ @@sudo docker inspect haproxy-bundle-docker-0 \
+    | jq .[0].Config.Image@/
 "172.16.0.1:8787/rhosp12/openstack-haproxy:pcmklatest"
 
-[heat-admin@lab-controller01 ~]$ sudo docker inspect haproxy-bundle-docker-0 \
-    | jq .[0].HostConfig.NetworkMode
+[heat-admin@lab-controller01 ~]$ @@sudo docker inspect haproxy-bundle-docker-0 \
+    | jq .[0].HostConfig.NetworkMode@/
 "host"
 
-[heat-admin@lab-controller01 ~]$ sudo docker inspect haproxy-bundle-docker-0 \
-    | jq .[0].Config.Cmd
+[heat-admin@lab-controller01 ~]$ @@sudo docker inspect haproxy-bundle-docker-0 \
+    | jq .[0].Config.Cmd@/
 [
   "/bin/bash",
   "/usr/local/bin/kolla_start"
 ]
 
-[heat-admin@lab-controller01 ~]$ sudo docker inspect haproxy-bundle-docker-0 \
-    | jq .[0].HostConfig.Binds
+[heat-admin@lab-controller01 ~]$ @@sudo docker inspect haproxy-bundle-docker-0 \
+    | jq .[0].HostConfig.Binds@/
 [
   "/etc/pki/tls/certs/ca-bundle.crt:/etc/pki/tls/certs/ca-bundle.crt:ro",
   "/etc/pki/tls/certs/ca-bundle.trust.crt:/etc/pki/tls/certs/ca-bundle.trust.crt:ro",
@@ -1246,8 +1247,8 @@ interested, but it can be instructive to look through the complete output.)
 One final item, which is true of all Pacemaker-managed containers.
 
 ```
-[heat-admin@lab-controller01 ~]$ sudo docker inspect haproxy-bundle-docker-0 \
-    | jq .[0].HostConfig.RestartPolicy.Name
+[heat-admin@lab-controller01 ~]$ @@sudo docker inspect haproxy-bundle-docker-0 \
+    | jq .[0].HostConfig.RestartPolicy.Name@/
 "no"
 ```
 
@@ -1271,8 +1272,8 @@ One thing which is significant is the startup mechanism for the Ceph containers,
 so let's take a look.
 
 ```
-[heat-admin@lab-controller01 ~]$ sudo docker inspect ceph-mon-lab-controller01 \
-    |  jq .[0].HostConfig.RestartPolicy
+[heat-admin@lab-controller01 ~]$ @@sudo docker inspect ceph-mon-lab-controller01 \
+    |  jq .[0].HostConfig.RestartPolicy@/
 {
   "MaximumRetryCount": 0,
   "Name": "no"
@@ -1287,7 +1288,7 @@ each container that it wishes to run.
 
 
 ```
-[heat-admin@lab-controller01 ~]$ systemctl list-units --type service ceph*
+[heat-admin@lab-controller01 ~]$ @@systemctl list-units --type service ceph*@/
 UNIT                              LOAD   ACTIVE SUB     DESCRIPTION
 ceph-mon@lab-controller01.service loaded active running Ceph Monitor
 
@@ -1298,7 +1299,7 @@ SUB    = The low-level unit activation state, values depend on unit type.
 1 loaded units listed. Pass --all to see loaded but inactive units, too.
 To show all installed unit files use 'systemctl list-unit-files'.
 
-[heat-admin@lab-controller01 ~]$ systemctl status ceph-mon@lab-controller01.service
+[heat-admin@lab-controller01 ~]$ @@systemctl status ceph-mon@lab-controller01.service@/
 ● ceph-mon@lab-controller01.service - Ceph Monitor
    Loaded: loaded (/etc/systemd/system/ceph-mon@.service; enabled; vendor preset: disabled)
    Active: active (running) since Sat 2018-04-28 16:53:15 UTC; 6h ago
@@ -1318,10 +1319,10 @@ Apr 28 23:27:30 lab-controller01 docker[4753]: 2018-04-28 23:27:30.658762 7f40ff
 Apr 28 23:27:32 lab-controller01 docker[4753]: 2018-04-28 23:27:32.759232 7f40fe9ae700  0 mon.... MB
 Hint: Some lines were ellipsized, use -l to show in full.
 
-[heat-admin@lab-controller01 ~]$ systemctl is-enabled ceph-mon@lab-controller01.service
+[heat-admin@lab-controller01 ~]$ @@systemctl is-enabled ceph-mon@lab-controller01.service@/
 enabled
 
-[heat-admin@lab-controller01 ~]$ cat /etc/systemd/system/ceph-mon@.service
+[heat-admin@lab-controller01 ~]$ @@cat /etc/systemd/system/ceph-mon@.service@/
 [Unit]
 Description=Ceph Monitor
 After=docker.service
@@ -1362,7 +1363,8 @@ The remainder of the containers running on our controllers are what we will call
 automatically started by the Docker daemon.
 
 ```
-[heat-admin@lab-controller01 ~]$ sudo docker inspect memcached | jq .[0].HostConfig.RestartPolicy.Name
+[heat-admin@lab-controller01 ~]$ @@sudo docker inspect memcached \
+    | jq .[0].HostConfig.RestartPolicy.Name@/
 "always"
 ```
 
@@ -1374,7 +1376,7 @@ it's been configured to run an OpenStack service.
 First, let's look at the full output of ``docker inspect``.
 
 ```
-[heat-admin@lab-controller01 ~]$ sudo docker inspect nova_scheduler | less
+[heat-admin@lab-controller01 ~]$ @@sudo docker inspect nova_scheduler | less@/
 (...)
         "Path": "kolla_start",
 (...)
